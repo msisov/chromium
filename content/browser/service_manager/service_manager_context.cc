@@ -301,9 +301,11 @@ void RegisterUIServiceInProcessIfNecessary(
   // Some tests don't create BrowserMainLoop.
   if (!BrowserMainLoop::GetInstance())
     return;
+#if !(defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS))
   // Do not embed the UI service when running in mash.
   if (base::FeatureList::IsEnabled(features::kMash))
     return;
+#endif
   // Do not embed the UI service if not running with mus.
   if (!features::IsMusEnabled())
     return;
