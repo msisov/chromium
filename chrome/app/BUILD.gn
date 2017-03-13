@@ -446,6 +446,8 @@ service_manifest("chrome_content_packaged_services_manifest_overlay") {
       "//ash:manifest",
       "//components/services/font:manifest",
     ]
+  } else if (use_ozone && is_linux) {
+    packaged_services += [ "//services/ui:manifest" ]
   }
 }
 
