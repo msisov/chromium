@@ -442,6 +442,8 @@ service_manifest("chrome_content_packaged_services_manifest_overlay") {
       "//ash/touch_hud/mus:manifest",
       "//components/font_service:manifest",
     ]
+  } else if (use_ozone && is_linux) {
+    packaged_services += [ "//services/ui:manifest" ]
   }
 }
 
