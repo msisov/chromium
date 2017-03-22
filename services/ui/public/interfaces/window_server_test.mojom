@@ -7,5 +7,5 @@ module ui.mojom;
 import "ui/events/mojo/event.mojom";
 
 interface WindowServerTest {
-  EnsureClientHasDrawnWindow(string client_name) => (bool success);
+  EnsureClientHasDrawnRootWindows(string client_name) => (uint64 root_window_count);
 };

@@ -5,6 +5,8 @@
 #ifndef SERVICES_UI_WS_WINDOW_SERVER_TEST_IMPL_H_
 #define SERVICES_UI_WS_WINDOW_SERVER_TEST_IMPL_H_
 
+#include <map>
+
 #include "services/ui/public/interfaces/window_server_test.mojom.h"
 
 namespace ui {
@@ -20,15 +22,16 @@ class WindowServerTestImpl : public mojom::WindowServerTest {
 
  private:
   void OnWindowPaint(const std::string& name,
-                     const EnsureClientHasDrawnWindowCallback& cb,
+                     const EnsureClientHasDrawnRootWindowsCallback& cb,
                      ServerWindow* window);
 
   // mojom::WindowServerTest:
-  void EnsureClientHasDrawnWindow(
+  void EnsureClientHasDrawnRootWindows(
       const std::string& client_name,
-      const EnsureClientHasDrawnWindowCallback& callback) override;
+      const EnsureClientHasDrawnRootWindowsCallback& callback) override;
 
   WindowServer* window_server_;
+  std::map<std::string, unsigned> painted_window_roots_;
 
   DISALLOW_COPY_AND_ASSIGN(WindowServerTestImpl);
 };
