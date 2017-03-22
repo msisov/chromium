@@ -1218,11 +1218,9 @@ void WindowTreeClient::OnEmbed(
     OnTopLevelCreatedImpl(it->second, std::move(root_data), drawn,
                           local_surface_id);
 
-    // TODO(tonikitoo): Fix the WindowTreeClientDelegate::OnEmbed API.
-    // In external window mode, this needs not to pass the ownership of the
-    // WindowTreeHostMus instance to the delegate_. A raw pointer should
-    // surface.
-    delegate_->OnEmbed(nullptr);
+    // Pass a raw pointer to WindowTreeHostMus, which helps delegate to identify
+    // which WindowTreeHostMus to use in case if there are many of them.
+    delegate_->OnEmbedRootReady(window_tree_host);
     return;
   }
 
