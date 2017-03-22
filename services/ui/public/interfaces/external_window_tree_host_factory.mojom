@@ -1,0 +1,15 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module ui.mojom;
+
+import "services/ui/public/interfaces/window_tree_host.mojom";
+
+// ExternalWindowTreeHostFactory triggers the creation of WindowTreeHost instances.
+interface ExternalWindowTreeHostFactory {
+  // Creates a new WindowTreeHost in 'external window mode'.
+  // One WindowTree/WindowTreeClient pair can serve one or more WindowTreeHost
+  // instances.
+  CreatePlatformWindow(WindowTreeHost& window_tree_host, uint32 client_id);
+};

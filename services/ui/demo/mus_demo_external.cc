@@ -24,7 +24,12 @@ class WindowTreeDataExternal : public WindowTreeData {
   // Creates a new window tree host associated to the WindowTreeData.
   WindowTreeDataExternal(aura::WindowTreeClient* window_tree_client,
                          int square_size)
-      : WindowTreeData(square_size) {}
+      : WindowTreeData(square_size) {
+    std::unique_ptr<aura::WindowTreeHostMus> tree_host =
+        base::MakeUnique<aura::WindowTreeHostMus>(window_tree_client);
+    tree_host->InitHost();
+    SetWindowTreeHost(std::move(tree_host));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(WindowTreeDataExternal);
 };
@@ -61,17 +66,11 @@ void MusDemoExternal::OnStartImpl() {
   // aura::GetDeviceScaleFactorFromDisplay().
   AddPrimaryDisplay(display::Display(0));
 
-  // The number of windows to open is specified by number_of_windows_. The
-  // windows are opened sequentially (the first one here and the others after
-  // each call to OnEmbed) to ensure that the WindowTreeHostMus passed to
-  // OnEmbed corresponds to the WindowTreeDataExternal::host_ created in
-  // OpenNewWindow.
+  // TODO(tonikitoo,fwang): New windows can be launched without need to wait
+  // the respective ::OnEmbed call of the previous instance.
   OpenNewWindow();
 
-  // TODO(tonikitoo,msisov): For true external window mode, we want a slightly
-  // different API: it would connect to MUS, creating a unique WindowTree
-  // instance, capable of serving 0..n WindowTreeHost's.
-  window_tree_client()->ConnectViaWindowTreeHostFactory();
+  window_tree_client()->ConnectViaExternalWindowTreeFactory();
 }
 
 void MusDemoExternal::OpenNewWindow() {
@@ -85,7 +84,11 @@ void MusDemoExternal::OpenNewWindow() {
 
 void MusDemoExternal::OnEmbed(
     std::unique_ptr<aura::WindowTreeHostMus> window_tree_host) {
-  InitWindowTreeData(std::move(window_tree_host));
+  DCHECK(!window_tree_host);
+
+  // TODO: Clean up WindowTreeClientDelegate::OnEmbed API so that it passes
+  // no ownership of WindowTreeHostMus instance.
+  InitWindowTreeData(nullptr);
   initialized_windows_count_++;
 
   // Open the next window until the requested number of windows is reached.

@@ -4,7 +4,7 @@
   "interface_provider_specs": {
     "service_manager:connector": {
       "requires": {
-        "ui": [ "window_manager", "window_tree_host_factory" ]
+        "ui": [ "external_window_tree_factory", "window_manager" ]
       }
     }
   }

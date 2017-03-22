@@ -171,6 +171,10 @@ class Display : public PlatformDisplayDelegate,
 
   class CursorState;
 
+  // Inits the display root once the display is ready in
+  // 'external window mode'.
+  void InitDisplayRoot();
+
   // Creates the set of WindowManagerDisplayRoots from the
   // WindowManagerWindowTreeFactorySet.
   void CreateWindowManagerDisplayRootsFromFactories();

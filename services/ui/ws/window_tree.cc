@@ -160,7 +160,35 @@ void WindowTree::Init(std::unique_ptr<WindowTreeBinding> binding,
   if (roots_.empty())
     return;
 
+  DoOnEmbed(std::move(tree), nullptr /*ServerWindow*/);
+}
+
+void WindowTree::DoOnEmbed(mojom::WindowTreePtr tree,
+                           ServerWindow* root_window) {
+  bool in_external_window_mode = !!root_window;
+  if (in_external_window_mode) {
+    DCHECK(!tree);
+    CHECK_LE(1u, roots_.size());
+
+    Display* display = GetDisplay(root_window);
+    int64_t display_id =
+        display ? display->GetId() : display::kInvalidDisplayId;
+
+    ClientWindowId window_id;
+    IsWindowKnown(root_window, &window_id);
+
+    const bool drawn =
+        root_window->parent() && root_window->parent()->IsDrawn();
+    client()->OnEmbed(WindowToWindowData(root_window),
+                      nullptr /*mojom::WindowTreePtr*/, display_id,
+                      ClientWindowIdToTransportId(window_id), drawn,
+                      root_window->current_local_surface_id());
+    return;
+  }
+
   std::vector<const ServerWindow*> to_send;
+
+  DCHECK(!root_window);
   CHECK_EQ(1u, roots_.size());
   const ServerWindow* root = *roots_.begin();
   GetUnknownWindowsFrom(root, &to_send);
@@ -201,7 +229,24 @@ void WindowTree::ConfigureWindowManager(
   automatically_create_display_roots_ = automatically_create_display_roots;
   window_manager_internal_ = binding_->GetWindowManager();
   window_manager_internal_->OnConnect();
+
+  if (window_server_->IsInExternalWindowMode()) {
+    external_window_tree_host_factory_.reset(
+        new ExternalWindowTreeHostFactory(window_server_, user_id_));
+    return;
+  }
   window_manager_state_ = std::make_unique<WindowManagerState>(this);
+}
+
+void WindowTree::ConfigureRootWindowTreeClient(
+    bool automatically_create_display_roots) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  automatically_create_display_roots_ = automatically_create_display_roots;
+  window_manager_internal_ = binding_->GetWindowManager();
+  window_manager_internal_->OnConnect();
+
+  external_window_tree_host_factory_.reset(
+      new ExternalWindowTreeHostFactory(window_server_, user_id_));
 }
 
 const ServerWindow* WindowTree::GetWindow(const WindowId& id) const {
@@ -258,6 +303,31 @@ void WindowTree::PrepareForWindowServerShutdown() {
   binding_->ResetClientForShutdown();
   if (window_manager_internal_)
     window_manager_internal_ = binding_->GetWindowManager();
+}
+
+void WindowTree::AddRoot(const ServerWindow* root) {
+  DCHECK(pending_client_window_id_ != kInvalidClientId);
+  DCHECK(window_server_->IsInExternalWindowMode());
+
+  const ClientWindowId client_window_id(
+      MakeClientWindowId(pending_client_window_id_));
+
+  DCHECK_EQ(0u, client_id_to_window_id_map_.count(client_window_id));
+
+  client_id_to_window_id_map_[client_window_id] = root->id();
+  window_id_to_client_id_map_[root->id()] = client_window_id;
+  pending_client_window_id_ = kInvalidClientId;
+
+  roots_.insert(root);
+
+  Display* display = GetDisplay(root);
+  DCHECK(display);
+
+  WindowManagerDisplayRoot* display_root = GetWindowManagerDisplayRoot(root);
+  DCHECK(display_root);
+
+  DoOnEmbed(nullptr /*mojom::WindowTreePtr*/,
+            display_root->GetClientVisibleRoot());
 }
 
 void WindowTree::AddRootForWindowManager(const ServerWindow* root) {
@@ -1142,6 +1212,11 @@ Id WindowTree::ClientWindowIdToTransportId(
   return (base::checked_cast<ClientSpecificId>(client_window_id.client_id())
           << 16) |
          base::checked_cast<ClientSpecificId>(client_window_id.sink_id());
+}
+
+void WindowTree::AddExternalModeWindowManagerState(
+    std::unique_ptr<WindowManagerState> window_manager_state) {
+  external_mode_wm_states_.insert(std::move(window_manager_state));
 }
 
 bool WindowTree::ShouldRouteToWindowManager(const ServerWindow* window) const {
@@ -2274,6 +2349,19 @@ void WindowTree::GetWindowManagerClient(
   window_manager_internal_client_binding_.reset(
       new mojo::AssociatedBinding<mojom::WindowManagerClient>(
           this, std::move(internal)));
+}
+
+void WindowTree::GetExternalWindowTreeHostFactory(
+    mojo::AssociatedInterfaceRequest<mojom::ExternalWindowTreeHostFactory>
+        request) {
+  if (!window_server_->IsInExternalWindowMode() ||
+      !external_window_tree_host_factory_ ||
+      external_window_tree_host_factory_binding_) {
+    return;
+  }
+  external_window_tree_host_factory_binding_.reset(
+      new mojo::AssociatedBinding<mojom::ExternalWindowTreeHostFactory>(
+          external_window_tree_host_factory_.get(), std::move(request)));
 }
 
 void WindowTree::GetCursorLocationMemory(

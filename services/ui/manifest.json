@@ -75,6 +75,9 @@
         ],
         "window_tree_host_factory": [
           "ui::mojom::WindowTreeHostFactory"
+        ],
+        "external_window_tree_factory": [
+          "ui::mojom::ExternalWindowTreeFactory"
         ]
       },
       "requires": {

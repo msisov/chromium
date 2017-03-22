@@ -1,0 +1,21 @@
+// Copyright 2017 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module ui.mojom;
+
+import "services/ui/public/interfaces/window_tree.mojom";
+
+// ExternalWindowTreeFactory is the entry point to obtain a
+// WindowTree instance in 'external window mode'.
+// Callers obtain a mojo handle to the unique ws::WindowTree instance,
+// on the server-side.
+//
+// NOTE: ExternalWindowTreeFactory::Create and
+// ExternalWindowTreeHostFactory::CreatePlatformWindow are put on separate interfaces,
+// so that the interface containing ::CreatePlatformWindow is obtained by
+// calling ::Register. That eliminates the possibility of ::CreatePlatformWindow
+// being called before ::Register.
+interface ExternalWindowTreeFactory {
+   Create(WindowTree& tree_request, WindowTreeClient client);
+};

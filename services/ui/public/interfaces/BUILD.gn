@@ -19,6 +19,8 @@ mojom("interfaces") {
     "clipboard.mojom",
     "display_manager.mojom",
     "event_matcher.mojom",
+    "external_window_tree_factory.mojom",
+    "external_window_tree_host_factory.mojom",
     "gpu.mojom",
     "mus_constants.mojom",
     "remote_event_dispatcher.mojom",

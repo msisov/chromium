@@ -30,6 +30,7 @@
 #include "services/ui/ws/display_binding.h"
 #include "services/ui/ws/display_creation_config.h"
 #include "services/ui/ws/display_manager.h"
+#include "services/ui/ws/external_window_tree_factory.h"
 #include "services/ui/ws/gpu_host.h"
 #include "services/ui/ws/remote_event_dispatcher.h"
 #include "services/ui/ws/threaded_image_cursors.h"
@@ -316,8 +317,12 @@ void Service::OnStart() {
   registry_with_source_info_.AddInterface<mojom::UserActivityMonitor>(
       base::Bind(&Service::BindUserActivityMonitorRequest,
                  base::Unretained(this)));
-  registry_with_source_info_.AddInterface<WindowTreeHostFactory>(base::Bind(
-      &Service::BindWindowTreeHostFactoryRequest, base::Unretained(this)));
+  registry_with_source_info_.AddInterface<mojom::WindowTreeHostFactory>(
+      base::Bind(&Service::BindWindowTreeHostFactoryRequest,
+                 base::Unretained(this)));
+  registry_with_source_info_.AddInterface<mojom::ExternalWindowTreeFactory>(
+      base::Bind(&Service::BindExternalWindowTreeFactoryRequest,
+                 base::Unretained(this)));
   registry_with_source_info_
       .AddInterface<mojom::WindowManagerWindowTreeFactory>(
           base::Bind(&Service::BindWindowManagerWindowTreeFactoryRequest,
@@ -528,6 +533,17 @@ void Service::BindWindowTreeHostFactoryRequest(
         window_server_.get(), source_info.identity.user_id()));
   }
   user_state->window_tree_host_factory->AddBinding(std::move(request));
+}
+
+void Service::BindExternalWindowTreeFactoryRequest(
+    mojom::ExternalWindowTreeFactoryRequest request,
+    const service_manager::BindSourceInfo& source_info) {
+  AddUserIfNecessary(source_info.identity);
+  mojo::MakeStrongBinding(
+      base::MakeUnique<ws::ExternalWindowTreeFactory>(
+          window_server_.get(), source_info.identity.user_id()),
+      std::move(request));
+  window_server_->SetInExternalWindowMode();
 }
 
 void Service::BindDiscardableSharedMemoryManagerRequest(

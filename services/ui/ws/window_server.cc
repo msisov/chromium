@@ -313,6 +313,12 @@ WindowTree* WindowServer::GetTreeWithClientName(
   return nullptr;
 }
 
+WindowTree* WindowServer::GetTreeForExternalWindowMode() {
+  DCHECK_LE(1u, tree_map_.size());
+  DCHECK(IsInExternalWindowMode());
+  return tree_map_.begin()->second.get();
+}
+
 ServerWindow* WindowServer::GetWindow(const WindowId& id) {
   // kWindowServerClientId is used for Display and WindowManager nodes.
   if (id.client_id == kWindowServerClientId) {

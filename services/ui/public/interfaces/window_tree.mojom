@@ -11,6 +11,7 @@ import "services/ui/public/interfaces/mus_constants.mojom";
 import "services/ui/public/interfaces/window_manager.mojom";
 import "services/ui/public/interfaces/window_manager_constants.mojom";
 import "services/ui/public/interfaces/window_tree_constants.mojom";
+import "services/ui/public/interfaces/external_window_tree_host_factory.mojom";
 import "services/viz/public/interfaces/compositing/compositor_frame_sink.mojom";
 import "services/viz/public/interfaces/compositing/frame_sink_id.mojom";
 import "services/viz/public/interfaces/compositing/local_surface_id.mojom";
@@ -308,6 +309,11 @@ interface WindowTree {
 
   // Tells the window manager to perform |string_action| for |window_id|.
   PerformWmAction(uint32 window_id, string action);
+
+  // Gets the (singleton) instance of ExternalWindowTreeHostFactory, as an associated
+  // interface of WindowTree. This allows them to share the same mojo message
+  // pipe, ensuring ordering of messages.
+  GetExternalWindowTreeHostFactory(associated ExternalWindowTreeHostFactory& request);
 
   // See description of WindowManager for details.
   GetWindowManagerClient(associated WindowManagerClient& internal);
