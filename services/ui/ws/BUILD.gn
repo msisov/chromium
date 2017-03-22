@@ -147,6 +147,7 @@ static_library("lib") {
     "//services/service_manager/public/mojom",
     "//services/ui/common:mus_common",
     "//services/ui/display",
+    "//services/ui/public/cpp:internal",
     "//services/ui/public/interfaces",
     "//services/viz/privileged/interfaces/compositing",
     "//ui/base",
