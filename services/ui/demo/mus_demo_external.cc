@@ -8,6 +8,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "services/service_manager/public/cpp/service_context.h"
 #include "services/ui/demo/window_tree_data.h"
+#include "services/ui/public/cpp/property_type_converters.h"
 #include "services/ui/public/interfaces/constants.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host.mojom.h"
 #include "ui/aura/mus/window_port_mus.h"
@@ -27,8 +28,14 @@ class WindowTreeDataExternal : public WindowTreeData {
   WindowTreeDataExternal(aura::WindowTreeClient* window_tree_client,
                          int square_size)
       : WindowTreeData(square_size) {
+    using WindowManager = ui::mojom::WindowManager;
+    using TransportType = std::vector<uint8_t>;
+    std::map<std::string, TransportType> properties;
+    properties[WindowManager::kBounds_InitProperty] =
+        mojo::ConvertTo<TransportType>(gfx::Rect(0, 0, 1024, 768));
+
     aura::WindowTreeHostMusInitParams init_params =
-        CreateInitParamsForTopLevel(window_tree_client);
+        CreateInitParamsForTopLevel(window_tree_client, properties);
     std::unique_ptr<aura::WindowTreeHostMus> tree_host =
         base::MakeUnique<aura::WindowTreeHostMus>(std::move(init_params));
     tree_host->InitHost();

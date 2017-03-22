@@ -49,6 +49,7 @@ source_set("internal") {
   visibility = [
     ":cpp",
     "//services/ui/demo:lib",
+    "//services/ui/ws:lib",
   ]
 
   sources = [
@@ -70,10 +71,6 @@ source_set("internal") {
     "//ui/display",
     "//ui/events",
     "//ui/gfx/geometry",
-  ]
-
-  data_deps = [
-    "//services/ui",
   ]
 
   defines = [ "GL_GLEXT_PROTOTYPES" ]
