@@ -338,6 +338,12 @@ WindowTreeAndWindowId WindowServer::UnregisterEmbedToken(
   return result;
 }
 
+WindowTree* WindowServer::GetTreeForExternalWindowMode() {
+  DCHECK_LE(1u, tree_map_.size());
+  DCHECK(IsInExternalWindowMode());
+  return tree_map_.begin()->second.get();
+}
+
 void WindowServer::OnTreeMessagedClient(ClientSpecificId id) {
   if (current_operation_)
     current_operation_->MarkTreeAsMessaged(id);

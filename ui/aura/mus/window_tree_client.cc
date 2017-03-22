@@ -251,6 +251,30 @@ WindowTreeClient::CreateForWindowTreeHostFactory(
   return wtc;
 }
 
+// static
+std::unique_ptr<WindowTreeClient> WindowTreeClient::CreateForExternalWindowMode(
+    service_manager::Connector* connector,
+    WindowTreeClientDelegate* delegate,
+    bool create_discardable_memory) {
+  std::unique_ptr<WindowTreeClient> wtc(
+      new WindowTreeClient(connector, delegate, nullptr, nullptr, nullptr,
+                           create_discardable_memory));
+  ui::mojom::ExternalWindowModeRegistrarPtr factory;
+  connector->BindInterface(ui::mojom::kServiceName, &factory);
+
+  ui::mojom::WindowTreePtr tree;
+
+  ui::mojom::WindowTreeClientPtr tree_client;
+  wtc->binding_.Bind(MakeRequest(&tree_client));
+  factory->Register(MakeRequest(&tree),
+                    MakeRequest(&wtc->tree_host_factory_ptr_),
+                    std::move(tree_client));
+
+  wtc->in_external_window_mode_ = true;
+  wtc->SetWindowTree(std::move(tree));
+  return wtc;
+}
+
 WindowTreeClient::~WindowTreeClient() {
   in_destructor_ = true;
 
@@ -422,6 +446,7 @@ WindowTreeClient::WindowTreeClient(
       binding_(this),
       tree_(nullptr),
       in_destructor_(false),
+      in_external_window_mode_(false),
       weak_factory_(this) {
   DCHECK(delegate_);
   // Allow for a null request in tests.
@@ -908,6 +933,16 @@ void WindowTreeClient::OnWindowMusCreated(WindowMus* window) {
   window->set_server_id(next_window_id_++);
   RegisterWindowMus(window);
 
+  if (in_external_window_mode_ &&
+      window->window_mus_type() == WindowMusType::DISPLAY_MANUALLY_CREATED) {
+    // Triggers the creation of a mojom::WindowTreeHost instance on the server
+    // side. Ends up calling back to client side, WindowTreeClient::OnEmbed.
+    ui::mojom::WindowTreeHostPtr host;
+    tree_host_factory_ptr_->CreatePlatformWindow(MakeRequest(&host),
+                                                 window->server_id());
+    return;
+  }
+
   DCHECK(window_manager_delegate_ || !IsRoot(window));
 
   std::unordered_map<std::string, std::vector<uint8_t>> transport_properties;
@@ -1242,7 +1277,35 @@ void WindowTreeClient::OnEmbed(
     ui::Id focused_window_id,
     bool drawn,
     const base::Optional<viz::LocalSurfaceId>& local_surface_id) {
+  if (in_external_window_mode_) {
+    // No need to set 'tree_ptr_' since it was already set during
+    // CreateForExternalWindowMode.
+    DCHECK(tree_ptr_);
+    DCHECK(!tree);
+
+    auto it = windows_.find(focused_window_id);
+    DCHECK(it != windows_.end());
+
+    WindowTreeHostMus* window_tree_host = GetWindowTreeHostMus(it->second);
+    // By this time, the window_tree_host and the compositor it owns must
+    // be initialized. It is done during start up as soon as
+    // BrowserFrame::InitBrowserFrame() is called.
+    DCHECK(window_tree_host->compositor()->root_layer());
+    // TODO(tonikitoo,msisov): We should probably call OnTopLevelCreated
+    // instead of OnEmbed.
+    OnTopLevelCreatedImpl(it->second, std::move(root_data), drawn,
+                          local_surface_id);
+
+    // TODO(tonikitoo): Fix the WindowTreeClientDelegate::OnEmbed API.
+    // In external window mode, this needs not to pass the ownership of the
+    // WindowTreeHostMus instance to the delegate_. A raw pointer should
+    // surface.
+    delegate_->OnEmbed(nullptr);
+    return;
+  }
+
   DCHECK(!tree_ptr_);
+  DCHECK(tree);
   tree_ptr_ = std::move(tree);
 
   is_from_embed_ = true;
@@ -1347,6 +1410,14 @@ void WindowTreeClient::OnTopLevelCreated(
   // modified locally).
   window_tree_host->set_display_id(display_id);
 
+  OnTopLevelCreatedImpl(window, std::move(data), drawn, local_surface_id);
+}
+
+void WindowTreeClient::OnTopLevelCreatedImpl(
+    WindowMus* window,
+    ui::mojom::WindowDataPtr data,
+    bool drawn,
+    const base::Optional<viz::LocalSurfaceId>& local_surface_id) {
   // The default visibilty is false, we only need update visibility if it
   // differs from that.
   if (data->visible) {
@@ -2463,9 +2534,16 @@ void WindowTreeClient::OnWindowTreeHostConfineCursorToBounds(
 
 std::unique_ptr<WindowPortMus> WindowTreeClient::CreateWindowPortForTopLevel(
     const std::map<std::string, std::vector<uint8_t>>* properties) {
+  WindowMusType window_type = in_external_window_mode_
+                                  ? WindowMusType::DISPLAY_MANUALLY_CREATED
+                                  : WindowMusType::TOP_LEVEL;
+
   std::unique_ptr<WindowPortMus> window_port =
-      std::make_unique<WindowPortMus>(this, WindowMusType::TOP_LEVEL);
+      std::make_unique<WindowPortMus>(this, window_type);
   roots_.insert(window_port.get());
+
+  if (in_external_window_mode_)
+    return window_port;
 
   window_port->set_server_id(next_window_id_++);
   RegisterWindowMus(window_port.get());

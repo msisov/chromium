@@ -21,6 +21,7 @@
 #include "base/memory/weak_ptr.h"
 #include "mojo/public/cpp/bindings/associated_binding.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
+#include "services/ui/public/interfaces/window_tree_host.mojom.h"
 #include "services/ui/ws/access_policy_delegate.h"
 #include "services/ui/ws/drag_source.h"
 #include "services/ui/ws/drag_target_connection.h"
@@ -161,9 +162,24 @@ class WindowTree : public mojom::WindowTree,
   WindowServer* window_server() { return window_server_; }
   const WindowServer* window_server() const { return window_server_; }
 
+  // Called from ExternalWindowTreeHostFactory when creating a new ws::Display.
+  // The Id is stored, and set to the WindowManagerDisplayRoot::root_,
+  // which hosts the content embedded by the client.
+  //
+  // Used in external window mode.
+  void prepare_to_create_root_display(Id transport_window_id) {
+    pending_client_window_id_ = transport_window_id;
+  }
+
+  // Calls WindowTreeClient::OnEmbed.
+  void DoOnEmbed(mojom::WindowTreePtr tree, ServerWindow* root);
+
   // Called from ~WindowServer. Reset WindowTreeClient so that it no longer gets
   // any messages.
   void PrepareForWindowServerShutdown();
+
+  // Adds a new root to this tree.
+  void AddRoot(const ServerWindow* root);
 
   // Adds a new root to this tree. This is only valid for window managers.
   void AddRootForWindowManager(const ServerWindow* root);
@@ -316,6 +332,12 @@ class WindowTree : public mojom::WindowTree,
   // reset the high 16 bits back to 0 if it's being sent back to the client
   // that created the window.
   Id ClientWindowIdToTransportId(const ClientWindowId& client_window_id) const;
+
+  // In external window mode, where various ws::WindowManagerDisplayRoot's can
+  // be roots in a WindowTree, each holds is own WindowManagerState instance.
+  // This method keeps track of them.
+  void AddExternalModeWindowManagerState(
+      std::unique_ptr<WindowManagerState> window_manager_state);
 
  private:
   friend class test::WindowTreeTestApi;
@@ -732,8 +754,11 @@ class WindowTree : public mojom::WindowTree,
       window_manager_internal_client_binding_;
   mojom::WindowManager* window_manager_internal_;
   std::unique_ptr<WindowManagerState> window_manager_state_;
+
   // See mojom for details.
   bool automatically_create_display_roots_ = true;
+
+  std::set<std::unique_ptr<WindowManagerState>> external_mode_wm_states_;
 
   std::unique_ptr<WaitingForTopLevelWindowInfo>
       waiting_for_top_level_window_info_;
@@ -752,6 +777,10 @@ class WindowTree : public mojom::WindowTree,
 
   // Controls whether the client can change the visibility of the roots.
   bool can_change_root_window_visibility_ = true;
+
+  // Temporarily stores the Id to be set to the WindowManagerDisplayRoot::root_,
+  // which hosts the content embedded by the client.
+  Id pending_client_window_id_ = kInvalidClientId;
 
   // A weak ptr factory for callbacks from the window manager for when we send
   // a image move. All weak ptrs are invalidated when a drag is completed.

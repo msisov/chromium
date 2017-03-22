@@ -21,6 +21,7 @@
 #include "mojo/public/cpp/bindings/binding.h"
 #include "services/ui/public/interfaces/window_manager_window_tree_factory.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
+#include "services/ui/ws/external_window_tree_host_factory.h"
 #include "services/ui/ws/gpu_host_delegate.h"
 #include "services/ui/ws/ids.h"
 #include "services/ui/ws/operation.h"
@@ -116,6 +117,8 @@ class WindowServer : public ServerWindowDelegate,
 
   WindowTree* GetTreeWithClientName(const std::string& client_name);
 
+  WindowTree* GetTreeForExternalWindowMode();
+
   size_t num_trees() const { return tree_map_.size(); }
 
   // Creates and registers a token for use in a future embedding. |window_id|
@@ -164,11 +167,20 @@ class WindowServer : public ServerWindowDelegate,
   void BindWindowManagerWindowTreeFactory(
       mojo::InterfaceRequest<mojom::WindowManagerWindowTreeFactory> request);
 
+  void set_window_tree_host_factory(
+      std::unique_ptr<ExternalWindowTreeHostFactory> factory) {
+    DCHECK(factory);
+    window_tree_host_factory_ = std::move(factory);
+  }
+
   // Sets focus to |window|. Returns true if |window| already has focus, or
   // focus was successfully changed. Returns |false| if |window| is not a valid
   // window to receive focus.
   bool SetFocusedWindow(ServerWindow* window);
   ServerWindow* GetFocusedWindow();
+
+  void SetInExternalWindowMode() { in_external_window_mode_ = true; }
+  bool IsInExternalWindowMode() const { return in_external_window_mode_; }
 
   void SetHighContrastMode(bool enabled);
 
@@ -410,6 +422,8 @@ class WindowServer : public ServerWindowDelegate,
   std::unique_ptr<WindowManagerWindowTreeFactory>
       window_manager_window_tree_factory_;
 
+  std::unique_ptr<ExternalWindowTreeHostFactory> window_tree_host_factory_;
+
   viz::SurfaceId root_surface_id_;
 
   // Incremented when the viz process is restarted.
@@ -424,6 +438,8 @@ class WindowServer : public ServerWindowDelegate,
   // System modal windows not attached to a display are added here. Once
   // attached to a display they are removed.
   ServerWindowTracker pending_system_modal_windows_;
+
+  bool in_external_window_mode_ = false;
 
   DisplayCreationConfig display_creation_config_;
 

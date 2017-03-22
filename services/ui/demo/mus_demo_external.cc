@@ -10,8 +10,10 @@
 #include "services/ui/demo/window_tree_data.h"
 #include "services/ui/public/interfaces/constants.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host.mojom.h"
+#include "ui/aura/mus/window_port_mus.h"
 #include "ui/aura/mus/window_tree_client.h"
 #include "ui/aura/mus/window_tree_host_mus.h"
+#include "ui/aura/mus/window_tree_host_mus_init_params.h"
 #include "ui/display/display.h"
 
 namespace ui {
@@ -24,7 +26,14 @@ class WindowTreeDataExternal : public WindowTreeData {
   // Creates a new window tree host associated to the WindowTreeData.
   WindowTreeDataExternal(aura::WindowTreeClient* window_tree_client,
                          int square_size)
-      : WindowTreeData(square_size) {}
+      : WindowTreeData(square_size) {
+    aura::WindowTreeHostMusInitParams init_params =
+        CreateInitParamsForTopLevel(window_tree_client);
+    std::unique_ptr<aura::WindowTreeHostMus> tree_host =
+        std::make_unique<aura::WindowTreeHostMus>(std::move(init_params));
+    tree_host->InitHost();
+    SetWindowTreeHost(std::move(tree_host));
+  }
 
   DISALLOW_COPY_AND_ASSIGN(WindowTreeDataExternal);
 };
@@ -41,7 +50,7 @@ MusDemoExternal::~MusDemoExternal() {}
 
 std::unique_ptr<aura::WindowTreeClient>
 MusDemoExternal::CreateWindowTreeClient() {
-  return aura::WindowTreeClient::CreateForWindowTreeHostFactory(
+  return aura::WindowTreeClient::CreateForExternalWindowMode(
       context()->connector(), this);
 }
 
@@ -57,10 +66,14 @@ void MusDemoExternal::OnStartImpl() {
     }
   }
 
-  // TODO(tonikitoo,fwang): Implement management of displays in external mode.
+  // TODO(tonikitoo,msisov): Implement management of displays in external mode.
   // For now, a fake display is created in order to work around an assertion in
   // aura::GetDeviceScaleFactorFromDisplay().
   AddPrimaryDisplay(display::Display(0));
+
+  // TODO(tonikitoo,msisov): New windows can be launched without need to wait
+  // the respective ::OnEmbed call of the previous instance.
+  OpenNewWindow();
 }
 
 void MusDemoExternal::OpenNewWindow() {
@@ -74,12 +87,11 @@ void MusDemoExternal::OpenNewWindow() {
 
 void MusDemoExternal::OnEmbed(
     std::unique_ptr<aura::WindowTreeHostMus> window_tree_host) {
-  if (initialized_windows_count_ == 0) {
-    // The initial connection to the WindowService has been established.
-    OpenNewWindow();
-  }
+  // In external window mode, the window tree host instance has already been
+  // created earlier on. nullptr is passed here then by the callee.
+  DCHECK(!window_tree_host);
 
-  InitWindowTreeData(std::move(window_tree_host));
+  InitWindowTreeData(nullptr /*window tree host mus*/);
   initialized_windows_count_++;
 
   // Open the next window until the requested number of windows is reached.

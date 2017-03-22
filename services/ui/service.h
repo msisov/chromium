@@ -26,6 +26,7 @@
 #include "services/ui/public/interfaces/accessibility_manager.mojom.h"
 #include "services/ui/public/interfaces/clipboard.mojom.h"
 #include "services/ui/public/interfaces/display_manager.mojom.h"
+#include "services/ui/public/interfaces/external_window_mode_registrar.mojom.h"
 #include "services/ui/public/interfaces/gpu.mojom.h"
 #include "services/ui/public/interfaces/ime/ime.mojom.h"
 #include "services/ui/public/interfaces/remote_event_dispatcher.mojom.h"
@@ -159,6 +160,10 @@ class Service : public service_manager::Service,
 
   void BindWindowTreeHostFactoryRequest(
       mojom::WindowTreeHostFactoryRequest request,
+      const service_manager::BindSourceInfo& source_info);
+
+  void BindExternalWindowModeRegistrarRequest(
+      mojom::ExternalWindowModeRegistrarRequest request,
       const service_manager::BindSourceInfo& source_info);
 
   void BindDiscardableSharedMemoryManagerRequest(

@@ -191,6 +191,30 @@ void Display::SetTitle(const std::string& title) {
   platform_display_->SetTitle(base::UTF8ToUTF16(title));
 }
 
+void Display::InitDisplayRoot() {
+  DCHECK(window_server_->IsInExternalWindowMode());
+
+  // TODO(tonikitoo,msisov): Current WindowManagerDisplayRoot class is misnamed,
+  // since in external window mode a non-WindowManager specific 'DisplayRoot'
+  // is also needed.
+  std::unique_ptr<WindowManagerDisplayRoot> display_root_ptr(
+      new WindowManagerDisplayRoot(this));
+  window_manager_display_root_ = display_root_ptr.get();
+
+  WindowTree* window_tree = window_server_->GetTreeForExternalWindowMode();
+
+  std::unique_ptr<WindowManagerState> window_manager_state =
+      std::make_unique<WindowManagerState>(window_tree);
+  display_root_ptr->window_manager_state_ = window_manager_state.get();
+  window_tree->AddExternalModeWindowManagerState(
+      std::move(window_manager_state));
+
+  window_manager_display_root_->window_manager_state_
+      ->AddWindowManagerDisplayRoot(std::move(display_root_ptr));
+
+  window_tree->AddRoot(window_manager_display_root_->root());
+}
+
 void Display::CreateWindowManagerDisplayRootFromFactory() {
   WindowManagerWindowTreeFactory* factory =
       window_server_->window_manager_window_tree_factory();
@@ -245,7 +269,11 @@ EventSink* Display::GetEventSink() {
 
 void Display::OnAcceleratedWidgetAvailable() {
   display_manager()->OnDisplayAcceleratedWidgetAvailable(this);
-  InitWindowManagerDisplayRoots();
+
+  if (window_server_->IsInExternalWindowMode())
+    InitDisplayRoot();
+  else
+    InitWindowManagerDisplayRoots();
 }
 
 void Display::OnNativeCaptureLost() {
