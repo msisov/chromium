@@ -86,6 +86,14 @@ class AURA_EXPORT WindowTreeHostMus : public WindowTreeHostPlatform {
   // supplied to the constructor.
   std::unique_ptr<DisplayInitParams> ReleaseDisplayInitParams();
 
+  // Used during the initial set up (in external window mode). It holds a
+  // copy of the properties needed by the window server when creating a
+  // root server window.
+  const std::map<std::string, std::vector<uint8_t>>& mus_init_properties()
+      const {
+    return mus_init_properties_;
+  }
+
   // Intended only for WindowTreeClient to call.
   void set_display_id(int64_t id) { display_id_ = id; }
   int64_t display_id() const { return display_id_; }
@@ -117,6 +125,8 @@ class AURA_EXPORT WindowTreeHostMus : public WindowTreeHostPlatform {
   std::unique_ptr<InputMethodMus> input_method_;
 
   std::unique_ptr<DisplayInitParams> display_init_params_;
+
+  std::map<std::string, std::vector<uint8_t>> mus_init_properties_;
 
   DISALLOW_COPY_AND_ASSIGN(WindowTreeHostMus);
 };
