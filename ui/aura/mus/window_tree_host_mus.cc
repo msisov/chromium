@@ -43,6 +43,11 @@ WindowTreeHostMus::WindowTreeHostMus(WindowTreeHostMusInitParams init_params)
       delegate_(init_params.window_tree_client) {
   gfx::Rect bounds_in_pixels;
   display_init_params_ = std::move(init_params.display_init_params);
+
+  // Copy the mus properties here in the display init paramaters instance,
+  // so that it is accessible from WTC::OnWindowMusCreated.
+  mus_init_properties_ = init_params.properties;
+
   if (display_init_params_) {
     bounds_in_pixels = display_init_params_->viewport_metrics.bounds_in_pixels;
     if (display_init_params_->display)
