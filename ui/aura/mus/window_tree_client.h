@@ -25,7 +25,9 @@
 #include "mojo/public/cpp/bindings/associated_binding.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
 #include "services/ui/public/interfaces/event_injector.mojom.h"
+#include "services/ui/public/interfaces/external_window_mode_registrar.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
+#include "services/ui/public/interfaces/window_tree_host.mojom.h"
 #include "ui/aura/aura_export.h"
 #include "ui/aura/client/transient_window_client_observer.h"
 #include "ui/aura/mus/capture_synchronizer_delegate.h"
@@ -135,6 +137,12 @@ class AURA_EXPORT WindowTreeClient
       service_manager::Connector* connector,
       WindowTreeClientDelegate* delegate,
       bool create_discardable_memory = true);
+
+  // Establishes the connection by way of the ExternalWindowModeRegistrar.
+  static std::unique_ptr<WindowTreeClient> CreateForExternalWindowMode(
+      service_manager::Connector* connector,
+      WindowTreeClientDelegate* delegate,
+      bool create_discardable_memory = false);
 
   ~WindowTreeClient() override;
 
@@ -335,6 +343,13 @@ class AURA_EXPORT WindowTreeClient
                    ui::Id focused_window_id,
                    bool drawn,
                    const base::Optional<viz::LocalSurfaceId>& local_surface_id);
+
+  // Called by OnTopLevelCreated() and OnEmbed() when in 'external window mode'.
+  void OnTopLevelCreatedImpl(
+      WindowMus* window,
+      ui::mojom::WindowDataPtr data,
+      bool drawn,
+      const base::Optional<viz::LocalSurfaceId>& local_surface_id);
 
   // Returns the EmbedRoot whose root is |window|, or null if there isn't one.
   EmbedRoot* GetEmbedRootWithRootWindow(aura::Window* window);
@@ -701,6 +716,8 @@ class AURA_EXPORT WindowTreeClient
 
   bool has_pointer_watcher_ = false;
 
+  bool in_external_window_mode_ = false;
+
   // The current change id for the client.
   uint32_t current_move_loop_change_ = 0u;
 
@@ -743,6 +760,8 @@ class AURA_EXPORT WindowTreeClient
 #if defined(USE_OZONE)
   std::unique_ptr<PlatformEventSourceMus> platform_event_source_;
 #endif
+
+  ui::mojom::ExternalWindowTreeHostFactoryPtr tree_host_factory_ptr_;
 
   base::WeakPtrFactory<WindowTreeClient> weak_factory_;
 

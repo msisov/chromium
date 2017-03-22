@@ -30,6 +30,7 @@
 #include "services/ui/ws/display_creation_config.h"
 #include "services/ui/ws/display_manager.h"
 #include "services/ui/ws/event_injector.h"
+#include "services/ui/ws/external_window_mode_registrar.h"
 #include "services/ui/ws/gpu_host.h"
 #include "services/ui/ws/threaded_image_cursors.h"
 #include "services/ui/ws/threaded_image_cursors_factory.h"
@@ -295,6 +296,9 @@ void Service::OnStart() {
   registry_with_source_info_.AddInterface<WindowTreeHostFactory>(
       base::BindRepeating(&Service::BindWindowTreeHostFactoryRequest,
                           base::Unretained(this)));
+  registry_with_source_info_.AddInterface<mojom::ExternalWindowModeRegistrar>(
+      base::BindRepeating(&Service::BindExternalWindowModeRegistrarRequest,
+                          base::Unretained(this)));
   registry_with_source_info_
       .AddInterface<mojom::WindowManagerWindowTreeFactory>(base::BindRepeating(
           &Service::BindWindowManagerWindowTreeFactoryRequest,
@@ -490,6 +494,15 @@ void Service::BindWindowTreeHostFactoryRequest(
         std::make_unique<ws::WindowTreeHostFactory>(window_server_.get());
   }
   window_tree_host_factory_->AddBinding(std::move(request));
+}
+
+void Service::BindExternalWindowModeRegistrarRequest(
+    mojom::ExternalWindowModeRegistrarRequest request,
+    const service_manager::BindSourceInfo& source_info) {
+  mojo::MakeStrongBinding(
+      std::make_unique<ws::ExternalWindowModeRegistrar>(window_server_.get()),
+      std::move(request));
+  window_server_->SetInExternalWindowMode();
 }
 
 void Service::BindDiscardableSharedMemoryManagerRequest(
