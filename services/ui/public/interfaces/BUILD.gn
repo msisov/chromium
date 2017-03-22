@@ -20,6 +20,8 @@ mojom("interfaces") {
     "display_manager.mojom",
     "event_injector.mojom",
     "event_matcher.mojom",
+    "external_window_mode_registrar.mojom",
+    "external_window_tree_host_factory.mojom",
     "gpu.mojom",
     "mus_constants.mojom",
     "user_activity_monitor.mojom",

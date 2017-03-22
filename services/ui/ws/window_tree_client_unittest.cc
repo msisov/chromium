@@ -18,6 +18,7 @@
 #include "services/service_manager/public/cpp/service_test.h"
 #include "services/ui/common/util.h"
 #include "services/ui/public/interfaces/constants.mojom.h"
+#include "services/ui/public/interfaces/external_window_mode_registrar.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host_factory.mojom.h"
 #include "services/ui/ws/ids.h"
@@ -168,6 +169,7 @@ class TestWindowTreeClient : public mojom::WindowTreeClient,
   }
 
   mojom::WindowTree* tree() { return tree_.get(); }
+  void set_tree(mojom::WindowTreePtr tree) { tree_ = std::move(tree); }
   TestChangeTracker* tracker() { return &tracker_; }
   Id root_window_id() const { return root_window_id_; }
 
@@ -195,7 +197,7 @@ class TestWindowTreeClient : public mojom::WindowTreeClient,
 
   // Runs a nested MessageLoop until OnEmbed() has been encountered.
   void WaitForOnEmbed() {
-    if (tree_)
+    if (tree_ready_)
       return;
     embed_run_loop_ = std::make_unique<base::RunLoop>();
     embed_run_loop_->Run();
@@ -311,7 +313,10 @@ class TestWindowTreeClient : public mojom::WindowTreeClient,
     // TODO(sky): add coverage of |focused_window_id|.
     ASSERT_TRUE(root);
     root_window_id_ = root->window_id;
-    tree_ = std::move(tree);
+    // 'tree' can be null in case of 'external window mode'.
+    if (tree)
+      set_tree(std::move(tree));
+    tree_ready_ = true;
     tracker()->OnEmbed(std::move(root), drawn);
     if (embed_run_loop_)
       embed_run_loop_->Quit();
@@ -558,6 +563,7 @@ class TestWindowTreeClient : public mojom::WindowTreeClient,
   TestChangeTracker tracker_;
 
   mojom::WindowTreePtr tree_;
+  bool tree_ready_ = false;
 
   // If non-null we're waiting for OnEmbed() using this RunLoop.
   std::unique_ptr<base::RunLoop> embed_run_loop_;
@@ -729,6 +735,26 @@ class WindowTreeClientTest : public WindowServerServiceTestBase {
 
     WindowServerServiceTestBase::SetUp();
 
+#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
+    // External window mode.
+    ui::mojom::ExternalWindowModeRegistrarPtr registrar;
+    connector()->BindInterface(ui::mojom::kServiceName, &registrar);
+
+    ui::mojom::WindowTreePtr tree;
+    ui::mojom::ExternalWindowTreeHostFactoryPtr tree_host_factory_ptr;
+    mojom::WindowTreeClientPtr tree_client_ptr;
+    wt_client1_ = std::make_unique<TestWindowTreeClient>();
+    wt_client1_->Bind(MakeRequest(&tree_client_ptr));
+
+    registrar->Register(MakeRequest(&tree), MakeRequest(&tree_host_factory_ptr),
+                        std::move(tree_client_ptr));
+
+    wt_client1_->set_tree(std::move(tree));
+
+    tree_host_factory_ptr->CreatePlatformWindow(MakeRequest(&host_),
+                                                BuildWindowId(1, 0));
+#else
+    // Internal window mode.
     mojom::WindowTreeHostFactoryPtr factory;
     connector()->BindInterface(ui::mojom::kServiceName, &factory);
 
@@ -738,6 +764,7 @@ class WindowTreeClientTest : public WindowServerServiceTestBase {
 
     factory->CreateWindowTreeHost(MakeRequest(&host_),
                                   std::move(tree_client_ptr));
+#endif
 
     // Next we should get an embed call on the "window manager" client.
     wt_client1_->WaitForOnEmbed();
