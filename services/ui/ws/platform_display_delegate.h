@@ -38,6 +38,9 @@ class PlatformDisplayDelegate {
   // Called when the Display loses capture.
   virtual void OnNativeCaptureLost() = 0;
 
+  // Called when the Display is resized.
+  virtual void OnBoundsChanged(const gfx::Rect& new_bounds) = 0;
+
   // Allows the OzonePlatform to be overridden, e.g. for tests. Returns null
   // for non-Ozone platforms.
   virtual OzonePlatform* GetOzonePlatform() = 0;

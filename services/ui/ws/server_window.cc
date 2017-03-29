@@ -230,7 +230,7 @@ void ServerWindow::SetBounds(
   if (bounds_ == bounds && current_local_surface_id_ == local_surface_id)
     return;
 
-  const gfx::Rect old_bounds = bounds_;
+  gfx::Rect old_bounds = bounds_;
 
   current_local_surface_id_ = local_surface_id;
 

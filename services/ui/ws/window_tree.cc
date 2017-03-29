@@ -931,8 +931,20 @@ void WindowTree::ProcessWindowBoundsChanged(
   ClientWindowId client_window_id;
   if (originated_change || !IsWindowKnown(window, &client_window_id))
     return;
+
+  // In external window mode, we cap the bounds WindowManagerDisplayRoot's
+  // root window to 0,0. So send the bounds of Display's root, which has the
+  // same size but contains the proper window placement (x, y).
+  gfx::Rect newest_bounds = new_bounds;
+  if (window_server_->IsInExternalWindowMode()) {
+    WindowManagerDisplayRoot* display_root =
+        GetWindowManagerDisplayRoot(window);
+    if (display_root && display_root->GetClientVisibleRoot() == window)
+      newest_bounds = GetDisplay(window)->root_window()->bounds();
+  }
+
   client()->OnWindowBoundsChanged(ClientWindowIdToTransportId(client_window_id),
-                                  old_bounds, new_bounds, local_surface_id);
+                                  old_bounds, newest_bounds, local_surface_id);
 }
 
 void WindowTree::ProcessWindowTransformChanged(
@@ -1477,6 +1489,16 @@ mojom::WindowDataPtr WindowTree::WindowToWindowData(
       transient_parent ? TransportIdForWindow(transient_parent)
                        : kInvalidTransportId;
   window_data->bounds = window->bounds();
+  // In external window mode, we cap the bounds WindowManagerDisplayRoot's
+  // root window to 0,0. So send the bounds of Display's root, which has the
+  // same size but contains the proper window placement (x, y).
+  if (window_server_->IsInExternalWindowMode()) {
+    WindowManagerDisplayRoot* display_root =
+        GetWindowManagerDisplayRoot(window);
+    if (display_root && display_root->GetClientVisibleRoot() == window)
+      window_data->bounds = GetDisplay(window)->root_window()->bounds();
+  }
+
   window_data->properties = mojo::MapToUnorderedMap(window->properties());
   window_data->visible = window->visible();
   return window_data;
@@ -1854,6 +1876,19 @@ void WindowTree::SetWindowBounds(
   // Only the owner of the window can change the bounds.
   bool success = access_policy_->CanSetWindowBounds(window);
   if (success) {
+    if (window_server_->IsInExternalWindowMode()) {
+      WindowManagerDisplayRoot* display_root =
+          GetWindowManagerDisplayRoot(window);
+      if (display_root && display_root->GetClientVisibleRoot() == window) {
+        Operation op(this, window_server_, OperationType::SET_WINDOW_BOUNDS);
+        Display* display = GetDisplay(window);
+        DCHECK(display);
+        display->SetBounds(bounds);
+        client()->OnChangeCompleted(change_id, success);
+        return;
+      }
+    }
+
     Operation op(this, window_server_, OperationType::SET_WINDOW_BOUNDS);
     window->SetBounds(bounds, local_surface_id);
   } else {
