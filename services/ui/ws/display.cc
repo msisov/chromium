@@ -83,7 +83,7 @@ void Display::Init(const display::ViewportMetrics& metrics,
   binding_ = std::move(binding);
   display_manager()->AddDisplay(this);
 
-  CreateRootWindow(metrics.bounds_in_pixels.size());
+  CreateRootWindow(metrics.bounds_in_pixels);
 
   platform_display_ = PlatformDisplay::Create(
       root_.get(), metrics, window_server_->GetThreadedImageCursorsFactory());
@@ -176,6 +176,15 @@ void Display::SetImeVisibility(ServerWindow* window, bool visible) {
   platform_display_->SetImeVisibility(visible);
 }
 
+void Display::SetBounds(const gfx::Rect& bounds) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  if (root_->bounds() == bounds)
+    return;
+
+  root_->SetBounds(bounds, allocator_.GenerateId());
+  platform_display_->SetViewportBounds(bounds);
+}
+
 void Display::OnWillDestroyTree(WindowTree* tree) {
   if (window_manager_display_root_ &&
       window_manager_display_root_->window_manager_state()->window_tree() ==
@@ -250,7 +259,7 @@ void Display::CreateWindowManagerDisplayRootFromFactory() {
       std::move(display_root_ptr));
 }
 
-void Display::CreateRootWindow(const gfx::Size& size) {
+void Display::CreateRootWindow(const gfx::Rect& bounds) {
   DCHECK(!root_);
 
   const ClientWindowId client_window_id =
@@ -259,7 +268,7 @@ void Display::CreateRootWindow(const gfx::Size& size) {
                                                  ServerWindow::Properties()));
   root_->set_event_targeting_policy(
       mojom::EventTargetingPolicy::DESCENDANTS_ONLY);
-  root_->SetBounds(gfx::Rect(size), allocator_.GenerateId());
+  root_->SetBounds(bounds, allocator_.GenerateId());
   root_->SetVisible(true);
   focus_controller_ = std::make_unique<FocusController>(root_.get());
   focus_controller_->AddObserver(this);
@@ -297,6 +306,19 @@ void Display::OnNativeCaptureLost() {
     window_manager_display_root_->window_manager_state()->SetCapture(
         nullptr, kInvalidClientId);
   }
+}
+
+void Display::OnBoundsChanged(const gfx::Rect& new_bounds) {
+  if (!window_server_->IsInExternalWindowMode())
+    return;
+
+  if (root_->bounds() == new_bounds)
+    return;
+
+  root_->SetBounds(new_bounds, allocator_.GenerateId());
+
+  window_manager_display_root_->root()->SetBounds(new_bounds,
+                                                  allocator_.GenerateId());
 }
 
 OzonePlatform* Display::GetOzonePlatform() {

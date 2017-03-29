@@ -120,6 +120,7 @@ class Display : public PlatformDisplayDelegate,
   void UpdateTextInputState(ServerWindow* window,
                             const ui::TextInputState& state);
   void SetImeVisibility(ServerWindow* window, bool visible);
+  void SetBounds(const gfx::Rect& bounds);
 
   // Called just before |tree| is destroyed.
   void OnWillDestroyTree(WindowTree* tree);
@@ -166,9 +167,9 @@ class Display : public PlatformDisplayDelegate,
   // WindowManagerWindowTreeFactory.
   void CreateWindowManagerDisplayRootFromFactory();
 
-  // Creates the root ServerWindow for this display, where |size| is in physical
+  // Creates the root ServerWindow for this display, where |rect| is in physical
   // pixels.
-  void CreateRootWindow(const gfx::Size& size);
+  void CreateRootWindow(const gfx::Rect& bounds);
 
   // Applyes the cursor scale and rotation to the PlatformDisplay.
   void UpdateCursorConfig();
@@ -178,6 +179,8 @@ class Display : public PlatformDisplayDelegate,
   EventSink* GetEventSink() override;
   void OnAcceleratedWidgetAvailable() override;
   void OnNativeCaptureLost() override;
+  void OnBoundsChanged(const gfx::Rect& new_bounds) override;
+
   OzonePlatform* GetOzonePlatform() override;
   bool IsHostingViz() const override;
 

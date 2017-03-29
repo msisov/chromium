@@ -813,6 +813,7 @@ class TestPlatformDisplay : public PlatformDisplay {
   EventSink* GetEventSink() override;
   void SetCursorConfig(display::Display::Rotation rotation,
                        float scale) override;
+  void SetViewportBounds(const gfx::Rect& rect) override;
 
  private:
   display::ViewportMetrics metrics_;

@@ -92,11 +92,17 @@ void PlatformDisplayDefault::Init(PlatformDisplayDelegate* delegate) {
 #endif
   }
 
-  platform_window_->Show();
   if (image_cursors_) {
     image_cursors_->SetDisplay(delegate_->GetDisplay(),
                                metrics_.device_scale_factor);
   }
+  // Show() must be called only after |image_cursors_| has created a
+  // a cursor loader after display is sent to it. Otherwise, Show()
+  // triggers a delegate call to OnBoundsChanged(), which end up to
+  // changing cursor location for not existing cursor loader.
+  // Show the platform window, unless it's the virtual unified display window.
+  if (delegate_->GetDisplay().id() != display::kUnifiedDisplayId)
+    platform_window_->Show();
 }
 
 void PlatformDisplayDefault::SetViewportSize(const gfx::Size& size) {
@@ -113,6 +119,10 @@ void PlatformDisplayDefault::SetCapture() {
 
 void PlatformDisplayDefault::ReleaseCapture() {
   platform_window_->ReleaseCapture();
+}
+
+void PlatformDisplayDefault::SetViewportBounds(const gfx::Rect& bounds) {
+  platform_window_->SetBounds(bounds);
 }
 
 void PlatformDisplayDefault::SetCursor(const ui::CursorData& cursor_data) {
@@ -190,11 +200,14 @@ void PlatformDisplayDefault::SetCursorConfig(
 
 void PlatformDisplayDefault::OnBoundsChanged(const gfx::Rect& new_bounds) {
   // We only care if the window size has changed.
-  if (new_bounds.size() == metrics_.bounds_in_pixels.size())
+  if (new_bounds == metrics_.bounds_in_pixels)
     return;
 
-  // TODO(tonikitoo): Handle the bounds changing in external window mode. The
-  // window should be resized by the WS and it shouldn't involve ScreenManager.
+  metrics_.bounds_in_pixels = new_bounds;
+  if (frame_generator_)
+    frame_generator_->OnWindowSizeChanged(new_bounds.size());
+
+  delegate_->OnBoundsChanged(new_bounds);
 }
 
 void PlatformDisplayDefault::OnDamageRect(const gfx::Rect& damaged_region) {
