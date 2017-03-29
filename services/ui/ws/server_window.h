@@ -102,9 +102,9 @@ class ServerWindow : public viz::HostFrameSinkClient {
   const gfx::Rect& bounds() const { return bounds_; }
   // Sets the bounds. If the size changes this implicitly resets the client
   // area to fill the whole bounds.
-  void SetBounds(const gfx::Rect& bounds,
-                 const base::Optional<viz::LocalSurfaceId>& local_surface_id =
-                     base::nullopt);
+  virtual void SetBounds(const gfx::Rect& bounds,
+                         const base::Optional<viz::LocalSurfaceId>&
+                             local_surface_id = base::nullopt);
 
   const std::vector<gfx::Rect>& additional_client_areas() const {
     return additional_client_areas_;
