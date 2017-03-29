@@ -56,6 +56,7 @@ class TestPlatformDisplayDelegate : public PlatformDisplayDelegate {
   ServerWindow* GetRootWindow() override { return nullptr; }
   EventSink* GetEventSink() override { return sink_; }
   void OnAcceleratedWidgetAvailable() override {}
+  void OnBoundsChanged(const gfx::Rect& new_bounds) override {}
   void OnNativeCaptureLost() override {}
   bool IsHostingViz() const override { return true; }
 

@@ -10,6 +10,7 @@
 #include "services/ui/public/interfaces/window_manager.mojom.h"
 #include "services/ui/ws/display.h"
 #include "services/ui/ws/display_manager.h"
+#include "services/ui/ws/external_window_display_root_window.h"
 #include "services/ui/ws/server_window.h"
 #include "services/ui/ws/window_manager_state.h"
 #include "services/ui/ws/window_server.h"
@@ -17,6 +18,20 @@
 
 namespace ui {
 namespace ws {
+
+namespace {
+
+ServerWindow* CreateExternalWindowDisplayRootWindow(
+    WindowServer* window_server,
+    const viz::FrameSinkId& frame_sink_id,
+    const std::map<std::string, std::vector<uint8_t>>& properties) {
+  ServerWindow* window = new ExternalWindowDisplayRootWindow(
+      window_server, frame_sink_id, properties);
+  window->AddObserver(window_server);
+  return window;
+}
+
+}  //  namespace
 
 WindowManagerDisplayRoot::WindowManagerDisplayRoot(Display* display)
     : display_(display) {
@@ -28,7 +43,10 @@ WindowManagerDisplayRoot::WindowManagerDisplayRoot(Display* display)
   const ClientWindowId client_window_id =
       window_server()->display_manager()->GetAndAdvanceNextRootId();
   root_.reset(
-      window_server()->CreateServerWindow(client_window_id, properties));
+      window_server()->IsInExternalWindowMode()
+          ? CreateExternalWindowDisplayRootWindow(window_server(),
+                                                  client_window_id, properties)
+          : window_server()->CreateServerWindow(client_window_id, properties));
   root_->set_event_targeting_policy(
       mojom::EventTargetingPolicy::DESCENDANTS_ONLY);
   // Our root is always a child of the Display's root. Do this
