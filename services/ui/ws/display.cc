@@ -316,6 +316,18 @@ void Display::OnBoundsChanged(const gfx::Rect& new_bounds) {
                                                   allocator_.GenerateId());
 }
 
+void Display::OnCloseRequest() {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  DCHECK(binding_);
+
+  WindowTree* window_tree = window_server_->GetTreeForExternalWindowMode();
+  ServerWindow* server_window =
+      window_manager_display_root_->window_manager_state()
+          ->GetWindowManagerRootForDisplayRoot(root_window());
+  if (window_tree)
+    window_tree->OnRequestClose(server_window);
+}
+
 bool Display::IsHostingViz() const {
   return window_server_->is_hosting_viz();
 }
