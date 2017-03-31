@@ -1217,6 +1217,13 @@ void WindowTree::AddExternalModeWindowManagerState(
   external_mode_wm_states_.insert(std::move(window_manager_state));
 }
 
+void WindowTree::OnRequestClose(ServerWindow* target_window) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  ClientWindowId client_window_id;
+  if (IsWindowKnown(target_window, &client_window_id))
+    client()->RequestClose(ClientWindowIdToTransportId(client_window_id));
+}
+
 bool WindowTree::ShouldRouteToWindowManager(const ServerWindow* window) const {
   if (window_manager_state_)
     return false;  // We are the window manager, don't route to ourself.

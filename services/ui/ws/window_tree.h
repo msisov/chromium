@@ -340,6 +340,10 @@ class WindowTree : public mojom::WindowTree,
   void AddExternalModeWindowManagerState(
       std::unique_ptr<WindowManagerState> window_manager_state);
 
+  // In external window mode, ozone backends can ask client to close a window on
+  // certain events.
+  void OnRequestClose(ServerWindow* target_window);
+
  private:
   friend class test::WindowTreeTestApi;
 
