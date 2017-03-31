@@ -1029,6 +1029,24 @@ void WindowServer::OnWindowSharedPropertyChanged(
   }
 }
 
+void WindowServer::OnWindowEmbeddedAppDisconnected(ServerWindow* window) {
+  if (!IsInExternalWindowMode() || display_manager_->displays().size() <= 1)
+    return;
+
+  WindowManagerDisplayRoot* display_root =
+      display_manager_->GetWindowManagerDisplayRoot(window);
+  if (!display_root)
+    return;
+
+  const WindowId& id = display_root->root()->id();
+  display_manager_->DestroyDisplay(display_root->display());
+
+  WindowManagerState* wm_state = display_root->window_manager_state();
+  ServerWindow* orphaned_window = wm_state->GetOrphanedRootWithId(id);
+  DCHECK(orphaned_window);
+  wm_state->DeleteWindowManagerDisplayRoot(orphaned_window);
+}
+
 void WindowServer::OnWindowTextInputStateChanged(
     ServerWindow* window,
     const ui::TextInputState& state) {

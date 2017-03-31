@@ -376,6 +376,20 @@ void Display::OnBoundsChanged(const gfx::Rect& new_bounds) {
                                    allocator_.GenerateId());
 }
 
+void Display::OnCloseRequest() {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  DCHECK(binding_);
+
+  WindowTree* window_tree = window_server_->GetTreeForExternalWindowMode();
+  WindowManagerDisplayRoot* display_root =
+      window_manager_display_root_map_.begin()->second;
+  ServerWindow* server_window =
+      display_root->window_manager_state()->GetWindowManagerRootForDisplayRoot(
+          root_window());
+  if (window_tree)
+    window_tree->OnRequestClose(server_window);
+}
+
 OzonePlatform* Display::GetOzonePlatform() {
 #if defined(USE_OZONE)
   return OzonePlatform::GetInstance();

@@ -360,6 +360,7 @@ class WindowServer : public ServerWindowDelegate,
       ServerWindow* window,
       const std::string& name,
       const std::vector<uint8_t>* new_data) override;
+  void OnWindowEmbeddedAppDisconnected(ServerWindow* window) override;
   void OnWindowCursorChanged(ServerWindow* window,
                              const ui::CursorData& cursor) override;
   void OnWindowNonClientCursorChanged(ServerWindow* window,

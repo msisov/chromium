@@ -196,6 +196,7 @@ class Display : public PlatformDisplayDelegate,
   void OnAcceleratedWidgetAvailable() override;
   void OnNativeCaptureLost() override;
   void OnBoundsChanged(const gfx::Rect& new_bounds) override;
+  void OnCloseRequest() override;
 
   OzonePlatform* GetOzonePlatform() override;
   bool IsHostingViz() const override;
