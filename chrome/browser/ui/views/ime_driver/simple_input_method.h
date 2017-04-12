@@ -13,7 +13,7 @@
 // locally.
 class SimpleInputMethod : public ui::mojom::InputMethod {
  public:
-  SimpleInputMethod();
+  explicit SimpleInputMethod(ui::mojom::TextInputClientPtr client);
   ~SimpleInputMethod() override;
 
   // ui::mojom::InputMethod:
@@ -24,6 +24,8 @@ class SimpleInputMethod : public ui::mojom::InputMethod {
   void CancelComposition() override;
 
  private:
+  ui::mojom::TextInputClientPtr client_;
+
   DISALLOW_COPY_AND_ASSIGN(SimpleInputMethod);
 };
 
