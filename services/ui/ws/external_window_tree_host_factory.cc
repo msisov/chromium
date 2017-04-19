@@ -53,6 +53,12 @@ void ExternalWindowTreeHostFactory::CreatePlatformWindow(
   if (iter != properties.end())
     metrics.bounds_in_pixels = mojo::ConvertTo<gfx::Rect>(iter->second);
 
+  iter = properties.find(ui::mojom::WindowManager::kWindowType_InitProperty);
+  if (iter != properties.end()) {
+    metrics.window_type = static_cast<ui::mojom::WindowType>(
+        mojo::ConvertTo<int32_t>(iter->second));
+  }
+
   ws_display->Init(metrics, std::move(display_binding));
 
   // The call below used to be part of ws::Display::Init chain.

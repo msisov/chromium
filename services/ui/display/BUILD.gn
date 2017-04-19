@@ -17,6 +17,7 @@ source_set("display") {
   deps = [
     "//base",
     "//services/service_manager/public/cpp",
+    "//services/ui/public/interfaces",
     "//ui/display",
     "//ui/gfx",
   ]

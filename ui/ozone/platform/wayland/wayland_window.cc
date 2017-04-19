@@ -73,8 +73,17 @@ bool WaylandWindow::Initialize() {
   }
   wl_surface_set_user_data(surface_.get(), this);
 
-  CreateXdgSurface();
-
+  // There is now default initialization for this type. Initialize it
+  // to ::WINDOW here. It will be changed by delelgate if it know the
+  // type of the window.
+  ui::PlatformWindowType ui_window_type =
+      ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
+  delegate_->GetWindowType(&ui_window_type);
+  if (ui_window_type == ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW) {
+    CreateXdgSurface();
+  } else {
+    return false;
+  }
   connection_->ScheduleFlush();
 
   connection_->AddWindow(surface_.id(), this);
