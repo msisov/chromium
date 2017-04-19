@@ -7,6 +7,7 @@
 
 #include <string>
 
+#include "services/ui/public/interfaces/window_manager_constants.mojom.h"
 #include "ui/gfx/geometry/rect.h"
 
 namespace display {
@@ -17,6 +18,11 @@ struct ViewportMetrics {
   gfx::Rect bounds_in_pixels;
   float device_scale_factor = 0.0f;
   float ui_scale_factor = 0.0f;
+
+  // TODO(tonikitoo,msisov): This is an abuse of ViewportMetrics,
+  // and for upstreaming, we should likely consider renaming ViewportMetrics
+  // to DisplayProperties or so.
+  ui::mojom::WindowType window_type = ui::mojom::WindowType::WINDOW;
 };
 
 inline bool operator==(const ViewportMetrics& lhs, const ViewportMetrics& rhs) {

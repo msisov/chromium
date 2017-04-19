@@ -23,6 +23,11 @@ enum PlatformWindowState {
   PLATFORM_WINDOW_STATE_FULLSCREEN,
 };
 
+enum PlatformWindowType {
+  PLATFORM_WINDOW_TYPE_WINDOW,
+  PLATFORM_WINDOW_TYPE_MENU,
+};
+
 class PlatformWindowDelegate {
  public:
   virtual ~PlatformWindowDelegate() {}
@@ -51,6 +56,11 @@ class PlatformWindowDelegate {
   virtual void OnAcceleratedWidgetDestroyed() = 0;
 
   virtual void OnActivationChanged(bool active) = 0;
+
+  // TODO(tonikitoo,msisov): Adding this method with an out parameter so that
+  // we can have a default implementation here and not need to add stubs to
+  // all subclasses. To be discussed when upstraming.
+  virtual void GetWindowType(PlatformWindowType* window_type) {}
 };
 
 }  // namespace ui
