@@ -149,7 +149,7 @@ interface WindowTree {
                     uint32 window_id,
                     string name,
                     array<uint8>? value);
-
+                    
   // Sets the opacity of the specified window to |opacity|.
   SetWindowOpacity(uint32 change_id, uint32 window_id, float opacity);
 

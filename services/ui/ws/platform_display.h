@@ -79,6 +79,9 @@ class PlatformDisplay : public ui::EventSource {
   // Sets the bounds of a native window.
   virtual void SetViewportBounds(const gfx::Rect& rect) {}
 
+  // Shows or hides native window.
+  virtual void SetWindowVisibility(bool visible) {}
+
   // Overrides factory for testing. Default (NULL) value indicates regular
   // (non-test) environment.
   static void set_factory_for_testing(PlatformDisplayFactory* factory) {

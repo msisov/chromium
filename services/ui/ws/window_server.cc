@@ -853,6 +853,16 @@ void WindowServer::CreateFrameSinkManager() {
       std::move(frame_sink_manager));
 }
 
+void WindowServer::SetNativeWindowVisibility(
+    WindowManagerDisplayRoot* display_root,
+    bool visible) {
+  if (!IsInExternalWindowMode())
+    return;
+  PlatformDisplay* display = display_root->display()->platform_display();
+  DCHECK(display);
+  display->SetWindowVisibility(visible);
+}
+
 ServerWindow* WindowServer::GetRootWindowForDrawn(const ServerWindow* window) {
   Display* display = display_manager_->GetDisplayContaining(window);
   return display ? display->root_window() : nullptr;
@@ -997,6 +1007,8 @@ void WindowServer::OnWindowVisibilityChanged(ServerWindow* window) {
   if (display_root) {
     display_root->window_manager_state()
         ->ReleaseCaptureBlockedByAnyModalWindow();
+    if (display_root->GetClientVisibleRoot() == window)
+      SetNativeWindowVisibility(display_root, window->visible());
   }
 }
 

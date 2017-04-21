@@ -327,6 +327,10 @@ class WindowServer : public ServerWindowDelegate,
 
   void CreateFrameSinkManager();
 
+  // Hides or shows native window.
+  void SetNativeWindowVisibility(WindowManagerDisplayRoot* display_root,
+                                 bool visible);
+
   // Overridden from ServerWindowDelegate:
   ServerWindow* GetRootWindowForDrawn(const ServerWindow* window) override;
 
