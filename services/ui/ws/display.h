@@ -121,6 +121,7 @@ class Display : public PlatformDisplayDelegate,
                             const ui::TextInputState& state);
   void SetImeVisibility(ServerWindow* window, bool visible);
   void SetBounds(const gfx::Rect& bounds);
+  void SetVisible(bool value);
 
   // Called just before |tree| is destroyed.
   void OnWillDestroyTree(WindowTree* tree);
