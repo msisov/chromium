@@ -185,6 +185,11 @@ void Display::SetBounds(const gfx::Rect& bounds) {
   platform_display_->SetViewportBounds(bounds);
 }
 
+void Display::SetVisible(bool value) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  platform_display_->SetWindowVisibility(value);
+}
+
 void Display::OnWillDestroyTree(WindowTree* tree) {
   if (window_manager_display_root_ &&
       window_manager_display_root_->window_manager_state()->window_tree() ==

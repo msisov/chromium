@@ -125,6 +125,13 @@ void PlatformDisplayDefault::SetViewportBounds(const gfx::Rect& bounds) {
   platform_window_->SetBounds(bounds);
 }
 
+void PlatformDisplayDefault::SetWindowVisibility(bool visible) {
+  if (visible)
+    platform_window_->Show();
+  else
+    platform_window_->Hide();
+}
+
 void PlatformDisplayDefault::SetCursor(const ui::CursorData& cursor_data) {
   if (!image_cursors_)
     return;

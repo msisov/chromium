@@ -31,5 +31,14 @@ void ExternalWindowDisplayRootWindow::SetBounds(
   ServerWindow::SetBounds(gfx::Rect(bounds.size()), local_surface_id);
 }
 
+void ExternalWindowDisplayRootWindow::SetVisible(bool value) {
+  Display* display =
+      window_server_->display_manager()->GetDisplayContaining(this);
+  if (display)
+    display->SetVisible(value);
+
+  ServerWindow::SetVisible(value);
+}
+
 }  // namespace ws
 }  // namespace ui

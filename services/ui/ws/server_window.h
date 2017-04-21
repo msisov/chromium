@@ -167,7 +167,7 @@ class ServerWindow : public viz::HostFrameSinkClient {
   // Returns the visibility requested by this window. IsDrawn() returns whether
   // the window is actually visible on screen.
   bool visible() const { return visible_; }
-  void SetVisible(bool value);
+  virtual void SetVisible(bool value);
 
   float opacity() const { return opacity_; }
   void SetOpacity(float value);

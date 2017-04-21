@@ -702,6 +702,7 @@ bool WindowTree::SetWindowVisibility(const ClientWindowId& window_id,
   }
   if (window->visible() == visible)
     return true;
+
   Operation op(this, window_server_, OperationType::SET_WINDOW_VISIBILITY);
   window->SetVisible(visible);
   return true;
