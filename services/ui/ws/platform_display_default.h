@@ -57,6 +57,7 @@ class PlatformDisplayDefault : public PlatformDisplay,
   void SetCursorConfig(display::Display::Rotation rotation,
                        float scale) override;
   void SetViewportBounds(const gfx::Rect& rect) override;
+  void SetWindowVisibility(bool visible) override;
 
  private:
   // ui::PlatformWindowDelegate:
