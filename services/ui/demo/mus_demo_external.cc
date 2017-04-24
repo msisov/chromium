@@ -10,8 +10,10 @@
 #include "services/ui/demo/window_tree_data.h"
 #include "services/ui/public/interfaces/constants.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host.mojom.h"
+#include "ui/aura/mus/window_port_mus.h"
 #include "ui/aura/mus/window_tree_client.h"
 #include "ui/aura/mus/window_tree_host_mus.h"
+#include "ui/aura/mus/window_tree_host_mus_init_params.h"
 #include "ui/display/display.h"
 
 namespace ui {
@@ -25,8 +27,10 @@ class WindowTreeDataExternal : public WindowTreeData {
   WindowTreeDataExternal(aura::WindowTreeClient* window_tree_client,
                          int square_size)
       : WindowTreeData(square_size) {
+    aura::WindowTreeHostMusInitParams init_params =
+        CreateInitParamsForTopLevel(window_tree_client);
     std::unique_ptr<aura::WindowTreeHostMus> tree_host =
-        base::MakeUnique<aura::WindowTreeHostMus>(window_tree_client);
+        base::MakeUnique<aura::WindowTreeHostMus>(std::move(init_params));
     tree_host->InitHost();
     SetWindowTreeHost(std::move(tree_host));
   }
