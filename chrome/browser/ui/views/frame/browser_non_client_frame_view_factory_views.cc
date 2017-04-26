@@ -33,7 +33,7 @@ namespace chrome {
 BrowserNonClientFrameView* CreateBrowserNonClientFrameView(
     BrowserFrame* frame,
     BrowserView* browser_view) {
-#if defined(USE_AURA)
+#if defined(USE_AURA) && (!defined(USE_OZONE) || defined(OS_CHROMEOS))
   if (aura::Env::GetInstance()->mode() == aura::Env::Mode::MUS) {
     BrowserNonClientFrameViewMus* frame_view =
         new BrowserNonClientFrameViewMus(frame, browser_view);
