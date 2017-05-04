@@ -14,6 +14,7 @@
 namespace ui {
 
 class WaylandWindow;
+class WaylandConnection;
 
 class WaylandPointer {
  public:

@@ -14,11 +14,27 @@
 #include "ui/views/corewm/tooltip_aura.h"
 #include "ui/views/widget/desktop_aura/desktop_native_widget_aura.h"
 #include "ui/views/widget/desktop_aura/window_event_filter.h"
+#include "ui/views/widget/widget_aura_utils.h"
 #include "ui/views/window/native_frame_view.h"
 #include "ui/wm/core/window_util.h"
 
 namespace views {
 
+namespace {
+
+void ConvertParamsToProperties(
+    const Widget::InitParams& params,
+    DesktopWindowTreeHostPlatform::InitProperties& props) {
+  // TODO(msisov, jkim): add properties required on creating window such as
+  // parent id.
+  props.window_type = GetAuraWindowTypeForWidgetType(params.type);
+  if (params.parent && params.parent->GetHost()) {
+    props.parent_window_widget_id =
+        params.parent->GetHost()->GetAcceleratedWidget();
+  }
+}
+
+}  // namespace
 ////////////////////////////////////////////////////////////////////////////////
 // DesktopWindowTreeHostPlatform:
 
@@ -43,8 +59,11 @@ void DesktopWindowTreeHostPlatform::SetBoundsInDIP(
 }
 
 void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
-  CreateAndSetDefaultPlatformWindow();
-  CreateCompositor(viz::FrameSinkId(), params.force_software_compositing);
+  InitProperties properties;
+  ConvertParamsToProperties(params, properties);
+  CreateAndSetPlatformWindowWithProperties(properties);
+  const bool use_software_compositing = params.force_software_compositing;
+  CreateCompositor(viz::FrameSinkId(), use_software_compositing);
   aura::WindowTreeHost::OnAcceleratedWidgetAvailable();
   InitHost();
   if (!params.bounds.IsEmpty())
