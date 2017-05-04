@@ -36,8 +36,10 @@ class WaylandConnection : public PlatformEventSource,
   wl_shm* shm() { return shm_.get(); }
   xdg_shell* shell() { return shell_.get(); }
   zxdg_shell_v6* shell_v6() { return shell_v6_.get(); }
+  wl_seat* seat() { return seat_.get(); }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
+  WaylandWindow* GetCurrentFocusedWindow();
   void AddWindow(gfx::AcceleratedWidget widget, WaylandWindow* window);
   void RemoveWindow(gfx::AcceleratedWidget widget);
 

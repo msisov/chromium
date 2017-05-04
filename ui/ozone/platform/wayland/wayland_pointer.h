@@ -12,6 +12,8 @@
 
 namespace ui {
 
+class WaylandConnection;
+
 class WaylandPointer {
  public:
   WaylandPointer(wl_pointer* pointer, const EventDispatchCallback& callback);
