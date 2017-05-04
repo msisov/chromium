@@ -82,20 +82,26 @@ void WaylandKeyboard::Enter(void* data,
                             uint32_t serial,
                             wl_surface* surface,
                             wl_array* keys) {
-  WaylandWindow::FromSurface(surface)->set_keyboard_focus(true);
+  if (surface)
+    WaylandWindow::FromSurface(surface)->set_keyboard_focus(true);
 }
 
 void WaylandKeyboard::Leave(void* data,
                             wl_keyboard* obj,
                             uint32_t serial,
                             wl_surface* surface) {
-  WaylandWindow::FromSurface(surface)->set_keyboard_focus(false);
+  if (surface)
+    WaylandWindow::FromSurface(surface)->set_keyboard_focus(false);
 
   WaylandKeyboard* keyboard = static_cast<WaylandKeyboard*>(data);
   DCHECK(keyboard);
 
   // Upon window focus lose, reset the key repeat timers.
   keyboard->auto_repeat_handler_.StopKeyRepeat();
+
+  // Reset all modifiers once focus is lost. Otherwise, the modifiers may be
+  // left with old flags, which are no longer valid.
+  keyboard->event_modifiers_.ResetKeyboardModifiers();
 }
 
 void WaylandKeyboard::Key(void* data,
