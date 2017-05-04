@@ -66,7 +66,8 @@ XDGSurfaceWrapperV6::XDGSurfaceWrapperV6(WaylandWindow* wayland_window)
 XDGSurfaceWrapperV6::~XDGSurfaceWrapperV6() {}
 
 bool XDGSurfaceWrapperV6::Initialize(WaylandConnection* connection,
-                                     wl_surface* surface) {
+                                     wl_surface* surface,
+                                     bool with_toplevel) {
   static const zxdg_surface_v6_listener zxdg_surface_v6_listener = {
       &XDGSurfaceWrapperV6::Configure,
   };
@@ -74,6 +75,10 @@ bool XDGSurfaceWrapperV6::Initialize(WaylandConnection* connection,
       &XDGSurfaceWrapperV6::ConfigureTopLevel,
       &XDGSurfaceWrapperV6::CloseTopLevel,
   };
+
+  // If this surface is created for the popup role, mark it like that as long as
+  // acknowledge configure must be sent back on each configure event.
+  surface_for_popup_ = !with_toplevel;
 
   zxdg_surface_v6_.reset(
       zxdg_shell_v6_get_xdg_surface(connection->shell_v6(), surface));
@@ -83,6 +88,10 @@ bool XDGSurfaceWrapperV6::Initialize(WaylandConnection* connection,
   }
   zxdg_surface_v6_add_listener(zxdg_surface_v6_.get(),
                                &zxdg_surface_v6_listener, this);
+  // XDGPopupV6 requires a separate surface to be created, so this is just a
+  // request to get an xdg_surface for it.
+  if (surface_for_popup_)
+    return true;
 
   zxdg_toplevel_v6_.reset(zxdg_surface_v6_get_toplevel(zxdg_surface_v6_.get()));
   if (!zxdg_toplevel_v6_) {
@@ -161,6 +170,9 @@ void XDGSurfaceWrapperV6::Configure(void* data,
                                     uint32_t serial) {
   XDGSurfaceWrapperV6* surface = static_cast<XDGSurfaceWrapperV6*>(data);
   surface->pending_configure_serial_ = serial;
+
+  if (surface->surface_for_popup_)
+    surface->AckConfigure();
 }
 
 // static
@@ -188,6 +200,11 @@ void XDGSurfaceWrapperV6::CloseTopLevel(
     void* data,
     struct zxdg_toplevel_v6* zxdg_toplevel_v6) {
   NOTIMPLEMENTED();
+}
+
+zxdg_surface_v6* XDGSurfaceWrapperV6::xdg_surface() const {
+  DCHECK(zxdg_surface_v6_);
+  return zxdg_surface_v6_.get();
 }
 
 }  // namespace ui

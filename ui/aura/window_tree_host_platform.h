@@ -10,6 +10,7 @@
 #include "base/compiler_specific.h"
 #include "base/macros.h"
 #include "ui/aura/aura_export.h"
+#include "ui/aura/client/window_types.h"
 #include "ui/aura/window_tree_host.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/platform_window/platform_window.h"
@@ -29,6 +30,16 @@ class WindowPort;
 class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
                                            public ui::PlatformWindowDelegate {
  public:
+  struct AURA_EXPORT InitProperties {
+    InitProperties();
+    InitProperties(const InitProperties& other);
+    ~InitProperties();
+
+    client::WindowType window_type;
+    gfx::AcceleratedWidget parent_window_widget_id =
+        gfx::kNullAcceleratedWidget;
+  };
+
   explicit WindowTreeHostPlatform(const gfx::Rect& bounds);
   ~WindowTreeHostPlatform() override;
 
@@ -57,6 +68,7 @@ class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
   // Creates a ui::PlatformWindow appropriate for the current platform and
   // installs it at as the PlatformWindow for this WindowTreeHostPlatform.
   void CreateAndSetDefaultPlatformWindow();
+  void CreateAndSetPlatformWindowWithProperties(InitProperties& properties);
 
   void SetPlatformWindow(std::unique_ptr<ui::PlatformWindow> window);
   ui::PlatformWindow* platform_window() { return platform_window_.get(); }
@@ -77,6 +89,9 @@ class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
   void OnAcceleratedWidgetDestroying() override;
   void OnAcceleratedWidgetDestroyed() override;
   void OnActivationChanged(bool active) override;
+  void GetWindowType(ui::PlatformWindowType* window_type) override;
+  void GetParentWindowAcceleratedWidget(
+      gfx::AcceleratedWidget* widget) override;
 
   // Overridden from aura::WindowTreeHost:
   bool CaptureSystemKeyEventsImpl(
@@ -100,6 +115,7 @@ class AURA_EXPORT WindowTreeHostPlatform : public WindowTreeHost,
   // by WindowTreeHost.
   viz::LocalSurfaceId pending_local_surface_id_;
   gfx::Size pending_size_;
+  InitProperties properties_;
 
   DISALLOW_COPY_AND_ASSIGN(WindowTreeHostPlatform);
 };

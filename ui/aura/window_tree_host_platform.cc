@@ -73,6 +73,12 @@ void WindowTreeHostPlatform::CreateAndSetDefaultPlatformWindow() {
 #endif
 }
 
+void WindowTreeHostPlatform::CreateAndSetPlatformWindowWithProperties(
+    InitProperties& properties) {
+  properties_ = properties;
+  CreateAndSetDefaultPlatformWindow();
+}
+
 void WindowTreeHostPlatform::SetPlatformWindow(
     std::unique_ptr<ui::PlatformWindow> window) {
   platform_window_ = std::move(window);
@@ -248,5 +254,34 @@ void WindowTreeHostPlatform::OnActivationChanged(bool active) {
   if (active)
     OnHostActivated();
 }
+
+void WindowTreeHostPlatform::GetWindowType(
+    ui::PlatformWindowType* window_type) {
+  DCHECK(window_type);
+  switch (properties_.window_type) {
+    case client::WindowType::WINDOW_TYPE_MENU:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU;
+      break;
+    default:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
+      break;
+  }
+}
+
+void WindowTreeHostPlatform::GetParentWindowAcceleratedWidget(
+    gfx::AcceleratedWidget* widget) {
+  DCHECK(widget);
+  if (properties_.parent_window_widget_id == gfx::kNullAcceleratedWidget)
+    return;
+
+  *widget = properties_.parent_window_widget_id;
+}
+
+WindowTreeHostPlatform::InitProperties::InitProperties() = default;
+
+WindowTreeHostPlatform::InitProperties::InitProperties(
+    const InitProperties& other) = default;
+
+WindowTreeHostPlatform::InitProperties::~InitProperties() = default;
 
 }  // namespace aura
