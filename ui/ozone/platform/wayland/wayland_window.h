@@ -18,6 +18,7 @@ namespace ui {
 class BitmapCursorOzone;
 class PlatformWindowDelegate;
 class WaylandConnection;
+class XDGPopupWrapper;
 class XDGSurfaceWrapper;
 
 namespace {
@@ -36,6 +37,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   bool Initialize();
 
   wl_surface* surface() const { return surface_.get(); }
+  XDGSurfaceWrapper* xdg_surface() { return xdg_surface_.get(); }
+  XDGPopupWrapper* xdg_popup() { return xdg_popup_.get(); }
 
   // Apply the bounds specified in the most recent configure event. This should
   // be called after processing all pending events in the wayland connection.
@@ -50,6 +53,17 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
 
   // Set whether this window has touch focus and should dispatch touch events.
   void set_touch_focus(bool focus) { has_touch_focus_ = focus; }
+
+  // Tells if it is a focused popup.
+  bool is_focused_popup() { return is_popup() && has_pointer_focus(); }
+
+  // Tells if this is a popup.
+  bool is_popup() const { return !!xdg_popup_.get(); }
+
+  // Set a child of this window. It is very important in case of nested
+  // xdg_popups as long as we must destroy the very last first and only then
+  // its parent.
+  void set_child_window(WaylandWindow* window) { child_window_ = window; }
 
   // Set whether this window has an implicit grab (often referred to as capture
   // in Chrome code). Implicit grabs happen while a pointer is down.
@@ -68,6 +82,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void SetTitle(const base::string16& title) override;
   void SetCapture() override;
   void ReleaseCapture() override;
+  // Tells if |this| has capture.
   bool HasCapture() const override;
   void ToggleFullscreen() override;
   void Maximize() override;
@@ -90,6 +105,9 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
 
   void OnCloseRequest();
 
+ protected:
+  PlatformWindowDelegate* delegate() { return delegate_; }
+
  private:
   bool IsMinimized() const;
   bool IsMaximized() const;
@@ -97,20 +115,25 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
 
   void SetPendingBounds(int32_t width, int32_t height);
 
+  // Creates a popup window, which is visible as a menu window.
+  void CreateXdgPopup();
   // Creates a surface window, which is visible as a main window.
   void CreateXdgSurface();
 
   PlatformWindowDelegate* delegate_;
   WaylandConnection* connection_;
+  WaylandWindow* parent_window_ = nullptr;
+  WaylandWindow* child_window_ = nullptr;
 
   // Creates xdg objects based on xdg shell version.
   std::unique_ptr<XDGShellObjectFactory> xdg_shell_objects_factory_;
 
   wl::Object<wl_surface> surface_;
 
-  // Wrapper around xdg v5 and xdg v6 objects. WaylandWindow doesn't
+  // Wrappers around xdg v5 and xdg v6 objects. WaylandWindow doesn't
   // know anything about the version.
   std::unique_ptr<XDGSurfaceWrapper> xdg_surface_;
+  std::unique_ptr<XDGPopupWrapper> xdg_popup_;
 
   // The current cursor bitmap (immutable).
   scoped_refptr<BitmapCursorOzone> bitmap_;
