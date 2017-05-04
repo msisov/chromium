@@ -9,9 +9,12 @@
 #include "base/bind.h"
 #include "ui/base/cursor/ozone/bitmap_cursor_factory_ozone.h"
 #include "ui/events/event.h"
+#include "ui/events/event_utils.h"
 #include "ui/events/ozone/events_ozone.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 #include "ui/ozone/platform/wayland/wayland_pointer.h"
+#include "ui/ozone/platform/wayland/xdg_popup_wrapper_v5.h"
+#include "ui/ozone/platform/wayland/xdg_popup_wrapper_v6.h"
 #include "ui/ozone/platform/wayland/xdg_surface_wrapper_v5.h"
 #include "ui/ozone/platform/wayland/xdg_surface_wrapper_v6.h"
 
@@ -35,9 +38,32 @@ class XDGShellObjectFactory {
     return std::make_unique<XDGSurfaceWrapperV5>(wayland_window);
   }
 
+  std::unique_ptr<XDGPopupWrapper> CreateXDGPopup(
+      WaylandConnection* connection,
+      WaylandWindow* wayland_window) {
+    if (connection->shell_v6()) {
+      std::unique_ptr<XDGSurfaceWrapper> surface =
+          CreateXDGSurface(connection, wayland_window);
+      surface->Initialize(connection, wayland_window->surface(), false);
+      return std::make_unique<XDGPopupWrapperV6>(std::move(surface),
+                                                 wayland_window);
+    }
+    DCHECK(connection->shell());
+    return std::make_unique<XDGPopupWrapperV5>(wayland_window);
+  }
+
  private:
   DISALLOW_COPY_AND_ASSIGN(XDGShellObjectFactory);
 };
+
+// TODO(msisov, tonikitoo): fix customization according to screen resolution
+// once we are able to get global coordinates of wayland windows.
+gfx::Rect TranslateBoundsToScreenCoordinates(const gfx::Rect& child_bounds,
+                                             const gfx::Rect& parent_bounds) {
+  int x = child_bounds.x() - parent_bounds.x();
+  int y = child_bounds.y() - parent_bounds.y();
+  return gfx::Rect(gfx::Point(x, y), child_bounds.size());
+}
 
 }  // namespace
 
@@ -51,12 +77,13 @@ WaylandWindow::WaylandWindow(PlatformWindowDelegate* delegate,
       state_(PlatformWindowState::PLATFORM_WINDOW_STATE_UNKNOWN) {}
 
 WaylandWindow::~WaylandWindow() {
-  if (xdg_surface_) {
-    PlatformEventSource::GetInstance()->RemovePlatformEventDispatcher(this);
-    connection_->RemoveWindow(surface_.id());
-  }
   if (has_pointer_focus_)
     connection_->pointer()->reset_window_with_pointer_focus();
+
+  PlatformEventSource::GetInstance()->RemovePlatformEventDispatcher(this);
+  connection_->RemoveWindow(surface_.id());
+  if (parent_window_)
+    parent_window_->set_child_window(nullptr);
 }
 
 // static
@@ -84,7 +111,7 @@ bool WaylandWindow::Initialize() {
   if (ui_window_type == ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW) {
     CreateXdgSurface();
   } else {
-    return false;
+    CreateXdgPopup();
   }
   connection_->ScheduleFlush();
 
@@ -95,10 +122,33 @@ bool WaylandWindow::Initialize() {
   return true;
 }
 
+void WaylandWindow::CreateXdgPopup() {
+  if (!parent_window_)
+    parent_window_ = connection_->GetCurrentFocusedWindow();
+
+  DCHECK(parent_window_);
+
+  gfx::Rect bounds =
+      TranslateBoundsToScreenCoordinates(bounds_, parent_window_->GetBounds());
+
+  xdg_popup_ = xdg_shell_objects_factory_->CreateXDGPopup(connection_, this);
+  if (!xdg_popup_ ||
+      !xdg_popup_->Initialize(connection_, surface(), parent_window_, bounds)) {
+    CHECK(false) << "Failed to create xdg_popup";
+  }
+
+  parent_window_->set_child_window(this);
+  // Release explicit capture set in mus for the main chromium window, so that
+  // events are forwarded correctly after popup is dead. 
+  if (!parent_window_->is_popup())
+    parent_window_->delegate()->OnLostCapture();
+}
+
 void WaylandWindow::CreateXdgSurface() {
   xdg_surface_ =
       xdg_shell_objects_factory_->CreateXDGSurface(connection_, this);
-  if (!xdg_surface_ || !xdg_surface_->Initialize(connection_, surface_.get())) {
+  if (!xdg_surface_ ||
+      !xdg_surface_->Initialize(connection_, surface_.get(), true)) {
     CHECK(false) << "Failed to create xdg_surface";
   }
 }
@@ -115,10 +165,26 @@ void WaylandWindow::ApplyPendingBounds() {
   connection_->ScheduleFlush();
 }
 
-void WaylandWindow::Show() {}
+void WaylandWindow::Show() {
+  if (xdg_surface_)
+    return;
+  if (!xdg_popup_) {
+    CreateXdgPopup();
+    connection_->ScheduleFlush();
+  }
+}
 
 void WaylandWindow::Hide() {
-  NOTIMPLEMENTED();
+  if (child_window_)
+    child_window_->Hide();
+  if (xdg_popup_) {
+    parent_window_->set_child_window(nullptr);
+    xdg_popup_.reset();
+    // Detach buffer from surface in order to completely shutdown popups and
+    // release resources.
+    wl_surface_attach(surface_.get(), NULL, 0, 0);
+    wl_surface_commit(surface_.get());
+  }
 }
 
 void WaylandWindow::Close() {
@@ -146,18 +212,16 @@ void WaylandWindow::SetTitle(const base::string16& title) {
 
 void WaylandWindow::SetCapture() {
   // Wayland does implicit grabs, and doesn't allow for explicit grabs. The
-  // exception to that seems to be popups, which can do a grab during show. Need
-  // to evaluate under what circumstances we need this.
-  NOTIMPLEMENTED();
+  // exception to that are popups, but we explicitly send events to a
+  // parent popup if such exists.
 }
 
 void WaylandWindow::ReleaseCapture() {
   // See comment in SetCapture() for details on wayland and grabs.
-  NOTIMPLEMENTED();
 }
 
 bool WaylandWindow::HasCapture() const {
-  return has_implicit_grab_;
+  return is_popup() ? true : has_implicit_grab_;
 }
 
 void WaylandWindow::ToggleFullscreen() {
@@ -254,6 +318,13 @@ PlatformImeController* WaylandWindow::GetPlatformImeController() {
 }
 
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
+  if (child_window_ && child_window_->is_popup())
+    return is_popup();
+
+  // If another window has capture, return early before checking focus.
+  if (HasCapture())
+    return true;
+
   if (event->IsMouseEvent())
     return has_pointer_focus_;
   if (event->IsKeyEvent())
@@ -264,6 +335,17 @@ bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
 }
 
 uint32_t WaylandWindow::DispatchEvent(const PlatformEvent& native_event) {
+  Event* event = static_cast<Event*>(native_event);
+  if (event->IsLocatedEvent() && !has_pointer_focus_) {
+    DCHECK(connection_);
+    WaylandWindow* window = connection_->GetCurrentFocusedWindow();
+    if (window) {
+      ConvertEventLocationToTargetWindowLocation(GetBounds().origin(),
+                                                 window->GetBounds().origin(),
+                                                 event->AsLocatedEvent());
+    }
+  }
+
   DispatchEventFromNativeUiEvent(
       native_event, base::BindOnce(&PlatformWindowDelegate::DispatchEvent,
                                    base::Unretained(delegate_)));
@@ -304,7 +386,10 @@ void WaylandWindow::HandleSurfaceConfigure(int32_t width,
 }
 
 void WaylandWindow::OnCloseRequest() {
-  NOTIMPLEMENTED();
+  // Before calling OnCloseRequest, the |xdg_popup_| must become hidden and
+  // only then call OnCloseRequest().
+  DCHECK(!xdg_popup_);
+  delegate_->OnCloseRequest();
 }
 
 bool WaylandWindow::IsMinimized() const {
