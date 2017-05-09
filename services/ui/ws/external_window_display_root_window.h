@@ -28,6 +28,8 @@ class ExternalWindowDisplayRootWindow : public ServerWindow {
   void SetBounds(const gfx::Rect& bounds,
                  const base::Optional<viz::LocalSurfaceId>& local_surface_id =
                      base::nullopt) override;
+  void SetProperty(const std::string& name,
+                   const std::vector<uint8_t>* value) override;
   void SetVisible(bool value) override;
 
  private:

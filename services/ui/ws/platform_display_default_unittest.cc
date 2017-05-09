@@ -59,6 +59,7 @@ class TestPlatformDisplayDelegate : public PlatformDisplayDelegate {
   void OnBoundsChanged(const gfx::Rect& new_bounds) override {}
   void OnCloseRequest() override {}
   void OnNativeCaptureLost() override {}
+  void OnWindowStateChanged(ui::mojom::ShowState new_state) override {}
   bool IsHostingViz() const override { return true; }
 
  private:

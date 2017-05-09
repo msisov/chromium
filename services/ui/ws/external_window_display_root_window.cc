@@ -31,6 +31,17 @@ void ExternalWindowDisplayRootWindow::SetBounds(
   ServerWindow::SetBounds(gfx::Rect(bounds.size()), local_surface_id);
 }
 
+void ExternalWindowDisplayRootWindow::SetProperty(
+    const std::string& name,
+    const std::vector<uint8_t>* value) {
+  Display* display =
+      window_server_->display_manager()->GetDisplayContaining(this);
+  if (display && name == mojom::WindowManager::kShowState_Property)
+    display->SetProperty(name, value);
+
+  ServerWindow::SetProperty(name, value);
+}
+
 void ExternalWindowDisplayRootWindow::SetVisible(bool value) {
   Display* display =
       window_server_->display_manager()->GetDisplayContaining(this);
