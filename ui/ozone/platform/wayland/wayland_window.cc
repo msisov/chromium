@@ -226,7 +226,7 @@ void WaylandWindow::ReleaseCapture() {
 }
 
 void WaylandWindow::ToggleFullscreen() {
-  DCHECK(xdg_surface_);
+  DCHECK(xdg_surface_ && !xdg_popup_);
 
   // TODO(msisov, tonikitoo): add multiscreen support. As the documentation says
   // if xdg_surface_set_fullscreen() is not provided with wl_output, it's up to
@@ -248,7 +248,7 @@ void WaylandWindow::ToggleFullscreen() {
 }
 
 void WaylandWindow::Maximize() {
-  DCHECK(xdg_surface_);
+  DCHECK(xdg_surface_ && !xdg_popup_);
 
   if (IsFullscreen())
     ToggleFullscreen();
@@ -266,7 +266,7 @@ void WaylandWindow::Maximize() {
 }
 
 void WaylandWindow::Minimize() {
-  DCHECK(xdg_surface_);
+  DCHECK(xdg_surface_ && !xdg_popup_);
 
   DCHECK(xdg_surface_);
   xdg_surface_->SetMinimized();
@@ -279,7 +279,7 @@ void WaylandWindow::Minimize() {
 }
 
 void WaylandWindow::Restore() {
-  DCHECK(xdg_surface_);
+  DCHECK(xdg_surface_ && !xdg_popup_);
 
   // Unfullscreen the window if it is fullscreen.
   if (IsFullscreen())

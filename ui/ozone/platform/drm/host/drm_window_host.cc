@@ -129,6 +129,8 @@ PlatformImeController* DrmWindowHost::GetPlatformImeController() {
   return nullptr;
 }
 
+void DrmWindowHost::PerformNativeWindowDragOrResize(uint32_t hittest) {}
+
 bool DrmWindowHost::CanDispatchEvent(const PlatformEvent& ne) {
   DCHECK(ne);
   Event* event = static_cast<Event*>(ne);

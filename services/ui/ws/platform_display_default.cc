@@ -133,6 +133,30 @@ void PlatformDisplayDefault::SetWindowVisibility(bool visible) {
     platform_window_->Hide();
 }
 
+void PlatformDisplayDefault::SetNativeWindowState(ui::mojom::ShowState state) {
+  if (applying_window_state_changes_)
+    return;
+
+  switch (state) {
+    case (ui::mojom::ShowState::MINIMIZED):
+      platform_window_->ReleaseCapture();
+      platform_window_->Minimize();
+      break;
+    case (ui::mojom::ShowState::MAXIMIZED):
+      platform_window_->Maximize();
+      break;
+    case (ui::mojom::ShowState::FULLSCREEN):
+      platform_window_->ToggleFullscreen();
+      break;
+    case (ui::mojom::ShowState::NORMAL):
+    case (ui::mojom::ShowState::DEFAULT):
+      platform_window_->Restore();
+      break;
+    default:
+      break;
+  }
+}
+
 void PlatformDisplayDefault::GetWindowType(
     ui::PlatformWindowType* window_type) {
   DCHECK(window_type);
@@ -268,7 +292,33 @@ void PlatformDisplayDefault::OnCloseRequest() {
 void PlatformDisplayDefault::OnClosed() {}
 
 void PlatformDisplayDefault::OnWindowStateChanged(
-    ui::PlatformWindowState new_state) {}
+    ui::PlatformWindowState new_state) {
+  ui::mojom::ShowState state;
+  switch (new_state) {
+    case (ui::PlatformWindowState::PLATFORM_WINDOW_STATE_MINIMIZED):
+      state = ui::mojom::ShowState::MINIMIZED;
+      break;
+    case (ui::PlatformWindowState::PLATFORM_WINDOW_STATE_MAXIMIZED):
+      state = ui::mojom::ShowState::MAXIMIZED;
+      break;
+    case (ui::PlatformWindowState::PLATFORM_WINDOW_STATE_NORMAL):
+      state = ui::mojom::ShowState::NORMAL;
+      break;
+    // If the window is in the fullscreen mode, there is no need to notify the
+    // client about the state as long as it has been the client who has changed
+    // the state. Checked here explicitly on purpose.
+    case (ui::PlatformWindowState::PLATFORM_WINDOW_STATE_FULLSCREEN):
+    default:
+      // We don't support other states at the moment. Ignore them.
+      return;
+  }
+
+  // OnWindowStateChanged() calls ServerWindow::SetProperty, which also calls to
+  // PlatformDisplayDefault::SetNativeWindowState. This value ensures where are
+  // not setting states of Ozone Windows twice.
+  base::AutoReset<bool> ignore_ws_state(&applying_window_state_changes_, true);
+  delegate_->OnWindowStateChanged(state);
+}
 
 void PlatformDisplayDefault::OnLostCapture() {
   delegate_->OnNativeCaptureLost();
