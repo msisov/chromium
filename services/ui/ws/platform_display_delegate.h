@@ -43,6 +43,10 @@ class PlatformDisplayDelegate {
   // Called when the Display is closed (external mode).
   virtual void OnCloseRequest() = 0;
 
+  // Called when the Display is minimized, maximized or restored (external
+  // mode).
+  virtual void OnWindowStateChanged(ui::mojom::ShowState new_state) = 0;
+
   virtual bool IsHostingViz() const = 0;
 
  protected:
