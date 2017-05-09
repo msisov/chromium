@@ -181,7 +181,7 @@ class ServerWindow : public viz::HostFrameSinkClient {
   const std::map<std::string, std::vector<uint8_t>>& properties() const {
     return properties_;
   }
-  void SetProperty(const std::string& name, const std::vector<uint8_t>* value);
+  virtual void SetProperty(const std::string& name, const std::vector<uint8_t>* value);
 
   std::string GetName() const;
 
