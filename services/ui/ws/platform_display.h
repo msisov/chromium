@@ -16,6 +16,7 @@
 #include "ui/display/display.h"
 #include "ui/events/event_source.h"
 #include "ui/gfx/native_widget_types.h"
+#include "ui/platform_window/platform_window_delegate.h"
 
 namespace ui {
 
@@ -81,6 +82,9 @@ class PlatformDisplay : public ui::EventSource {
 
   // Shows or hides native window.
   virtual void SetWindowVisibility(bool visible) {}
+
+  // Changes state of a native window to minimized, maximized or normal.
+  virtual void SetNativeWindowState(ui::mojom::ShowState state) {}
 
   // Overrides factory for testing. Default (NULL) value indicates regular
   // (non-test) environment.

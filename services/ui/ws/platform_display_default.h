@@ -58,6 +58,7 @@ class PlatformDisplayDefault : public PlatformDisplay,
                        float scale) override;
   void SetViewportBounds(const gfx::Rect& rect) override;
   void SetWindowVisibility(bool visible) override;
+  void SetNativeWindowState(ui::mojom::ShowState state) override;
   void GetWindowType(PlatformWindowType* window_type) override;
 
  private:
@@ -84,6 +85,10 @@ class PlatformDisplayDefault : public PlatformDisplay,
   display::ViewportMetrics metrics_;
   std::unique_ptr<ui::PlatformWindow> platform_window_;
   gfx::AcceleratedWidget widget_;
+
+  // Set to true once ozone is in a process of telling a server window of
+  // changed window state.
+  bool applying_window_state_changes_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(PlatformDisplayDefault);
 };

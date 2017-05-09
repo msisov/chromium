@@ -122,6 +122,7 @@ class Display : public PlatformDisplayDelegate,
   void SetImeVisibility(ServerWindow* window, bool visible);
   void SetBounds(const gfx::Rect& bounds);
   void SetVisible(bool value);
+  void SetProperty(const std::string& name, const std::vector<uint8_t>* value);
 
   // Called just before |tree| is destroyed.
   void OnWillDestroyTree(WindowTree* tree);
@@ -182,6 +183,7 @@ class Display : public PlatformDisplayDelegate,
   void OnNativeCaptureLost() override;
   void OnBoundsChanged(const gfx::Rect& new_bounds) override;
   void OnCloseRequest() override;
+  void OnWindowStateChanged(ui::mojom::ShowState new_state) override;
 
   OzonePlatform* GetOzonePlatform() override;
   bool IsHostingViz() const override;

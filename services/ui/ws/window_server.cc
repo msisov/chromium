@@ -11,6 +11,7 @@
 #include "base/memory/ptr_util.h"
 #include "base/stl_util.h"
 #include "components/viz/common/switches.h"
+#include "services/ui/public/cpp/property_type_converters.h"
 #include "services/ui/ws/display.h"
 #include "services/ui/ws/display_creation_config.h"
 #include "services/ui/ws/display_manager.h"

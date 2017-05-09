@@ -13,6 +13,7 @@
 #include "services/service_manager/public/mojom/connector.mojom.h"
 #include "services/ui/common/types.h"
 #include "services/ui/display/viewport_metrics.h"
+#include "services/ui/public/cpp/property_type_converters.h"
 #include "services/ui/public/interfaces/cursor/cursor.mojom.h"
 #include "services/ui/ws/debug_utils.h"
 #include "services/ui/ws/display_binding.h"
@@ -190,6 +191,14 @@ void Display::SetVisible(bool value) {
   platform_display_->SetWindowVisibility(value);
 }
 
+void Display::SetProperty(const std::string& name, const std::vector<uint8_t>* value) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  DCHECK(name == mojom::WindowManager::kShowState_Property);
+
+  const int64_t state = mojo::ConvertTo<int64_t>(*value);
+  platform_display_->SetNativeWindowState(static_cast<ui::mojom::ShowState>(state));
+}
+
 void Display::OnWillDestroyTree(WindowTree* tree) {
   if (window_manager_display_root_ &&
       window_manager_display_root_->window_manager_state()->window_tree() ==
@@ -336,6 +345,19 @@ void Display::OnCloseRequest() {
           ->GetWindowManagerRootForDisplayRoot(root_window());
   if (window_tree)
     window_tree->OnRequestClose(server_window);
+}
+
+void Display::OnWindowStateChanged(ui::mojom::ShowState new_state) {
+  if (!window_server_->IsInExternalWindowMode())
+    return;
+
+  std::vector<uint8_t> transport_value =
+      mojo::ConvertTo<std::vector<uint8_t>>(static_cast<int64_t>(new_state));
+
+  ServerWindow* server_window =
+      window_manager_display_root_->GetClientVisibleRoot();
+  server_window->SetProperty(mojom::WindowManager::kShowState_Property,
+                             &transport_value);
 }
 
 OzonePlatform* Display::GetOzonePlatform() {
