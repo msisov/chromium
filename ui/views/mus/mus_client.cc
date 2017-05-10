@@ -165,6 +165,12 @@ MusClient::~MusClient() {
 // static
 bool MusClient::ShouldCreateDesktopNativeWidgetAura(
     const Widget::InitParams& init_params) {
+#if defined(USE_AURA) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  // For Ozone/Linux desktop builds (Mus code path), we mimic regular
+  // X11/Linux builds on how to create widgets.
+  return false;
+#endif
+
   // TYPE_CONTROL and child widgets require a NativeWidgetAura.
   return init_params.type != Widget::InitParams::TYPE_CONTROL &&
          !init_params.child;
