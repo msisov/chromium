@@ -82,4 +82,6 @@ PlatformImeController* StubWindow::GetPlatformImeController() {
   return nullptr;
 }
 
+void StubWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {}
+
 }  // namespace ui

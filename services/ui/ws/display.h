@@ -156,6 +156,10 @@ class Display : public PlatformDisplayDelegate,
       ui::Event* event,
       base::OnceClosure event_processed_callback = base::OnceClosure());
 
+  // Tells the window manager to start interactive move or resize based on
+  // the |hittest|, which can be move, top, left and etc.
+  void PerformNativeWindowDragOrResize(uint32_t hittest);
+
  private:
   friend class test::DisplayTestApi;
 

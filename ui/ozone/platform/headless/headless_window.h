@@ -41,6 +41,7 @@ class HeadlessWindow : public PlatformWindow {
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
   PlatformImeController* GetPlatformImeController() override;
+  void PerformNativeWindowDragOrResize(uint32_t hittest) override;
 
  private:
   PlatformWindowDelegate* delegate_;

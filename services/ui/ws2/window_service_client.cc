@@ -952,6 +952,11 @@ void WindowServiceClient::CancelWindowMove(Id window_id) {
   NOTIMPLEMENTED();
 }
 
+void WindowServiceClient::PerformNativeWindowDragOrResize(ui::Id window_id,
+                                                          uint32_t hittest) {
+  NOTIMPLEMENTED();
+}
+
 void WindowServiceClient::PerformDragDrop(
     uint32_t change_id,
     Id source_window_id,
