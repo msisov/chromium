@@ -7,6 +7,7 @@
 #include <string>
 
 #include "base/strings/utf_string_conversions.h"
+#include "ui/base/hit_test.h"
 #include "ui/base/platform_window_defaults.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/base/x/x11_window_event_manager.h"
@@ -22,6 +23,56 @@
 namespace ui {
 
 namespace {
+
+// These constants are defined in the Extended Window Manager Hints
+// standard...and aren't in any header that I can find.
+const int k_NET_WM_MOVERESIZE_SIZE_TOPLEFT = 0;
+const int k_NET_WM_MOVERESIZE_SIZE_TOP = 1;
+const int k_NET_WM_MOVERESIZE_SIZE_TOPRIGHT = 2;
+const int k_NET_WM_MOVERESIZE_SIZE_RIGHT = 3;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT = 4;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOM = 5;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT = 6;
+const int k_NET_WM_MOVERESIZE_SIZE_LEFT = 7;
+const int k_NET_WM_MOVERESIZE_MOVE = 8;
+
+// Identifies the direction of the "hittest" for X11.
+bool IdentifyDirection(int hittest, int* direction) {
+  DCHECK(direction);
+  *direction = -1;
+  switch (hittest) {
+    case HTBOTTOM:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOM;
+      break;
+    case HTBOTTOMLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT;
+      break;
+    case HTBOTTOMRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT;
+      break;
+    case HTCAPTION:
+      *direction = k_NET_WM_MOVERESIZE_MOVE;
+      break;
+    case HTLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_LEFT;
+      break;
+    case HTRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_RIGHT;
+      break;
+    case HTTOP:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOP;
+      break;
+    case HTTOPLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOPLEFT;
+      break;
+    case HTTOPRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOPRIGHT;
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
 
 XID FindXEventTarget(const XEvent& xev) {
   XID target = xev.xany.window;
@@ -104,10 +155,10 @@ void X11WindowBase::Create() {
 
   // Setup XInput event mask.
   long event_mask = ButtonPressMask | ButtonReleaseMask | FocusChangeMask |
-                    KeyPressMask | KeyReleaseMask | EnterWindowMask |
-                    LeaveWindowMask | ExposureMask | VisibilityChangeMask |
-                    StructureNotifyMask | PropertyChangeMask |
-                    PointerMotionMask;
+                    KeyPressMask | KeyReleaseMask | ExposureMask |
+                    VisibilityChangeMask | StructureNotifyMask |
+                    PropertyChangeMask | PointerMotionMask;
+
   xwindow_events_.reset(new ui::XScopedEventSelector(xwindow_, event_mask));
 
   // Setup XInput2 event mask.
@@ -291,6 +342,34 @@ void X11WindowBase::ConfineCursorToBounds(const gfx::Rect& bounds) {}
 
 PlatformImeController* X11WindowBase::GetPlatformImeController() {
   return nullptr;
+}
+
+void X11WindowBase::PerformNativeWindowDragOrResize(uint32_t hittest) {
+  int direction;
+  if (!IdentifyDirection(hittest, &direction))
+    return;
+
+  // We most likely have an implicit grab right here. We need to dump it
+  // because what we're about to do is tell the window manager
+  // that it's now responsible for moving the window around; it immediately
+  // grabs when it receives the event below.
+  XUngrabPointer(xdisplay_, x11::CurrentTime);
+
+  XEvent event;
+  memset(&event, 0, sizeof(event));
+  event.xclient.type = ClientMessage;
+  event.xclient.display = xdisplay_;
+  event.xclient.window = xwindow_;
+  event.xclient.message_type = gfx::GetAtom("_NET_WM_MOVERESIZE");
+  event.xclient.format = 32;
+  event.xclient.data.l[0] = xroot_window_event_location_.x();
+  event.xclient.data.l[1] = xroot_window_event_location_.y();
+  event.xclient.data.l[2] = direction;
+  event.xclient.data.l[3] = 0;
+  event.xclient.data.l[4] = 0;
+
+  XSendEvent(xdisplay_, xroot_window_, x11::False,
+             SubstructureRedirectMask | SubstructureNotifyMask, &event);
 }
 
 bool X11WindowBase::IsEventForXWindow(const XEvent& xev) const {

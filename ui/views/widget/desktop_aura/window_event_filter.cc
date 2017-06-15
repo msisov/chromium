@@ -6,6 +6,7 @@
 
 #include "services/ui/public/interfaces/window_manager_constants.mojom.h"
 #include "ui/aura/client/aura_constants.h"
+#include "ui/aura/mus/window_tree_host_mus.h"
 #include "ui/aura/window.h"
 #include "ui/aura/window_delegate.h"
 #include "ui/aura/window_tree_host.h"
@@ -33,6 +34,8 @@ void WindowEventFilter::OnMouseEvent(ui::MouseEvent* event) {
   aura::Window* target = static_cast<aura::Window*>(event->target());
   if (!target->delegate())
     return;
+
+  DCHECK(event->IsLocatedEvent());
 
   int previous_click_component = HTNOWHERE;
   int component = target->delegate()->GetNonClientComponent(event->location());
@@ -146,6 +149,15 @@ void WindowEventFilter::LowerWindow() {}
 
 void WindowEventFilter::MaybeDispatchHostWindowDragMovement(
     int hittest,
-    ui::MouseEvent* event) {}
+    ui::Event* event) {
+  if (event->IsLeftMouseButton()) {
+    auto* target = static_cast<aura::Window*>(event->target());
+    if (target) {
+      aura::WindowTreeHostMus* wth = aura::WindowTreeHostMus::ForWindow(target);
+      DCHECK(wth);
+      wth->PerformNativeWindowDragOrResize(hittest);
+    }
+  }
+}
 
 }  // namespace views

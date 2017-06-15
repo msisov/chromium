@@ -164,6 +164,10 @@ class Display : public PlatformDisplayDelegate,
   // Returns the root window of the active user.
   ServerWindow* GetActiveRootWindow();
 
+  // Tells the window manager to start interactive move or resize based on
+  // the |hittest|, which can be move, top, left and etc.
+  void PerformNativeWindowDragOrResize(uint32_t hittest);
+
  private:
   friend class test::DisplayTestApi;
 

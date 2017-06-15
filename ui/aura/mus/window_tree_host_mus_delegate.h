@@ -67,6 +67,12 @@ class AURA_EXPORT WindowTreeHostMusDelegate {
       const gfx::Point& cursor_location,
       const base::Callback<void(bool)>& callback) = 0;
 
+  // Called to tell the native window manager to start interactive drag or
+  // resize of a window.
+  virtual void OnWindowTreeHostPerformNativeWindowDragOrResize(
+      WindowTreeHostMus* window_tree_host,
+      int hittest) = 0;
+
   // Called to cancel a move loop.
   virtual void OnWindowTreeHostCancelWindowMove(
       WindowTreeHostMus* window_tree_host) = 0;

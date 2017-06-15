@@ -60,6 +60,7 @@ class PlatformDisplayDefault : public PlatformDisplay,
   void SetWindowVisibility(bool visible) override;
   void SetNativeWindowState(ui::mojom::ShowState state) override;
   void GetWindowType(PlatformWindowType* window_type) override;
+  void PerformNativeWindowDragOrResize(uint32_t hittest) override;
 
  private:
   // ui::PlatformWindowDelegate:

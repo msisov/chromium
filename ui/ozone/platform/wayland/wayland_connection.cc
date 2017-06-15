@@ -143,6 +143,11 @@ int WaylandConnection::GetKeyboardModifiers() {
   return modifiers;
 }
 
+void WaylandConnection::ResetPointerFlags() {
+  if (pointer_)
+    pointer_->ResetFlags();
+}
+
 void WaylandConnection::OnDispatcherListChanged() {
   StartProcessingEvents();
 }

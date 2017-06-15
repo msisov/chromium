@@ -62,6 +62,10 @@ class PlatformWindow {
   // The PlatformImeController is owned by the PlatformWindow, the ownership is
   // not transferred.
   virtual PlatformImeController* GetPlatformImeController() = 0;
+
+  // The window manager starts interactive drag or resize of a window based on
+  // the |hittest|.
+  virtual void PerformNativeWindowDragOrResize(uint32_t hittest) = 0;
 };
 
 }  // namespace ui

@@ -441,6 +441,10 @@ ServerWindow* Display::GetActiveRootWindow() {
   return nullptr;
 }
 
+void Display::PerformNativeWindowDragOrResize(uint32_t hittest) {
+  platform_display_->PerformNativeWindowDragOrResize(hittest);
+}
+
 void Display::OnActivationChanged(ServerWindow* old_active_window,
                                   ServerWindow* new_active_window) {
   // Don't do anything here. We assume the window manager handles restacking. If

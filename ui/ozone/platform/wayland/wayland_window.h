@@ -81,6 +81,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
   PlatformImeController* GetPlatformImeController() override;
+  void PerformNativeWindowDragOrResize(uint32_t hittest) override;
 
   // PlatformEventDispatcher
   bool CanDispatchEvent(const PlatformEvent& event) override;

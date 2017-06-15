@@ -244,6 +244,7 @@ class TestWindowTree : public ui::mojom::WindowTree {
                          uint32_t window_id,
                          ui::mojom::MoveLoopSource source,
                          const gfx::Point& cursor_location) override;
+  void PerformNativeWindowDragOrResize(Id window_id, uint32_t hittest) override;
   void CancelWindowMove(uint32_t window_id) override;
 
   struct AckedEvent {

@@ -77,6 +77,12 @@ uint32_t X11WindowOzone::DispatchEvent(const PlatformEvent& platform_event) {
   auto* event = static_cast<Event*>(platform_event);
   if (!window_manager_->event_grabber() ||
       window_manager_->event_grabber() == this) {
+    if (event->IsMouseEvent() && event->AsMouseEvent()->IsLeftMouseButton()) {
+      // Set location of an x root window, which will be used for interactive
+      // dragging/resize if a later hittest is positive.
+      SetXRootWindowEventLocation(event->AsMouseEvent()->root_location());
+    }
+    
     // This is unfortunately needed otherwise events that depend on global state
     // (eg. double click) are broken.
     DispatchEventFromNativeUiEvent(
