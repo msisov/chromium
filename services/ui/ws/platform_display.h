@@ -92,6 +92,10 @@ class PlatformDisplay : public ui::EventSource {
     PlatformDisplay::factory_ = factory;
   }
 
+  // Tells the window manager to start interactive move or resize based on
+  // the |hittest|.
+  virtual void PerformNativeWindowDragOrResize(uint32_t hittest) {}
+
  private:
   // Static factory instance (always NULL for non-test).
   static PlatformDisplayFactory* factory_;

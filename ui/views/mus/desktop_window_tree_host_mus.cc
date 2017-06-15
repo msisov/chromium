@@ -36,6 +36,7 @@
 
 #if defined(USE_OZONE)
 #include "ui/base/cursor/ozone/cursor_data_factory_ozone.h"
+#include "ui/views/widget/desktop_aura/window_event_filter.h"
 #endif
 
 namespace views {
@@ -233,6 +234,29 @@ DesktopWindowTreeHostMus::~DesktopWindowTreeHostMus() {
   desktop_native_widget_aura_->OnDesktopWindowTreeHostDestroyed(this);
 }
 
+ui::EventDispatchDetails DesktopWindowTreeHostMus::SendEventToSink(ui::Event* event) {
+  // We need to make sure it is appropriately marked as non-client if it's in the non
+  // client area, or otherwise, we can get into a state where the a window is
+  // set as the |mouse_pressed_handler_| in window_event_dispatcher.cc
+  // despite the mouse button being released. X11 also does the same.
+  //
+  // See comment in DesktopWindowTreeHostX11::DispatchMouseEvent for details.
+  aura::Window* content_window = desktop_native_widget_aura_->content_window();
+  if (content_window && content_window->delegate()) {
+    if (event->IsMouseEvent()) {
+      ui::MouseEvent* mouse_event = event->AsMouseEvent();
+      int flags = mouse_event->flags();
+      int hit_test_code =
+          content_window->delegate()->GetNonClientComponent(mouse_event->location());
+      if (hit_test_code != HTCLIENT && hit_test_code != HTNOWHERE)
+        flags |= ui::EF_IS_NON_CLIENT;
+      mouse_event->set_flags(flags);
+    }
+  }
+
+  return aura::WindowTreeHostMus::SendEventToSink(event);
+}
+
 void DesktopWindowTreeHostMus::SendClientAreaToServer() {
   if (!ShouldSendClientAreaToServer())
     return;
@@ -341,6 +365,17 @@ void DesktopWindowTreeHostMus::OnNativeWidgetCreated(
     parent_ = static_cast<DesktopWindowTreeHostMus*>(params.parent->GetHost());
     parent_->children_.insert(this);
   }
+
+#if defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  std::unique_ptr<ui::EventHandler> handler(new WindowEventFilter(this));
+  wm::CompoundEventFilter* compound_event_filter =
+      desktop_native_widget_aura_->root_window_event_filter();
+  if (non_client_window_event_filter_)
+    compound_event_filter->RemoveHandler(handler.get());
+  compound_event_filter->AddHandler(handler.get());
+  non_client_window_event_filter_ = std::move(handler);
+#endif
+
   native_widget_delegate_->OnNativeWidgetCreated(true);
 }
 
@@ -417,6 +452,14 @@ void DesktopWindowTreeHostMus::CloseNow() {
     parent_->children_.erase(this);
     parent_ = nullptr;
   }
+
+#if defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  // Remove the event listeners we've installed. We need to remove these
+  // because otherwise we get assert during ~WindowEventDispatcher().
+  desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
+      non_client_window_event_filter_.get());
+  non_client_window_event_filter_.reset();
+#endif
 
   DestroyCompositor();
   desktop_native_widget_aura_->OnHostClosed();

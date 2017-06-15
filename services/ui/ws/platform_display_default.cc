@@ -169,6 +169,14 @@ void PlatformDisplayDefault::GetWindowType(
     *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU;
 }
 
+void PlatformDisplayDefault::PerformNativeWindowDragOrResize(uint32_t hittest) {
+  platform_window_->PerformNativeWindowDragOrResize(hittest);
+
+  // Release capture explicitly set by EventDispatcher to ensure events are
+  // passed properly after resizing/dragging is done.
+  platform_window_->ReleaseCapture();
+}
+
 void PlatformDisplayDefault::SetCursor(const ui::CursorData& cursor_data) {
   if (!image_cursors_)
     return;

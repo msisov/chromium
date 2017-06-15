@@ -2522,6 +2522,13 @@ void WindowTreeClient::OnWindowTreeHostPerformWindowMove(
                            source, cursor_location);
 }
 
+void WindowTreeClient::OnWindowTreeHostPerformNativeWindowDragOrResize(
+    WindowTreeHostMus* window_tree_host,
+    int hittest) {
+  WindowMus* window_mus = WindowMus::Get(window_tree_host->window());
+  tree_->PerformNativeWindowDragOrResize(window_mus->server_id(), hittest);
+}
+
 void WindowTreeClient::OnWindowTreeHostCancelWindowMove(
     WindowTreeHostMus* window_tree_host) {
   tree_->CancelWindowMove(

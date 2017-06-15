@@ -607,6 +607,7 @@ class WindowTree : public mojom::WindowTree,
                          Id window_id,
                          ui::mojom::MoveLoopSource source,
                          const gfx::Point& cursor) override;
+  void PerformNativeWindowDragOrResize(Id window_id, uint32_t hittest) override;
   void CancelWindowMove(Id window_id) override;
 
   // mojom::WindowManagerClient:

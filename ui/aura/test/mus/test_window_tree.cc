@@ -363,4 +363,7 @@ void TestWindowTree::PerformWindowMove(uint32_t change_id,
 
 void TestWindowTree::CancelWindowMove(ui::Id window_id) {}
 
+void TestWindowTree::PerformNativeWindowDragOrResize(ui::Id window_id,
+                                                     uint32_t hittest) {}
+
 }  // namespace aura

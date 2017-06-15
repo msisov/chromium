@@ -46,6 +46,7 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
   PlatformImeController* GetPlatformImeController() override;
+  void PerformNativeWindowDragOrResize(uint32_t hittest) override;
 
  protected:
   // Creates new underlying XWindow. Does not map XWindow.
@@ -64,6 +65,11 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
 
   // Processes events for this XWindow.
   void ProcessXWindowEvent(XEvent* xev);
+
+  // Sets a location of ButtonPress event on xroot_window_.
+  void SetXRootWindowEventLocation(const gfx::Point& location) {
+    xroot_window_event_location_ = location;
+  }
 
  private:
   // Called when WM_STATE property is changed.
@@ -84,6 +90,11 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
 
   // The bounds of |xwindow_|.
   gfx::Rect bounds_;
+
+
+  // The point on xroot_window_, where a ButtonPress event occurred.
+  // Used for interactive window drag/resize.
+  gfx::Point xroot_window_event_location_;
 
   // The window manager state bits.
   base::flat_set<::Atom> window_properties_;

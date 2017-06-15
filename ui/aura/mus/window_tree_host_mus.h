@@ -42,9 +42,7 @@ class AURA_EXPORT WindowTreeHostMus : public WindowTreeHostPlatform {
   // Sets the bounds in pixels.
   void SetBoundsFromServer(const gfx::Rect& bounds_in_pixels);
 
-  ui::EventDispatchDetails SendEventToSink(ui::Event* event) {
-    return aura::WindowTreeHostPlatform::SendEventToSink(event);
-  }
+  virtual ui::EventDispatchDetails SendEventToSink(ui::Event* event);
 
   InputMethodMus* input_method() { return input_method_.get(); }
 
@@ -74,6 +72,10 @@ class AURA_EXPORT WindowTreeHostMus : public WindowTreeHostPlatform {
   void PerformWindowMove(ui::mojom::MoveLoopSource mus_source,
                          const gfx::Point& cursor_location,
                          const base::Callback<void(bool)>& callback);
+
+  // Tells the native window manager to start interactive drag or resize of a
+  // window.
+  void PerformNativeWindowDragOrResize(int hittest);
 
   // Tells the window manager to abort any current move initiated by
   // PerformWindowMove().

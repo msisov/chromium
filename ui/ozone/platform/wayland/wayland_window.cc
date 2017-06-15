@@ -9,6 +9,7 @@
 #include "base/bind.h"
 #include "base/memory/ptr_util.h"
 #include "ui/base/cursor/ozone/bitmap_cursor_factory_ozone.h"
+#include "ui/base/hit_test.h"
 #include "ui/events/event.h"
 #include "ui/events/event_utils.h"
 #include "ui/events/ozone/events_ozone.h"
@@ -316,6 +317,15 @@ void WaylandWindow::ConfineCursorToBounds(const gfx::Rect& bounds) {
 PlatformImeController* WaylandWindow::GetPlatformImeController() {
   NOTIMPLEMENTED();
   return nullptr;
+}
+
+void WaylandWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {
+  connection_->ResetPointerFlags();
+
+  if (hittest == HTCAPTION)
+    xdg_surface_->SurfaceMove(connection_);
+  else
+    xdg_surface_->SurfaceResize(connection_, hittest);
 }
 
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& native_event) {

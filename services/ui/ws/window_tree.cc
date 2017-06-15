@@ -2556,6 +2556,24 @@ void WindowTree::PerformWindowMove(uint32_t change_id,
       cursor);
 }
 
+void WindowTree::PerformNativeWindowDragOrResize(Id window_id,
+                                                 uint32_t hittest) {
+  ClientWindowId client_window_id(MakeClientWindowId(window_id));
+  ServerWindow* window = GetWindowByClientId(client_window_id);
+  DCHECK(window);
+  WindowManagerDisplayRoot* display_root = GetWindowManagerDisplayRoot(window);
+  if (!display_root) {
+    // The window isn't parented. There's nothing to do.
+    DVLOG(1) << "PerformNativeWindowDragOrResize failed (window unparented)";
+    return;
+  }
+  display_root->display()->PerformNativeWindowDragOrResize(hittest);
+
+  // Reset states so that the next events are processed without any
+  // left over state.
+  display_root->window_manager_state()->event_processor()->Reset();
+}
+
 void WindowTree::CancelWindowMove(Id window_id) {
   ServerWindow* window = GetWindowByClientId(MakeClientWindowId(window_id));
   if (!window) {
