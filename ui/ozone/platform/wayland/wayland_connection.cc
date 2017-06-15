@@ -206,6 +206,11 @@ void WaylandConnection::SetClipboardData(const std::string& contents,
   data_map_ = nullptr;
 }
 
+void WaylandConnection::ResetPointerFlags() {
+  if (pointer_)
+    pointer_->ResetFlags();
+}
+
 void WaylandConnection::OnDispatcherListChanged() {
   StartProcessingEvents();
 }
