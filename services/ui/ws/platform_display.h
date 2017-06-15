@@ -88,6 +88,10 @@ class PlatformDisplay : public ui::EventSource {
   // Changes state of a native window to minimized, maximized or normal.
   virtual void SetNativeWindowState(ui::mojom::ShowState state) {}
 
+  // Tells the window manager to start interactive move or resize based on
+  // the |hittest|.
+  virtual void PerformNativeWindowDragOrResize(uint32_t hittest) {}
+
   // Overrides factory for testing. Default (NULL) value indicates regular
   // (non-test) environment.
   static void set_factory_for_testing(PlatformDisplayFactory* factory) {
