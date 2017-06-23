@@ -4,6 +4,7 @@
 
 #include "ui/platform_window/x11/x11_window_manager_ozone.h"
 
+#include "ui/base/x/x11_pointer_grab.h"
 #include "ui/platform_window/x11/x11_window_ozone.h"
 
 namespace ui {
@@ -21,6 +22,7 @@ void X11WindowManagerOzone::GrabEvents(X11WindowOzone* window) {
     old_grabber->OnLostCapture();
 
   event_grabber_ = window;
+  ui::GrabPointer(window->xwindow(), true, None);
 }
 
 void X11WindowManagerOzone::UngrabEvents(X11WindowOzone* window) {
@@ -28,6 +30,7 @@ void X11WindowManagerOzone::UngrabEvents(X11WindowOzone* window) {
     return;
   event_grabber_->OnLostCapture();
   event_grabber_ = nullptr;
+  ui::UngrabPointer();
 }
 
 }  // namespace ui
