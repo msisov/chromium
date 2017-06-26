@@ -691,7 +691,8 @@ MockDataDeviceManager::MockDataDeviceManager()
 MockDataDeviceManager::~MockDataDeviceManager() {}
 
 MockOutput::MockOutput()
-    : Global(&wl_output_interface, nullptr, kOutputVersion) {}
+    : Global(&wl_output_interface, nullptr, kOutputVersion),
+	  rect_(0, 0, 1024, 768) {}
 
 MockOutput::~MockOutput() {}
 
