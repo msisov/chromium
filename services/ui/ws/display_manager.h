@@ -133,6 +133,7 @@ class DisplayManager : public display::ScreenManagerDelegate {
   void OnDisplayModified(const display::Display& display,
                          const display::ViewportMetrics& metrics) override;
   void OnPrimaryDisplayChanged(int64_t primary_display_id) override;
+  void OnHostDisplaysReady() override;
 
   WindowServer* window_server_;
 

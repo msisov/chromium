@@ -7,6 +7,9 @@
 
 #include "services/ui/display/screen_manager.h"
 
+#include "base/memory/weak_ptr.h"
+#include "ui/display/screen_base.h"
+
 namespace display {
 
 // In external window mode, the purpose of having a ScreenManager
@@ -22,6 +25,10 @@ class ScreenManagerOzoneExternal : public ScreenManager {
   ~ScreenManagerOzoneExternal() override;
 
  private:
+  // Callback to be called from the Ozone platform when
+  // host displays' data are ready.
+  void OnHostDisplaysReady(const std::vector<gfx::Size>&);
+
   // ScreenManager.
   void AddInterfaces(
       service_manager::BinderRegistryWithArgs<
@@ -30,7 +37,14 @@ class ScreenManagerOzoneExternal : public ScreenManager {
   void RequestCloseDisplay(int64_t display_id) override;
   display::ScreenBase* GetScreen() override;
 
-  std::unique_ptr<display::ScreenBase> screen_;
+  // Internal control for displays added/removed/modified.
+  // THIS IS NOT INSTALLED IN Screen::SetScreenInstancce.
+  std::unique_ptr<ScreenBase> screen_;
+
+  ScreenManagerDelegate* delegate_ = nullptr;
+  int next_display_id_ = 0;
+
+  base::WeakPtrFactory<ScreenManagerOzoneExternal> weak_ptr_factory_;
 
   DISALLOW_COPY_AND_ASSIGN(ScreenManagerOzoneExternal);
 };

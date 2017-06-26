@@ -97,6 +97,13 @@ class OzonePlatformHeadless : public OzonePlatform {
       surface_factory_ = std::make_unique<HeadlessSurfaceFactory>(file_path_);
   }
 
+  void QueryHostDisplaysData(QueryHostDisplaysDataCallback callback) override {
+    DCHECK(!callback.is_null());
+
+    // For now just use a random resolution so that unit tests pass.
+    callback.Run(std::vector<gfx::Size>(1, gfx::Size(1024, 768)));
+  }
+
  private:
   std::unique_ptr<HeadlessWindowManager> window_manager_;
   std::unique_ptr<HeadlessSurfaceFactory> surface_factory_;

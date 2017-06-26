@@ -411,5 +411,12 @@ void DisplayManager::OnPrimaryDisplayChanged(int64_t primary_display_id) {
     user_display_manager_->OnPrimaryDisplayChanged(primary_display_id);
 }
 
+void DisplayManager::OnHostDisplaysReady() {
+  // Valid only for when in external window mode.
+  // For now, mimic the behavior of whether we had received the
+  // frame decoration data from the Window Manager.
+  GetUserDisplayManager()->OnFrameDecorationValuesChanged();
+}
+
 }  // namespace ws
 }  // namespace ui

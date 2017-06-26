@@ -726,6 +726,15 @@ void WindowServer::OnFirstSurfaceActivation(
 
 bool WindowServer::GetFrameDecorations(
     mojom::FrameDecorationValuesPtr* values) {
+  if (IsInExternalWindowMode() && values) {
+    *values = mojom::FrameDecorationValues::New();
+    // The value is used to calculate chrome's tabstrip height in
+    // BrowserNonClientFrameViewMus::GetHeaderHeigh() in ChromeOS/mash builds.
+    // TODO(tonikitoo,msisov): Maybe there is some refinement to be done here?
+    (*values)->normal_client_area_insets = gfx::Insets(0, 0, 0, 0);
+    return true;
+  }
+
   WindowManagerState* window_manager_state = GetWindowManagerState();
   if (!window_manager_state)
     return false;
