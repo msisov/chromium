@@ -99,6 +99,16 @@ class OzonePlatformX11 : public OzonePlatform {
     surface_factory_ozone_ = std::make_unique<X11SurfaceFactory>();
   }
 
+  void QueryHostDisplaysData(QueryHostDisplaysDataCallback callback) override {
+    DCHECK(!callback.is_null());
+
+    // TODO(tonikitoo): Add support to multiple displays.
+    XDisplay* display = gfx::GetXDisplay();
+    Screen* screen = DefaultScreenOfDisplay(display);
+    callback.Run(
+        std::vector<gfx::Size>(1, gfx::Size(screen->width, screen->height)));
+  }
+
   base::MessageLoop::Type GetMessageLoopTypeForGpu() override {
     // When Ozone X11 backend is running use an UI loop to grab Expose events.
     // See GLSurfaceGLX and https://crbug.com/326995.

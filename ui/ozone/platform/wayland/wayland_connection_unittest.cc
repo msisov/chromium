@@ -73,10 +73,16 @@ TEST(WaylandConnectionTest, Output) {
   ASSERT_TRUE(connection.Initialize());
   connection.StartProcessingEvents();
 
-  base::RunLoop run_loop;
-  OutputObserver observer(run_loop.QuitClosure());
-  connection.PrimaryOutput()->SetObserver(&observer);
-  run_loop.Run();
+  /* Before adding a waiting loop to WaylandConnection::Initilize,
+   * this setting of the observer worked. But as long as we now wait
+   * until all the events are processed and the output handle mode is set,
+   * it's too late to add an observer at this point.
+   *
+   * base::RunLoop run_loop;
+   * OutputObserver observer(run_loop.QuitClosure());
+   * connection.PrimaryOutput()->SetObserver(&observer);
+   * run_loop.Run();
+   */
 
   ASSERT_TRUE(connection.GetOutputList().size() == 1);
   WaylandOutput* output = connection.PrimaryOutput();
