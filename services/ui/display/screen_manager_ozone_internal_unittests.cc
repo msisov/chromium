@@ -105,6 +105,8 @@ class TestScreenManagerDelegate : public ScreenManagerDelegate {
     AddChange("Primary", base::Int64ToString(primary_display_id));
   }
 
+  void OnHostDisplaysReady(const ui::ws::UserId& user_id) override {}
+
   std::vector<DisplayState> added_;
   std::vector<DisplayState> modified_;
   std::string changes_;

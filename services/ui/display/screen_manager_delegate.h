@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 
+#include "services/ui/ws/user_id.h"
+
 namespace display {
 
 class Display;
@@ -29,6 +31,10 @@ class ScreenManagerDelegate {
 
   // Called when the primary display is changed.
   virtual void OnPrimaryDisplayChanged(int64_t primary_display_id) = 0;
+
+  // In external window mode, query the host system about data (resolution)
+  // of the displays available.
+  virtual void OnHostDisplaysReady(const ui::ws::UserId& user_id) = 0;
 
  protected:
   virtual ~ScreenManagerDelegate() {}

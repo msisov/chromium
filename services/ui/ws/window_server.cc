@@ -724,6 +724,17 @@ void WindowServer::OnFirstSurfaceActivation(
 bool WindowServer::GetFrameDecorationsForUser(
     const UserId& user_id,
     mojom::FrameDecorationValuesPtr* values) {
+  if (IsInExternalWindowMode() && values) {
+    *values = mojom::FrameDecorationValues::New();
+    // '33' was picked up by trial/error and because this is the value
+    // used in ChromeOS/mash builds. The value is used to calculate chrome's
+    // tabstrip height in BrowserNonClientFrameViewMus::GetHeaderHeigh().
+    // TODO(tonikitoo,msisov): Maybe there is some refinement to be done here?
+    // What about maximized_client_area_insets and max_title_bar_button_width?
+    (*values)->normal_client_area_insets = gfx::Insets(33, 0, 0, 0);
+    return true;
+  }
+
   WindowManagerState* window_manager_state =
       window_manager_window_tree_factory_set_.GetWindowManagerStateForUser(
           user_id);

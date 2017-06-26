@@ -48,7 +48,9 @@ bool WaylandConnection::Initialize() {
   }
 
   wl_registry_add_listener(registry_.get(), &registry_listener, this);
-  wl_display_roundtrip(display_.get());
+
+  while (!PrimaryOutput() || PrimaryOutput()->Geometry().IsEmpty())
+    wl_display_roundtrip(display_.get());
 
   if (!compositor_) {
     LOG(ERROR) << "No wl_compositor object";

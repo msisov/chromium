@@ -455,8 +455,9 @@ void Service::BindClipboardRequest(
 void Service::BindDisplayManagerRequest(
     mojom::DisplayManagerRequest request,
     const service_manager::BindSourceInfo& source_info) {
-  // Wait for the DisplayManager to be configured before binding display
-  // requests. Otherwise the client sees no displays.
+// DisplayManagerObservers generally expect there to be at least one
+// ws::display, except on LinuxOS/Ozone (external window mode).
+#if !defined(USE_OZONE) || defined(OS_CHROMEOS)
   if (!window_server_->display_manager()->IsReady()) {
     std::unique_ptr<PendingRequest> pending_request(new PendingRequest);
     pending_request->source_info = source_info;
@@ -465,6 +466,7 @@ void Service::BindDisplayManagerRequest(
     pending_requests_.push_back(std::move(pending_request));
     return;
   }
+#endif
   window_server_->display_manager()
       ->GetUserDisplayManager(source_info.identity.user_id())
       ->AddDisplayManagerBinding(std::move(request));

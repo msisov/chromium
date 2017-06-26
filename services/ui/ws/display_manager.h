@@ -134,6 +134,7 @@ class DisplayManager : public UserIdTrackerObserver,
   void OnDisplayModified(const display::Display& display,
                          const display::ViewportMetrics& metrics) override;
   void OnPrimaryDisplayChanged(int64_t primary_display_id) override;
+  void OnHostDisplaysReady(const UserId& user_id) override;
 
   WindowServer* window_server_;
   UserIdTracker* user_id_tracker_;
