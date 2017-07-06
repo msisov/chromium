@@ -74,11 +74,16 @@ void BrowserFrame::InitBrowserFrame() {
   views::Widget::InitParams params = native_browser_frame_->GetWidgetParams();
   params.delegate = browser_view_;
   if (browser_view_->browser()->is_type_tabbed()) {
+// In Ozone/Linux, we call chrome::GetSavedWindowBoundsAndShowState from
+// BrowserFrameMus::GetWidgetParams, given that it triggers a call to
+// create the native Ozone.
+#if !defined(USE_OZONE) || !defined(OS_LINUX) || defined(OS_CHROMEOS)
     // Typed panel/popup can only return a size once the widget has been
     // created.
     chrome::GetSavedWindowBoundsAndShowState(browser_view_->browser(),
                                              &params.bounds,
                                              &params.show_state);
+#endif
 
     params.workspace = browser_view_->browser()->initial_workspace();
     const base::CommandLine& parsed_command_line =
