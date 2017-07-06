@@ -8,6 +8,7 @@
 
 #include <memory>
 
+#include "chrome/browser/ui/browser_window_state.h"
 #include "chrome/browser/ui/views/frame/browser_frame.h"
 #include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/common/extensions/extension_constants.h"
@@ -37,7 +38,12 @@ views::Widget::InitParams BrowserFrameMus::GetWidgetParams() {
   views::Widget::InitParams params;
   params.name = "BrowserFrame";
   params.native_widget = this;
+#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
+  chrome::GetSavedWindowBoundsAndShowState(browser_view_->browser(),
+                                           &params.bounds, &params.show_state);
+#else
   params.bounds = gfx::Rect(10, 10, 640, 480);
+#endif
   params.delegate = browser_view_;
   std::map<std::string, std::vector<uint8_t>> properties =
       views::MusClient::ConfigurePropertiesFromParams(params);
