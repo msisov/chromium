@@ -53,6 +53,8 @@ static_library("lib") {
     "event_targeter.cc",
     "event_targeter.h",
     "event_targeter_delegate.h",
+    "external_window_access_policy.cc",
+    "external_window_access_policy.h",
     "external_window_tree_factory.cc",
     "external_window_tree_factory.h",
     "external_window_tree_host_factory.cc",
