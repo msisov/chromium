@@ -15,6 +15,7 @@
 #include "services/ui/ws/display.h"
 #include "services/ui/ws/display_creation_config.h"
 #include "services/ui/ws/display_manager.h"
+#include "services/ui/ws/external_window_access_policy.h"
 #include "services/ui/ws/frame_generator.h"
 #include "services/ui/ws/gpu_host.h"
 #include "services/ui/ws/operation.h"
@@ -254,10 +255,13 @@ WindowTree* WindowServer::CreateTreeForWindowManager(
   delegate_->OnWillCreateTreeForWindowManager(
       automatically_create_display_roots);
 
+  std::unique_ptr<AccessPolicy> access_policy = in_external_window_mode_
+      ? base::WrapUnique(new ExternalWindowAccessPolicy)
+      : base::WrapUnique(new WindowManagerAccessPolicy);
+
   const bool is_for_embedding = false;
   std::unique_ptr<WindowTree> window_tree = std::make_unique<WindowTree>(
-      this, is_for_embedding, nullptr,
-      base::WrapUnique(new WindowManagerAccessPolicy));
+      this, is_for_embedding, nullptr, std::move(access_policy));
   std::unique_ptr<WindowTreeBinding> window_tree_binding =
       delegate_->CreateWindowTreeBinding(
           WindowServerDelegate::BindingType::WINDOW_MANAGER, this,
