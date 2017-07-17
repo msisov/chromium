@@ -4,6 +4,9 @@
 
 #include "ui/aura/mus/window_tree_host_mus_init_params.h"
 
+#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
+#include "base/command_line.h"
+#endif
 #include "ui/aura/mus/window_port_mus.h"
 #include "ui/aura/mus/window_tree_client.h"
 #include "ui/display/display.h"
@@ -36,6 +39,10 @@ WindowTreeHostMusInitParams CreateInitParamsForTopLevel(
       static_cast<WindowTreeHostMusDelegate*>(window_tree_client)
           ->CreateWindowPortForTopLevel(&properties);
   params.properties = std::move(properties);
+#if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
+  params.use_classic_ime =
+      !base::CommandLine::ForCurrentProcess()->HasSwitch("use-ime-service");
+#endif
   return params;
 }
 
