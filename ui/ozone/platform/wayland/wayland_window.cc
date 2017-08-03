@@ -340,12 +340,14 @@ bool WaylandWindow::CanDispatchEvent(const PlatformEvent& native_event) {
     return has_pointer_focus_;
   if (event->IsKeyEvent())
     return has_keyboard_focus_;
+  if (event->IsTouchEvent())
+    return has_touch_focus_;
   return false;
 }
 
 uint32_t WaylandWindow::DispatchEvent(const PlatformEvent& native_event) {
   Event* event = static_cast<Event*>(native_event);
-  if (event->IsLocatedEvent() && !has_pointer_focus_) {
+  if (event->IsLocatedEvent() && !has_pointer_or_touch_focus()) {
     DCHECK(connection_);
     WaylandWindow* window = connection_->GetCurrentFocusedWindow();
     if (window) {

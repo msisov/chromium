@@ -22,6 +22,28 @@
 
 namespace views {
 
+namespace {
+
+bool CanPerformDragOrResize(int hittest) {
+  switch (hittest) {
+    case HTBOTTOM:
+    case HTBOTTOMLEFT:
+    case HTBOTTOMRIGHT:
+    case HTCAPTION:
+    case HTLEFT:
+    case HTRIGHT:
+    case HTTOP:
+    case HTTOPLEFT:
+    case HTTOPRIGHT:
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+}  // namespace
+
 WindowEventFilter::WindowEventFilter(DesktopWindowTreeHost* window_tree_host)
     : window_tree_host_(window_tree_host), click_component_(HTNOWHERE) {}
 
@@ -30,6 +52,17 @@ WindowEventFilter::~WindowEventFilter() {}
 void WindowEventFilter::OnMouseEvent(ui::MouseEvent* event) {
   if (event->type() != ui::ET_MOUSE_PRESSED)
     return;
+  HandleEventInternal(event);
+}
+
+void WindowEventFilter::OnTouchEvent(ui::TouchEvent* event) {
+  if (event->type() != ui::ET_TOUCH_PRESSED)
+    return;
+  HandleEventInternal(event);
+}
+
+void WindowEventFilter::HandleEventInternal(ui::Event* event) {
+  DCHECK(event->IsMouseEvent() || event->IsTouchEvent());
 
   aura::Window* target = static_cast<aura::Window*>(event->target());
   if (!target->delegate())
@@ -38,16 +71,18 @@ void WindowEventFilter::OnMouseEvent(ui::MouseEvent* event) {
   DCHECK(event->IsLocatedEvent());
 
   int previous_click_component = HTNOWHERE;
-  int component = target->delegate()->GetNonClientComponent(event->location());
-  if (event->IsLeftMouseButton()) {
+  const gfx::Point& location = event->AsLocatedEvent()->location();
+  int component = target->delegate()->GetNonClientComponent(location);
+  if (event->type() == ui::ET_TOUCH_PRESSED ||
+      event->AsMouseEvent()->IsLeftMouseButton()) {
     previous_click_component = click_component_;
     click_component_ = component;
   }
 
   if (component == HTCAPTION) {
     OnClickedCaption(event, previous_click_component);
-  } else if (component == HTMAXBUTTON) {
-    OnClickedMaximizeButton(event);
+  } else if (component == HTMAXBUTTON && event->IsMouseEvent()) {
+    OnClickedMaximizeButton(event->AsMouseEvent());
   } else {
     if (target->GetProperty(aura::client::kResizeBehaviorKey) &
         ui::mojom::kResizeBehaviorCanResize) {
@@ -56,7 +91,7 @@ void WindowEventFilter::OnMouseEvent(ui::MouseEvent* event) {
   }
 }
 
-void WindowEventFilter::OnClickedCaption(ui::MouseEvent* event,
+void WindowEventFilter::OnClickedCaption(ui::Event* event,
                                          int previous_click_component) {
   aura::Window* target = static_cast<aura::Window*>(event->target());
   LinuxUI* linux_ui = LinuxUI::instance();
@@ -64,13 +99,15 @@ void WindowEventFilter::OnClickedCaption(ui::MouseEvent* event,
   views::LinuxUI::NonClientWindowFrameActionSourceType action_type;
   views::LinuxUI::NonClientWindowFrameAction default_action;
 
-  if (event->IsRightMouseButton()) {
+  if (event->IsMouseEvent() && event->AsMouseEvent()->IsRightMouseButton()) {
     action_type = LinuxUI::WINDOW_FRAME_ACTION_SOURCE_RIGHT_CLICK;
     default_action = LinuxUI::WINDOW_FRAME_ACTION_MENU;
-  } else if (event->IsMiddleMouseButton()) {
+  } else if (event->IsMouseEvent() &&
+             event->AsMouseEvent()->IsMiddleMouseButton()) {
     action_type = LinuxUI::WINDOW_FRAME_ACTION_SOURCE_MIDDLE_CLICK;
     default_action = LinuxUI::WINDOW_FRAME_ACTION_NONE;
-  } else if (event->IsLeftMouseButton() &&
+  } else if (event->IsMouseEvent() &&
+             event->AsMouseEvent()->IsLeftMouseButton() &&
              event->flags() & ui::EF_IS_DOUBLE_CLICK) {
     click_component_ = HTNOWHERE;
     if (previous_click_component == HTCAPTION) {
@@ -108,7 +145,7 @@ void WindowEventFilter::OnClickedCaption(ui::MouseEvent* event,
       views::View* view = widget->GetContentsView();
       if (!view)
         break;
-      gfx::Point location(event->location());
+      gfx::Point location(event->AsLocatedEvent()->location());
       views::View::ConvertPointToScreen(view, &location);
       view->ShowContextMenu(location, ui::MENU_SOURCE_MOUSE);
       break;
@@ -147,16 +184,18 @@ void WindowEventFilter::ToggleMaximizedState() {
 
 void WindowEventFilter::LowerWindow() {}
 
-void WindowEventFilter::MaybeDispatchHostWindowDragMovement(
-    int hittest,
-    ui::Event* event) {
-  if (event->IsLeftMouseButton()) {
+void WindowEventFilter::MaybeDispatchHostWindowDragMovement(int hittest,
+                                                            ui::Event* event) {
+  if ((event->type() == ui::ET_TOUCH_PRESSED ||
+       event->AsMouseEvent()->IsLeftMouseButton()) &&
+      CanPerformDragOrResize(hittest)) {
     auto* target = static_cast<aura::Window*>(event->target());
     if (target) {
       aura::WindowTreeHostMus* wth = aura::WindowTreeHostMus::ForWindow(target);
       DCHECK(wth);
       wth->PerformNativeWindowDragOrResize(hittest);
     }
+    event->StopPropagation();
   }
 }
 

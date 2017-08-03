@@ -50,10 +50,15 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   // Set whether this window has keyboard focus and should dispatch key events.
   void set_keyboard_focus(bool focus) { has_keyboard_focus_ = focus; }
 
-  bool has_pointer_focus() { return has_pointer_focus_; }
+  // Set whether this window has touch focus and should dispatch touch events.
+  void set_touch_focus(bool focus) { has_touch_focus_ = focus; }
+
+  bool has_pointer_or_touch_focus() {
+    return has_pointer_focus_ || has_touch_focus_;
+  }
 
   // Tells if it is a focused popup.
-  bool is_focused_popup() { return is_popup() && has_pointer_focus(); }
+  bool is_focused_popup() { return is_popup() && has_pointer_or_touch_focus(); }
 
   // Tells if this is a popup.
   bool is_popup() { return !!xdg_popup_.get(); }
@@ -137,6 +142,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   gfx::Rect restored_bounds_;
   bool has_pointer_focus_ = false;
   bool has_keyboard_focus_ = false;
+  bool has_touch_focus_ = false;
 
   // Stores current states of the window.
   ui::PlatformWindowState state_;
