@@ -17,9 +17,16 @@
 
 namespace ui {
 
+// ChromeOS does not seem to need the thread safe variant of RefCounted because
+// it uses "custom" cursors, and in PlatformDisplayDefault::SetCursor, it takes
+// the non-threaded path.
+//
+// TODO(tonikitoo,msisov): investigate how to share the same logic as ChromeOS
+// or upstream this change.
+
 // A cursor that is an SkBitmap combined with a gfx::Point hotspot.
 class UI_BASE_EXPORT BitmapCursorOzone
-    : public base::RefCounted<BitmapCursorOzone> {
+    : public base::RefCountedThreadSafe<BitmapCursorOzone> {
  public:
   BitmapCursorOzone(const SkBitmap& bitmap, const gfx::Point& hotspot);
   BitmapCursorOzone(const std::vector<SkBitmap>& bitmaps,
@@ -34,7 +41,7 @@ class UI_BASE_EXPORT BitmapCursorOzone
   int frame_delay_ms();
 
  private:
-  friend class base::RefCounted<BitmapCursorOzone>;
+  friend class base::RefCountedThreadSafe<BitmapCursorOzone>;
   ~BitmapCursorOzone();
 
   std::vector<SkBitmap> bitmaps_;
