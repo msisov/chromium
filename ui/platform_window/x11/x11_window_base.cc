@@ -79,15 +79,18 @@ void X11WindowBase::Create() {
   // type of the window.
   ui::PlatformWindowType ui_window_type = ui::PlatformWindowType::kWindow;
   // TODO(msisov, jkim): pass PlatformWindowInitProperties here.
-  if (ui_window_type != ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW) {
-    // Setting this to True, doesn't allow X server to set different
-    // properties, e.g. decorations.
-    // TODO(msisov): Investigate further.
-    // https://tronche.com/gui/x/xlib/window/attributes/override-redirect.html
-    swa.override_redirect = x11::True;
-    window_type = gfx::GetAtom("_NET_WM_WINDOW_TYPE_MENU");
-  } else {
-    window_type = gfx::GetAtom("_NET_WM_WINDOW_TYPE_NORMAL");
+   switch (ui_window_type) {
+    case ui::PlatformWindowType::kMenu:
+      window_type = gfx::GetAtom("_NET_WM_WINDOW_TYPE_MENU");
+      swa.override_redirect = x11::True;
+      break;
+    case ui::PlatformWindowType::kPopup:
+      swa.override_redirect = x11::True;
+      window_type = gfx::GetAtom("_NET_WM_WINDOW_TYPE_NOTIFICATION");
+      break;
+    default:
+      window_type = gfx::GetAtom("_NET_WM_WINDOW_TYPE_NORMAL");
+      break;
   }
 
   xwindow_ =
