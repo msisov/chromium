@@ -108,10 +108,21 @@ bool WaylandWindow::Initialize() {
   ui::PlatformWindowType ui_window_type =
       ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
   delegate_->GetWindowType(&ui_window_type);
-  if (ui_window_type == ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW)
-    CreateXdgSurface();
-  else
-    CreateXdgPopup();
+  switch (ui_window_type) {
+    case ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU:
+    case ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_POPUP:
+      // TODO(msisov, tonikitoo): Handle notification windows, which are marked
+      // as popup windows as well. Those are the windows that do not have
+      // parents and popup when a browser receive a notification.
+      CreateXdgPopup();
+      break;
+    case ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW:
+      CreateXdgSurface();
+      break;
+    default:
+      NOTREACHED() << "Not supported window type: type=" << ui_window_type;
+      break;
+  }
 
   connection_->ScheduleFlush();
 
