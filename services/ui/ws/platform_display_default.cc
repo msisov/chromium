@@ -160,13 +160,23 @@ void PlatformDisplayDefault::SetNativeWindowState(ui::mojom::ShowState state) {
 void PlatformDisplayDefault::GetWindowType(
     ui::PlatformWindowType* window_type) {
   DCHECK(window_type);
-  // TODO(tonikitoo, msisov): it might be better to pass more params through
-  // Widget::InitParams to ozone windows. For now, just do a check whether it's
-  // a normal window or menu..
-  if (metrics_.window_type == ui::mojom::WindowType::WINDOW)
-    *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
-  else
-    *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU;
+  switch (metrics_.window_type) {
+    case ui::mojom::WindowType::MENU:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU;
+      break;
+    case ui::mojom::WindowType::TOOLTIP:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_TOOLTIP;
+      break;
+    case ui::mojom::WindowType::POPUP:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_POPUP;
+      break;
+    case ui::mojom::WindowType::DRAG:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_DRAG;
+      break;
+    default:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
+      break;
+  }
 }
 
 void PlatformDisplayDefault::PerformNativeWindowDragOrResize(uint32_t hittest) {

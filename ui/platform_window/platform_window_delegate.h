@@ -27,6 +27,9 @@ enum PlatformWindowState {
 enum PlatformWindowType {
   PLATFORM_WINDOW_TYPE_WINDOW,
   PLATFORM_WINDOW_TYPE_MENU,
+  PLATFORM_WINDOW_TYPE_TOOLTIP,
+  PLATFORM_WINDOW_TYPE_POPUP,
+  PLATFORM_WINDOW_TYPE_DRAG,
 };
 
 class PlatformWindowDelegate {
