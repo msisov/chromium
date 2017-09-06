@@ -94,8 +94,8 @@ void WaylandPointer::Motion(void* data,
   pointer->location_.SetPoint(wl_fixed_to_double(surface_x),
                               wl_fixed_to_double(surface_y));
   MouseEvent event(ET_MOUSE_MOVED, gfx::Point(), gfx::Point(),
-                   base::TimeTicks() + base::TimeDelta::FromMilliseconds(time),
-                   pointer->GetFlagsWithKeyboardModifiers(), 0);
+                   EventTimeForNow(), pointer->GetFlagsWithKeyboardModifiers(),
+                   0);
   event.set_location_f(pointer->location_);
   event.set_root_location_f(pointer->location_);
   pointer->callback_.Run(&event);
@@ -148,9 +148,7 @@ void WaylandPointer::Button(void* data,
   // MouseEvent's flags should contain the button that was released too.
   const int flags = pointer->GetFlagsWithKeyboardModifiers() | changed_button;
   MouseEvent event(type, gfx::Point(), gfx::Point(),
-                   base::TimeTicks() + base::TimeDelta::FromMilliseconds(time),
-                   flags, changed_button);
-
+                   EventTimeForNow(), flags, changed_button);
   event.set_location_f(pointer->location_);
   event.set_root_location_f(pointer->location_);
   pointer->callback_.Run(&event);
@@ -180,8 +178,8 @@ void WaylandPointer::Axis(void* data,
     return;
   MouseWheelEvent event(
       offset, gfx::Point(), gfx::Point(),
-      base::TimeTicks() + base::TimeDelta::FromMilliseconds(time),
-      pointer->GetFlagsWithKeyboardModifiers(), 0);
+      EventTimeForNow(), pointer->GetFlagsWithKeyboardModifiers(),
+      0);
   event.set_location_f(pointer->location_);
   event.set_root_location_f(pointer->location_);
   pointer->callback_.Run(&event);
