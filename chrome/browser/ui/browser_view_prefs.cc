@@ -30,10 +30,14 @@ void RegisterBrowserViewLocalPrefs(PrefRegistrySimple* registry) {
 
 void RegisterBrowserViewProfilePrefs(
     user_prefs::PrefRegistrySyncable* registry) {
+#if defined(OS_LINUX) && !defined(OS_CHROMEOS)
+  bool custom_frame_pref_default = true;
 #if defined(USE_X11)
+  custom_frame_pref_default = ui::GetCustomFramePrefDefault();
+#endif  // USE_X11
   registry->RegisterBooleanPref(prefs::kUseCustomChromeFrame,
-                                ui::GetCustomFramePrefDefault());
-#endif
+                                custom_frame_pref_default);
+#endif  // OS_LINUX && !OS_CHROMEOS
 }
 
 void MigrateBrowserTabStripPrefs(PrefService* prefs) {
@@ -42,4 +46,4 @@ void MigrateBrowserTabStripPrefs(PrefService* prefs) {
                       prefs->GetInteger(kTabStripLayoutType) != 0);
     prefs->ClearPref(kTabStripLayoutType);
   }
-}
+}	
