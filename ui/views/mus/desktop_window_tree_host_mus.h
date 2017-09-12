@@ -62,6 +62,12 @@ class VIEWS_MUS_EXPORT DesktopWindowTreeHostMus
   // Returns true if the client area should be set on this.
   bool ShouldSendClientAreaToServer() const;
 
+  // Relayout the widget's client and non-client views.
+  // TODO(msisov, tonikitoo): think how to share this with
+  // DesktopWindowTreeHostX11. These two have pointers to
+  // |native_widget_delegate_|.
+  void Relayout();
+
   // DesktopWindowTreeHost:
   void Init(aura::Window* content_window,
             const Widget::InitParams& params) override;

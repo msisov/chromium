@@ -218,6 +218,11 @@ DesktopWindowTreeHostMus::DesktopWindowTreeHostMus(
   // Widget. This call enables that.
   NativeWidgetAura::RegisterNativeWidgetForWindow(desktop_native_widget_aura,
                                                   window());
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  window()->AddObserver(this);
+#endif
+
   // TODO: use display id and bounds if available, likely need to pass in
   // InitParams for that.
 }
@@ -315,6 +320,17 @@ bool DesktopWindowTreeHostMus::ShouldSendClientAreaToServer() const {
   using WIP = views::Widget::InitParams;
   const WIP::Type type = desktop_native_widget_aura_->widget_type();
   return type == WIP::TYPE_WINDOW || type == WIP::TYPE_PANEL;
+}
+
+void DesktopWindowTreeHostMus::Relayout() {
+  Widget* widget = native_widget_delegate_->AsWidget();
+  NonClientView* non_client_view = widget->non_client_view();
+  // non_client_view may be NULL, especially during creation.
+  if (non_client_view) {
+    non_client_view->client_view()->InvalidateLayout();
+    non_client_view->InvalidateLayout();
+  }
+  widget->GetRootView()->Layout();
 }
 
 void DesktopWindowTreeHostMus::Init(aura::Window* content_window,
@@ -835,10 +851,30 @@ void DesktopWindowTreeHostMus::OnActiveFocusClientChanged(
 void DesktopWindowTreeHostMus::OnWindowPropertyChanged(aura::Window* window,
                                                        const void* key,
                                                        intptr_t old) {
-  DCHECK_EQ(window, desktop_native_widget_aura_->content_window());
+  // Note that DesktopWindowTreeHostMus is subscribed for two aura::Windows:
+  // the root window, which is interested because of show state changes, and
+  // content window, which is a child of a root window and belongs to
+  // DesktopNativeWidgetAura.
+
   DCHECK(!window->GetRootWindow() || this->window() == window->GetRootWindow());
   if (!this->window())
     return;
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  // In ozone, the widget's client and non-client views must be updated once the
+  // root window has its window state updated. Otherwise, once the host window
+  // manager updates the window state, the views are out-dated and do not
+  // correspond to actual state. So, update them here on every window state
+  // change happened with the root window. The behaviour of
+  // DesktopWindowTreeHostX11::OnWmStateChanged is actually copied here.
+  if (window->IsRootWindow() && window == this->window()) {
+    if (key == aura::client::kShowStateKey)
+      Relayout();
+    return;
+  }
+#endif
+
+  DCHECK_EQ(window, desktop_native_widget_aura_->content_window());
 
   // Allow mus clients to mirror widget window properties to their root windows.
   MusPropertyMirror* property_mirror = MusClient::Get()->mus_property_mirror();
