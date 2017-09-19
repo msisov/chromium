@@ -54,6 +54,9 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
 
   void Destroy();
 
+  void SetPointerGrab();
+  void ReleasePointerGrab();
+
   PlatformWindowDelegate* delegate() { return delegate_; }
   XDisplay* xdisplay() { return xdisplay_; }
   XID xwindow() const { return xwindow_; }
@@ -79,6 +82,24 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   bool IsMaximized() const;
   bool IsFullscreen() const;
 
+  void OnCrossingEvent(bool enter,
+                       bool focus_in_window_or_ancestor,
+                       int mode,
+                       int detail);
+
+  // Called on an XFocusInEvent, XFocusOutEvent, XIFocusInEvent, or an
+  // XIFocusOutEvent.
+  // TODO(msisov, tonikitoo): share this with DesktopWindowTreeHostX11.
+  void OnFocusEvent(bool focus_in, int mode, int detail);
+
+  // Record the activation state.
+  // TODO(msisov, tonikitoo): share this with DesktopWindowTreeHostX11.
+  void BeforeActivationStateChanged();
+
+  // Handle the state change since BeforeActivationStateChanged().
+  // TODO(msisov, tonikitoo): share this with DesktopWindowTreeHostX11.
+  void AfterActivationStateChanged();
+
   PlatformWindowDelegate* const delegate_;
 
   XDisplay* xdisplay_;
@@ -91,6 +112,29 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   // The bounds of |xwindow_|.
   gfx::Rect bounds_;
 
+  bool IsActive() const;
+
+  bool window_mapped_in_server_ = false;
+  // Does |xwindow_| have the pointer grab (XI2 or normal)?
+  bool has_pointer_grab_ = false;
+
+  // Is the pointer in |xwindow_| or one of its children?
+  bool has_pointer_ = false;
+
+  // Is |xwindow_| or one of its children focused?
+  bool has_window_focus_ = false;
+
+  // (An ancestor window or the PointerRoot is focused) && |has_pointer_|.
+  // |has_pointer_focus_| == true is the odd case where we will receive keyboard
+  // input when |has_window_focus_| == false.  |has_window_focus_| and
+  // |has_pointer_focus_| are mutually exclusive.
+  bool has_pointer_focus_ = false;
+
+  // Used for tracking activation state in {Before|After}ActivationStateChanged.
+  bool was_active_ = false;
+  bool had_pointer_ = false;
+  bool had_pointer_grab_ = false;
+  bool had_window_focus_ = false;
 
   // The point on xroot_window_, where a ButtonPress event occurred.
   // Used for interactive window drag/resize.

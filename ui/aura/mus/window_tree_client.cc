@@ -33,6 +33,7 @@
 #include "services/ui/public/interfaces/window_tree_host_factory.mojom.h"
 #include "ui/aura/client/aura_constants.h"
 #include "ui/aura/client/drag_drop_client.h"
+#include "ui/aura/client/focus_client.h"
 #include "ui/aura/client/transient_window_client.h"
 #include "ui/aura/env.h"
 #include "ui/aura/env_input_state_controller.h"
@@ -1911,6 +1912,25 @@ void WindowTreeClient::SetBlockingContainers(
   window_manager_client_->SetBlockingContainers(
       std::move(transport_all_blocking_containers),
       base::Bind(&OnAckMustSucceed, FROM_HERE));
+}
+
+void WindowTreeClient::OnActivationChanged(ui::Id window_id, bool is_active) {
+  DCHECK(in_external_window_mode_);
+  WindowMus* window = GetWindowByServerId(window_id);
+  // This call goes from the host window manager once a window gains or looses
+  // focus and is being activated or deactivated. Thus, it must be a root
+  // window, but not other children.
+  if (!window || !IsRoot(window))
+    return;
+
+  client::FocusClient* focus_client = nullptr;
+  aura::Window* client_window = nullptr;
+  if (is_active) {
+    client_window = window->GetWindow();
+    focus_client = aura::client::GetFocusClient(client_window);
+  }
+
+  focus_synchronizer_->SetActiveFocusClient(focus_client, client_window);
 }
 
 void WindowTreeClient::GetWindowManager(

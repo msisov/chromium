@@ -20,6 +20,9 @@
 #include "ui/gfx/x/x11_atom_cache.h"
 #include "ui/platform_window/platform_window_delegate.h"
 
+#include "ui/base/x/x11_pointer_grab.h"
+#include "ui/events/devices/x11/touch_factory_x11.h"
+
 namespace ui {
 
 namespace {
@@ -112,6 +115,17 @@ void X11WindowBase::Destroy() {
   // |this| might be deleted because of the above call.
 
   XDestroyWindow(xdisplay, xwindow);
+}
+
+void X11WindowBase::SetPointerGrab() {
+  if (has_pointer_grab_)
+    return;
+  has_pointer_grab_ |= !ui::GrabPointer(xwindow_, true, x11::None);
+}
+
+void X11WindowBase::ReleasePointerGrab() {
+  ui::UngrabPointer();
+  has_pointer_grab_ = false;
 }
 
 void X11WindowBase::Create() {
@@ -304,9 +318,14 @@ void X11WindowBase::SetTitle(const base::string16& title) {
   }
 }
 
-void X11WindowBase::SetCapture() {}
+void X11WindowBase::SetCapture() {
+  has_pointer_grab_ |= !ui::GrabPointer(xwindow_, true, x11::None);
+}
 
-void X11WindowBase::ReleaseCapture() {}
+void X11WindowBase::ReleaseCapture() {
+  ui::UngrabPointer();
+  has_pointer_grab_ = false;
+}
 
 void X11WindowBase::ToggleFullscreen() {
   ui::SetWMSpecState(xwindow_, !IsFullscreen(),
@@ -419,6 +438,13 @@ bool X11WindowBase::IsEventForXWindow(const XEvent& xev) const {
 
 void X11WindowBase::ProcessXWindowEvent(XEvent* xev) {
   switch (xev->type) {
+    case EnterNotify:
+    case LeaveNotify: {
+      OnCrossingEvent(xev->type == EnterNotify, xev->xcrossing.focus,
+                      xev->xcrossing.mode, xev->xcrossing.detail);
+      break;
+    }
+
     case Expose: {
       gfx::Rect damage_rect(xev->xexpose.x, xev->xexpose.y, xev->xexpose.width,
                             xev->xexpose.height);
@@ -426,10 +452,11 @@ void X11WindowBase::ProcessXWindowEvent(XEvent* xev) {
       break;
     }
 
-    case x11::FocusOut:
-      if (xev->xfocus.mode != NotifyGrab)
-        delegate_->OnLostCapture();
+    case x11::FocusIn:
+    case x11::FocusOut: {
+      OnFocusEvent(xev->type == x11::FocusIn, xev->xfocus.mode, xev->xfocus.detail);
       break;
+    }
 
     case ConfigureNotify: {
       DCHECK_EQ(xwindow_, xev->xconfigure.event);
@@ -451,6 +478,20 @@ void X11WindowBase::ProcessXWindowEvent(XEvent* xev) {
         bounds_ = bounds;
         delegate_->OnBoundsChanged(bounds_);
       }
+      break;
+    }
+
+    case MapNotify: {
+      window_mapped_in_server_ = true;
+      break;
+    }
+
+    case UnmapNotify: {
+      window_mapped_in_server_ = false;
+      has_pointer_ = false;
+      has_pointer_grab_ = false;
+      has_pointer_focus_ = false;
+      has_window_focus_ = false;
       break;
     }
 
@@ -523,6 +564,154 @@ bool X11WindowBase::IsMaximized() const {
 
 bool X11WindowBase::IsFullscreen() const {
   return state_ == ui::PlatformWindowState::PLATFORM_WINDOW_STATE_FULLSCREEN;
+}
+
+void X11WindowBase::BeforeActivationStateChanged() {
+  was_active_ = IsActive();
+  had_pointer_ = has_pointer_;
+  had_pointer_grab_ = has_pointer_grab_;
+  had_window_focus_ = has_window_focus_;
+}
+
+void X11WindowBase::AfterActivationStateChanged() {
+  if (had_pointer_grab_ && !has_pointer_grab_) {
+    // TODO(msisov, tonikitoo): think how to make a call to
+    // dispatcher()->OnHostLostMouseGrab(). That's done in
+    // DesktopWindowTreeHostX11::AfterActivationStateChanged also.
+  }
+
+  bool had_pointer_capture = had_pointer_ || had_pointer_grab_;
+  bool has_pointer_capture = has_pointer_ || has_pointer_grab_;
+  if (had_pointer_capture && !has_pointer_capture)
+    delegate_->OnLostCapture();
+
+  if (was_active_ != IsActive())
+    delegate_->OnActivationChanged(IsActive());
+}
+
+bool X11WindowBase::IsActive() const {
+  // Focus and stacking order are independent in X11.  Since we cannot guarantee
+  // a window is topmost if it has focus, just use the focus state to determine
+  // if a window is active.
+  bool is_active = has_window_focus_ || has_pointer_focus_;
+
+  // is_active => window_mapped_in_server_
+  // !window_mapped_in_server_ => !is_active
+  DCHECK(!is_active || window_mapped_in_server_);
+
+  // |has_window_focus_| and |has_pointer_focus_| are mutually exclusive.
+  DCHECK(!has_window_focus_ || !has_pointer_focus_);
+
+  return is_active;
+}
+
+void X11WindowBase::OnCrossingEvent(bool enter,
+                                    bool focus_in_window_or_ancestor,
+                                    int mode,
+                                    int detail) {
+  // NotifyInferior on a crossing event means the pointer moved into or out of a
+  // child window, but the pointer is still within |xwindow_|.
+  if (detail == NotifyInferior)
+    return;
+
+  BeforeActivationStateChanged();
+
+  if (mode == NotifyGrab)
+    has_pointer_grab_ = enter;
+  else if (mode == NotifyUngrab)
+    has_pointer_grab_ = false;
+
+  has_pointer_ = enter;
+  if (focus_in_window_or_ancestor && !has_window_focus_) {
+    // If we reach this point, we know the focus is in an ancestor or the
+    // pointer root.  The definition of |has_pointer_focus_| is (An ancestor
+    // window or the PointerRoot is focused) && |has_pointer_|.  Therefore, we
+    // can just use |has_pointer_| in the assignment.  The transitions for when
+    // the focus changes are handled in OnFocusEvent().
+    has_pointer_focus_ = has_pointer_;
+  }
+
+  AfterActivationStateChanged();
+}
+
+void X11WindowBase::OnFocusEvent(bool focus_in, int mode, int detail) {
+  // NotifyInferior on a focus event means the focus moved into or out of a
+  // child window, but the focus is still within |xwindow_|.
+  if (detail == NotifyInferior)
+    return;
+
+  bool notify_grab = mode == NotifyGrab || mode == NotifyUngrab;
+
+  BeforeActivationStateChanged();
+
+  // For every focus change, the X server sends normal focus events which are
+  // useful for tracking |has_window_focus_|, but supplements these events with
+  // NotifyPointer events which are only useful for tracking pointer focus.
+
+  // For |has_pointer_focus_| and |has_window_focus_|, we continue tracking
+  // state during a grab, but ignore grab/ungrab events themselves.
+  if (!notify_grab && detail != NotifyPointer)
+    has_window_focus_ = focus_in;
+
+  if (!notify_grab && has_pointer_) {
+    switch (detail) {
+      case NotifyAncestor:
+      case NotifyVirtual:
+        // If we reach this point, we know |has_pointer_| was true before and
+        // after this event.  Since the definition of |has_pointer_focus_| is
+        // (An ancestor window or the PointerRoot is focused) && |has_pointer_|,
+        // we only need to worry about transitions on the first conjunct.
+        // Therefore, |has_pointer_focus_| will become true when:
+        // 1. Focus moves from |xwindow_| to an ancestor
+        //    (FocusOut with NotifyAncestor)
+        // 2. Focus moves from a decendant of |xwindow_| to an ancestor
+        //    (FocusOut with NotifyVirtual)
+        // |has_pointer_focus_| will become false when:
+        // 1. Focus moves from an ancestor to |xwindow_|
+        //    (FocusIn with NotifyAncestor)
+        // 2. Focus moves from an ancestor to a child of |xwindow_|
+        //    (FocusIn with NotifyVirtual)
+        has_pointer_focus_ = !focus_in;
+        break;
+      case NotifyPointer:
+        // The remaining cases for |has_pointer_focus_| becoming true are:
+        // 3. Focus moves from |xwindow_| to the PointerRoot
+        // 4. Focus moves from a decendant of |xwindow_| to the PointerRoot
+        // 5. Focus moves from None to the PointerRoot
+        // 6. Focus moves from Other to the PointerRoot
+        // 7. Focus moves from None to an ancestor of |xwindow_|
+        // 8. Focus moves from Other to an ancestor fo |xwindow_|
+        // In each case, we will get a FocusIn with a detail of NotifyPointer.
+        // The remaining cases for |has_pointer_focus_| becoming false are:
+        // 3. Focus moves from the PointerRoot to |xwindow_|
+        // 4. Focus moves from the PointerRoot to a decendant of |xwindow|
+        // 5. Focus moves from the PointerRoot to None
+        // 6. Focus moves from an ancestor of |xwindow_| to None
+        // 7. Focus moves from the PointerRoot to Other
+        // 8. Focus moves from an ancestor of |xwindow_| to Other
+        // In each case, we will get a FocusOut with a detail of NotifyPointer.
+        has_pointer_focus_ = focus_in;
+        break;
+      case NotifyNonlinear:
+      case NotifyNonlinearVirtual:
+        // We get Nonlinear(Virtual) events when
+        // 1. Focus moves from Other to |xwindow_|
+        //    (FocusIn with NotifyNonlinear)
+        // 2. Focus moves from Other to a decendant of |xwindow_|
+        //    (FocusIn with NotifyNonlinearVirtual)
+        // 3. Focus moves from |xwindow_| to Other
+        //    (FocusOut with NotifyNonlinear)
+        // 4. Focus moves from a decendant of |xwindow_| to Other
+        //    (FocusOut with NotifyNonlinearVirtual)
+        // |has_pointer_focus_| should be false before and after this event.
+        has_pointer_focus_ = false;
+        break;
+      default:
+        break;
+    }
+  }
+
+  AfterActivationStateChanged();
 }
 
 }  // namespace ui

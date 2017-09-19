@@ -60,6 +60,7 @@ class TestPlatformDisplayDelegate : public PlatformDisplayDelegate {
   void OnCloseRequest() override {}
   void OnNativeCaptureLost() override {}
   void OnWindowStateChanged(ui::mojom::ShowState new_state) override {}
+  void OnActivationChanged(bool is_active) override {}
   OzonePlatform* GetOzonePlatform() override { return ozone_platform_; }
   bool IsHostingViz() const override { return true; }
 

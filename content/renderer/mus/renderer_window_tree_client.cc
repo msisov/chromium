@@ -384,6 +384,9 @@ void RendererWindowTreeClient::OnChangeCompleted(uint32_t change_id,
 
 void RendererWindowTreeClient::RequestClose(ui::Id window_id) {}
 
+void RendererWindowTreeClient::OnActivationChanged(ui::Id window_id,
+                                                   bool is_active) {}
+
 void RendererWindowTreeClient::GetWindowManager(
     mojo::AssociatedInterfaceRequest<ui::mojom::WindowManager> internal) {
   NOTREACHED();

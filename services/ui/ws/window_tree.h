@@ -344,6 +344,11 @@ class WindowTree : public mojom::WindowTree,
   // certain events.
   void OnRequestClose(ServerWindow* target_window);
 
+  // In external window mode, ozone backends can ask client to change the
+  // activation state of the windows, which results in changing focus in focus
+  // controller.
+  void OnActivationChanged(ServerWindow* target_window, bool is_active);
+
  private:
   friend class test::WindowTreeTestApi;
 

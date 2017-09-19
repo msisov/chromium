@@ -1231,6 +1231,15 @@ void WindowTree::OnRequestClose(ServerWindow* target_window) {
     client()->RequestClose(ClientWindowIdToTransportId(client_window_id));
 }
 
+void WindowTree::OnActivationChanged(ServerWindow* target_window,
+                                     bool is_active) {
+  DCHECK(window_server_->IsInExternalWindowMode());
+  ClientWindowId client_window_id;
+  if (IsWindowKnown(target_window, &client_window_id))
+    client()->OnActivationChanged(ClientWindowIdToTransportId(client_window_id),
+                                  is_active);
+}
+
 bool WindowTree::ShouldRouteToWindowManager(const ServerWindow* window) const {
   if (window_manager_state_)
     return false;  // We are the window manager, don't route to ourself.

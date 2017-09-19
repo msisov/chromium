@@ -360,6 +360,19 @@ void Display::OnWindowStateChanged(ui::mojom::ShowState new_state) {
                              &transport_value);
 }
 
+void Display::OnActivationChanged(bool is_active) {
+  if (!window_server_->IsInExternalWindowMode())
+    return;
+
+  WindowTree* window_tree = window_server_->GetTreeForExternalWindowMode();
+  if (!window_tree)
+    return;
+
+  ServerWindow* server_window =
+      window_manager_display_root_->GetClientVisibleRoot();
+  window_tree->OnActivationChanged(server_window, is_active);
+}
+
 OzonePlatform* Display::GetOzonePlatform() {
 #if defined(USE_OZONE)
   return OzonePlatform::GetInstance();

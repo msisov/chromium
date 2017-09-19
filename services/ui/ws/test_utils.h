@@ -562,6 +562,7 @@ class TestWindowTreeClient : public ui::mojom::WindowTreeClient {
   void OnDragDropDone() override;
   void OnChangeCompleted(uint32_t change_id, bool success) override;
   void RequestClose(Id window_id) override;
+  void OnActivationChanged(Id window_id, bool is_active) override;
   void GetWindowManager(
       mojo::AssociatedInterfaceRequest<mojom::WindowManager> internal) override;
 

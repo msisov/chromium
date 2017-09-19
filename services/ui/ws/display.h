@@ -188,6 +188,7 @@ class Display : public PlatformDisplayDelegate,
   void OnBoundsChanged(const gfx::Rect& new_bounds) override;
   void OnCloseRequest() override;
   void OnWindowStateChanged(ui::mojom::ShowState new_state) override;
+  void OnActivationChanged(bool is_active) override;
 
   OzonePlatform* GetOzonePlatform() override;
   bool IsHostingViz() const override;

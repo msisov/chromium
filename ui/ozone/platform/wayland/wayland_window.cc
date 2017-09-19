@@ -399,6 +399,11 @@ void WaylandWindow::HandleSurfaceConfigure(int32_t width,
   // when it has finished processing events. We may get many configure events
   // in a row during an interactive resize, and only the last one matters.
   SetPendingBounds(width, height);
+
+  was_active_ = is_active_;
+  is_active_ = is_activated;
+  if (was_active_ != is_active_)
+    delegate_->OnActivationChanged(is_active_);
 }
 
 void WaylandWindow::OnCloseRequest() {

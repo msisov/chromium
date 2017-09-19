@@ -508,6 +508,7 @@ class AURA_EXPORT WindowTreeClient
   void OnDragDropDone() override;
   void OnChangeCompleted(uint32_t change_id, bool success) override;
   void RequestClose(ui::Id window_id) override;
+  void OnActivationChanged(ui::Id window_id, bool is_active) override;
   void SetBlockingContainers(
       const std::vector<BlockingContainers>& all_blocking_containers) override;
   void GetWindowManager(
