@@ -443,6 +443,7 @@ class TestWindowTreeClient2 : public TestWindowTreeClient,
     }
   }
   void RequestClose(Id window_id) override {}
+  void OnActivationChanged(ui::Id window_id, bool is_active) override {}
   void GetWindowManager(mojo::AssociatedInterfaceRequest<mojom::WindowManager>
                             internal) override {
     window_manager_binding_ =

@@ -482,6 +482,8 @@ void TestWindowTreeClient::OnChangeCompleted(uint32_t change_id, bool success) {
 }
 
 void TestWindowTreeClient::RequestClose(Id window_id) {}
+void TestWindowTreeClient::OnActivationChanged(Id window_id,
+                                               bool is_active) {}
 
 void TestWindowTreeClient::GetWindowManager(
     mojo::AssociatedInterfaceRequest<mojom::WindowManager> internal) {}
