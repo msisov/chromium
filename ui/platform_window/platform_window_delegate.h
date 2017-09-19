@@ -59,6 +59,8 @@ class PlatformWindowDelegate {
   // a new widget is made available through OnAcceleratedWidgetAvailable().
   virtual void OnAcceleratedWidgetDestroyed() = 0;
 
+  // Notifies the delegate that the activation state of the window has been
+  // changed.
   virtual void OnActivationChanged(bool active) = 0;
 
   // TODO(tonikitoo,msisov): Adding this method with an out parameter so that
