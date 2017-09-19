@@ -150,6 +150,9 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   // Stores current states of the window.
   ui::PlatformWindowState state_;
 
+  bool was_active_ = false;
+  bool is_active_ = false;
+
   DISALLOW_COPY_AND_ASSIGN(WaylandWindow);
 };
 

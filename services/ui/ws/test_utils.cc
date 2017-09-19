@@ -486,6 +486,9 @@ void TestWindowTreeClient::OnChangeCompleted(uint32_t change_id, bool success) {
     tracker_.OnChangeCompleted(change_id, success);
 }
 
+void TestWindowTreeClient::OnActivationChanged(uint32_t window_id,
+                                               bool is_active) {}
+
 void TestWindowTreeClient::RequestClose(uint32_t window_id) {}
 
 void TestWindowTreeClient::GetWindowManager(

@@ -572,6 +572,10 @@ interface WindowTreeClient {
   // change ids for details.
   OnChangeCompleted(uint32 change_id, bool success);
 
+  // The WindowManager is requesting the specified window to change activation
+  // state.
+  OnActivationChanged(uint32 window_id, bool is_active);
+
   // The WindowManager is requesting the specified window to close. If the
   // client allows the change it should delete the window.
   RequestClose(uint32 window_id);

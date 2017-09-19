@@ -54,6 +54,10 @@ class PlatformDisplayDelegate {
 
   virtual bool IsHostingViz() const = 0;
 
+  // Called when the activation state of the window has been changed. For
+  // example, click on a different window or between windows.
+  virtual void OnActivationChanged(bool is_active) = 0;
+
  protected:
   virtual ~PlatformDisplayDelegate() {}
 };

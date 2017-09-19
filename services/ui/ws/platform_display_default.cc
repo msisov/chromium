@@ -389,7 +389,9 @@ void PlatformDisplayDefault::OnAcceleratedWidgetDestroyed() {
   NOTREACHED();
 }
 
-void PlatformDisplayDefault::OnActivationChanged(bool active) {}
+void PlatformDisplayDefault::OnActivationChanged(bool active) {
+  delegate_->OnActivationChanged(active);
+}
 
 void PlatformDisplayDefault::GetParentWindowAcceleratedWidget(
     gfx::AcceleratedWidget* widget) {

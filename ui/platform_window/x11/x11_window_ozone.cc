@@ -38,6 +38,9 @@ void X11WindowOzone::PrepareForShutdown() {
 
 void X11WindowOzone::SetCapture() {
   window_manager_->GrabEvents(this);
+  // Sets pointer grab if events are grabbed.
+  if (window_manager_->event_grabber() == this)
+    SetPointerGrab();
 }
 
 void X11WindowOzone::ReleaseCapture() {
@@ -102,6 +105,7 @@ uint32_t X11WindowOzone::DispatchEvent(const PlatformEvent& platform_event) {
 }
 
 void X11WindowOzone::OnLostCapture() {
+  ReleasePointerGrab();
   delegate()->OnLostCapture();
 }
 
