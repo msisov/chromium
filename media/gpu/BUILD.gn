@@ -17,6 +17,7 @@ buildflag_header("buildflags") {
     "USE_VAAPI=$use_vaapi",
     "USE_V4L2_CODEC=$use_v4l2_codec",
     "USE_LIBV4L2=$use_v4lplugin",
+    "USE_LINUX_V4L2=$use_linux_v4l2_only",
   ]
 }
 
@@ -24,7 +25,7 @@ if (is_mac) {
   import("//build/config/mac/mac_sdk.gni")
 }
 
-if (is_chromeos && use_v4lplugin) {
+if (use_v4lplugin) {
   generate_stubs("libv4l2_stubs") {
     extra_header = "v4l2/v4l2_stub_header.fragment"
     sigs = [ "v4l2/v4l2.sig" ]
@@ -217,12 +218,8 @@ component("gpu") {
       "v4l2/v4l2_h264_accelerator.h",
       "v4l2/v4l2_image_processor.cc",
       "v4l2/v4l2_image_processor.h",
-      "v4l2/v4l2_jpeg_decode_accelerator.cc",
-      "v4l2/v4l2_jpeg_decode_accelerator.h",
       "v4l2/v4l2_jpeg_encode_accelerator.cc",
       "v4l2/v4l2_jpeg_encode_accelerator.h",
-      "v4l2/v4l2_slice_video_decode_accelerator.cc",
-      "v4l2/v4l2_slice_video_decode_accelerator.h",
       "v4l2/v4l2_video_decode_accelerator.cc",
       "v4l2/v4l2_video_decode_accelerator.h",
       "v4l2/v4l2_video_encode_accelerator.cc",
@@ -232,6 +229,15 @@ component("gpu") {
       "v4l2/v4l2_vp9_accelerator.cc",
       "v4l2/v4l2_vp9_accelerator.h",
     ]
+
+    if (!use_linux_v4l2_only) {
+      sources += [
+        "v4l2_jpeg_decode_accelerator.cc",
+        "v4l2_jpeg_decode_accelerator.h",
+        "v4l2_slice_video_decode_accelerator.cc",
+        "v4l2_slice_video_decode_accelerator.h",
+      ]
+    }
 
     libs = [
       "EGL",
