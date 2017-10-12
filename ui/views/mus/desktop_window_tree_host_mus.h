@@ -166,7 +166,14 @@ class VIEWS_MUS_EXPORT DesktopWindowTreeHostMus
 
   std::unique_ptr<ui::EventHandler> non_client_window_event_filter_;
 
+  // In Ozone/Linux, it is not Ash who fills in window decoration
+  // (like in ChromeOS). Hence, we forcily disable 'auto_update_client_area_'
+  // in order to built-in window decorations to be provided.
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  bool auto_update_client_area_ = false;
+#else
   bool auto_update_client_area_ = true;
+#endif
 
   // Used so that Close() isn't immediate.
   base::WeakPtrFactory<DesktopWindowTreeHostMus> close_widget_factory_;
