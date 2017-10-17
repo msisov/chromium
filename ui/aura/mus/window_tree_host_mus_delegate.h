@@ -65,6 +65,7 @@ class AURA_EXPORT WindowTreeHostMusDelegate {
       WindowTreeHostMus* window_tree_host,
       ui::mojom::MoveLoopSource mus_source,
       const gfx::Point& cursor_location,
+      const gfx::Vector2d& drag_offset,
       const base::Callback<void(bool)>& callback) = 0;
 
   // Called to tell the native window manager to start interactive drag or

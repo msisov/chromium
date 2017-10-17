@@ -187,6 +187,14 @@ void PlatformDisplayDefault::PerformNativeWindowDragOrResize(uint32_t hittest) {
   platform_window_->ReleaseCapture();
 }
 
+bool PlatformDisplayDefault::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return platform_window_->RunMoveLoop(drag_offset);
+}
+
+void PlatformDisplayDefault::StopMoveLoop() {
+  platform_window_->StopMoveLoop();
+}
+
 void PlatformDisplayDefault::SetCursor(const ui::CursorData& cursor_data) {
   if (!image_cursors_)
     return;

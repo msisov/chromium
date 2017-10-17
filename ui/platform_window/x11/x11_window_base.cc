@@ -266,7 +266,7 @@ void X11WindowBase::SetBounds(const gfx::Rect& bounds) {
     XWindowChanges changes = {0};
     unsigned value_mask = 0;
 
-    if (bounds_.size() != bounds.size()) {
+    if (!bounds.size().IsEmpty() && bounds_.size() != bounds.size()) {
       changes.width = bounds.width();
       changes.height = bounds.height();
       value_mask |= CWHeight | CWWidth;
@@ -286,8 +286,13 @@ void X11WindowBase::SetBounds(const gfx::Rect& bounds) {
   // case if we're running without a window manager.  If there's a window
   // manager, it can modify or ignore the request, but (per ICCCM) we'll get a
   // (possibly synthetic) ConfigureNotify about the actual size and correct
-  // |bounds_| later.
+  // |bounds_| later. If |bounds| came with zero size, use the previous size
+  // of |bounds_|.
+  gfx::Size size = bounds_.size();
+  if (!bounds.size().IsEmpty())
+    size = bounds_.size();
   bounds_ = bounds;
+  bounds_.set_size(size);
 
   // Even if the pixel bounds didn't change this call to the delegate should
   // still happen. The device scale factor may have changed which effectively
@@ -393,6 +398,12 @@ void X11WindowBase::PerformNativeWindowDragOrResize(uint32_t hittest) {
   XSendEvent(xdisplay_, xroot_window_, x11::False,
              SubstructureRedirectMask | SubstructureNotifyMask, &event);
 }
+
+bool X11WindowBase::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void X11WindowBase::StopMoveLoop() {}
 
 bool X11WindowBase::IsEventForXWindow(const XEvent& xev) const {
   return xwindow_ != x11::None && FindXEventTarget(xev) == xwindow_;

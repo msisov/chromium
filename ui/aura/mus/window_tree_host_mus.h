@@ -71,6 +71,7 @@ class AURA_EXPORT WindowTreeHostMus : public WindowTreeHostPlatform {
   // true if the move wasn't canceled.
   void PerformWindowMove(ui::mojom::MoveLoopSource mus_source,
                          const gfx::Point& cursor_location,
+                         const gfx::Vector2d& drag_offset,
                          const base::Callback<void(bool)>& callback);
 
   // Tells the native window manager to start interactive drag or resize of a

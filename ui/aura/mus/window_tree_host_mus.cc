@@ -167,9 +167,10 @@ void WindowTreeHostMus::PerformWmAction(const std::string& action) {
 void WindowTreeHostMus::PerformWindowMove(
     ui::mojom::MoveLoopSource mus_source,
     const gfx::Point& cursor_location,
+    const gfx::Vector2d& drag_offset,
     const base::Callback<void(bool)>& callback) {
   delegate_->OnWindowTreeHostPerformWindowMove(
-      this, mus_source, cursor_location, callback);
+      this, mus_source, cursor_location, drag_offset, callback);
 }
 
 void WindowTreeHostMus::PerformNativeWindowDragOrResize(int hittest) {

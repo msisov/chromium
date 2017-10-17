@@ -243,7 +243,8 @@ class TestWindowTree : public ui::mojom::WindowTree {
   void PerformWindowMove(uint32_t change_id,
                          uint32_t window_id,
                          ui::mojom::MoveLoopSource source,
-                         const gfx::Point& cursor_location) override;
+                         const gfx::Point& cursor_location,
+                         const gfx::Vector2d& drag_offset) override;
   void PerformNativeWindowDragOrResize(Id window_id, uint32_t hittest) override;
   void CancelWindowMove(uint32_t window_id) override;
 

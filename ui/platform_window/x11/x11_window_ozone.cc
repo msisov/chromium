@@ -24,6 +24,11 @@ X11WindowOzone::X11WindowOzone(X11WindowManagerOzone* window_manager,
   auto* event_source = X11EventSourceLibevent::GetInstance();
   if (event_source)
     event_source->AddXEventDispatcher(this);
+
+// TODO(msisov, tonikitoo): Add a dummy implementation for chromeos.
+#if !defined(OS_CHROMEOS)
+  move_loop_client_.reset(new WindowMoveLoopClient());
+#endif
 }
 
 X11WindowOzone::~X11WindowOzone() {
@@ -52,6 +57,24 @@ void X11WindowOzone::SetCursor(PlatformCursor cursor) {
   XDefineCursor(xdisplay(), xwindow(), cursor_ozone->xcursor());
 }
 
+bool X11WindowOzone::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+// TODO(msisov, tonikitoo): Add a dummy implementation for chromeos.
+#if !defined(OS_CHROMEOS)
+  DCHECK(move_loop_client_);
+  ReleaseCapture();
+  return move_loop_client_->RunMoveLoop(this, drag_offset);
+#endif
+  return true;
+}
+
+void X11WindowOzone::StopMoveLoop() {
+// TODO(msisov, tonikitoo): Add a dummy implementation for chromeos.
+#if !defined(OS_CHROMEOS)
+  ReleaseCapture();
+  move_loop_client_->EndMoveLoop();
+#endif
+}
+
 void X11WindowOzone::CheckCanDispatchNextPlatformEvent(XEvent* xev) {
   handle_next_event_ = xwindow() == x11::None ? false : IsEventForXWindow(*xev);
 }
@@ -73,7 +96,13 @@ bool X11WindowOzone::DispatchXEvent(XEvent* xev) {
 }
 
 bool X11WindowOzone::CanDispatchEvent(const PlatformEvent& platform_event) {
-  return handle_next_event_;
+  bool in_move_loop =
+#if !defined(OS_CHROMEOS)
+      move_loop_client_->IsInMoveLoop();
+#else
+      false;
+#endif
+  return handle_next_event_ || in_move_loop;
 }
 
 uint32_t X11WindowOzone::DispatchEvent(const PlatformEvent& platform_event) {

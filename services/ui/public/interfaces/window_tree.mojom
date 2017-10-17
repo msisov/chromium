@@ -323,12 +323,14 @@ interface WindowTree {
   // where the location is (x << 16) | y.
   GetCursorLocationMemory() => (handle<shared_buffer> cursor_buffer);
 
-  // Tells the window manager to start moving the window. OnChangeCompleted is
+  // Tells the (host) window manager to start moving the window. OnChangeCompleted is
   // called on whether the move was canceled. Because there's a delay between
   // when a client sends this message and when the window manager starts acting
-  // on it, pass the cursor location at the start of the move.
+  // on it, pass the cursor location at the start of the move. In external
+  // window move, |drag_offset| is passed to ozone backend for proper handling
+  // of the move loop.
   PerformWindowMove(uint32 change_id, uint32 window_id, MoveLoopSource source,
-                    gfx.mojom.Point cursor);
+                    gfx.mojom.Point cursor, gfx.mojom.Vector2d drag_offset);
                     
   // Tells the native window manager to start interactive move or resize of the
   // window. Once window's bounds are changed during the move or resize, those

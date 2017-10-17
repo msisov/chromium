@@ -80,4 +80,10 @@ PlatformImeController* StubWindow::GetPlatformImeController() {
 
 void StubWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {}
 
+bool StubWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void StubWindow::StopMoveLoop() {}
+
 }  // namespace ui

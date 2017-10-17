@@ -42,6 +42,10 @@ jumbo_component("x11") {
       "x11_window_manager_ozone.h",
       "x11_window_ozone.cc",
       "x11_window_ozone.h",
+      "whole_screen_move_loop.cc",
+      "whole_screen_move_loop.h",
+      "window_move_loop_client.cc",
+      "window_move_loop_client.h",
     ]
     deps += [
       "//ui/base",
