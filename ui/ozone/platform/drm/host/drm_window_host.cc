@@ -135,6 +135,12 @@ PlatformImeController* DrmWindowHost::GetPlatformImeController() {
 
 void DrmWindowHost::PerformNativeWindowDragOrResize(uint32_t hittest) {}
 
+bool DrmWindowHost::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void DrmWindowHost::StopMoveLoop() {}
+
 bool DrmWindowHost::CanDispatchEvent(const PlatformEvent& event) {
   DCHECK(event);
 
