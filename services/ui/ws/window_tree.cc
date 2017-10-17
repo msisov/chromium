@@ -2519,13 +2519,13 @@ void WindowTree::CancelDragDrop(Id window_id) {
   wms->CancelDragDrop();
 }
 
-void WindowTree::PerformWindowMove(uint32_t change_id,
-                                   Id window_id,
-                                   ui::mojom::MoveLoopSource source,
-                                   const gfx::Point& cursor) {
+void WindowTree::PerformWindowMove(uint32_t change_id, Id window_id,
+    ui::mojom::MoveLoopSource source, const gfx::Point& cursor,
+    const gfx::Vector2d& drag_offset) {
   ServerWindow* window = GetWindowByClientId(MakeClientWindowId(window_id));
   bool success = window && access_policy_->CanInitiateMoveLoop(window);
-  if (!success || !ShouldRouteToWindowManager(window)) {
+  if (!success || (!ShouldRouteToWindowManager(window) &&
+                   !window_server_->IsInExternalWindowMode())) {
     // We need to fail this move loop change, otherwise the client will just be
     // waiting for |change_id|.
     DVLOG(1) << "PerformWindowMove failed (access denied)";
@@ -2549,6 +2549,19 @@ void WindowTree::PerformWindowMove(uint32_t change_id,
     return;
   }
 
+  const uint32_t wm_change_id =
+      window_server_->IsInExternalWindowMode()
+          ? change_id
+          : window_server_->GenerateWindowManagerChangeId(this, change_id);
+  bool result = window_server_->StartMoveLoop(wm_change_id, window, this,
+                                              window->bounds(), drag_offset);
+
+  if (window_server_->IsInExternalWindowMode()) {
+    window_server_->EndMoveLoop();
+    OnChangeCompleted(change_id, result);
+    return;
+  }
+
   // When we perform a window move loop, we give the window manager non client
   // capture. Because of how the capture public interface currently works,
   // SetCapture() will check whether the mouse cursor is currently in the
@@ -2556,10 +2569,6 @@ void WindowTree::PerformWindowMove(uint32_t change_id,
   // manager. (And normal window movement relies on this behaviour.)
   WindowManagerState* wms = display_root->window_manager_state();
   wms->SetCapture(window, wms->window_tree()->id());
-
-  const uint32_t wm_change_id =
-      window_server_->GenerateWindowManagerChangeId(this, change_id);
-  window_server_->StartMoveLoop(wm_change_id, window, this, window->bounds());
   wms->window_tree()->window_manager_internal_->WmPerformMoveLoop(
       wm_change_id, wms->window_tree()->TransportIdForWindow(window), source,
       cursor);
@@ -2609,6 +2618,11 @@ void WindowTree::CancelWindowMove(Id window_id) {
   WindowManagerDisplayRoot* display_root = GetWindowManagerDisplayRoot(window);
   if (!display_root) {
     DVLOG(1) << "CancelWindowMove failed (no such window manager display root)";
+    return;
+  }
+
+  if (window_server_->IsInExternalWindowMode()) {
+    window_server()->EndMoveLoop();
     return;
   }
 

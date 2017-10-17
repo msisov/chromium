@@ -1315,7 +1315,7 @@ TEST_F(WindowTreeTest, ValidMoveLoopWithWM) {
       ->PerformWindowMove(
           change_id,
           child_tree->ClientWindowIdToTransportId(embed_window_id2_in_child),
-          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0));
+          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0), gfx::Vector2d());
 
   EXPECT_TRUE(wm_internal.on_perform_move_loop_called());
 }
@@ -1367,7 +1367,7 @@ TEST_F(WindowTreeTest, MoveLoopAckOKByWM) {
       ->PerformWindowMove(
           change_id,
           child_tree->ClientWindowIdToTransportId(embed_window_id2_in_child),
-          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0));
+          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0), gfx::Vector2d());
 
   // There should be three changes, the first two relating to capture changing,
   // the last for the completion.
@@ -1425,7 +1425,7 @@ TEST_F(WindowTreeTest, WindowManagerCantMoveLoop) {
   const uint32_t change_id = 7;
   static_cast<mojom::WindowTree*>(wm_tree())->PerformWindowMove(
       change_id, wm_tree()->ClientWindowIdToTransportId(embed_window_id2),
-      mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0));
+      mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0), gfx::Vector2d());
 
   EXPECT_FALSE(wm_internal.on_perform_move_loop_called());
 }
@@ -1476,7 +1476,7 @@ TEST_F(WindowTreeTest, RevertWindowBoundsOnMoveLoopFailure) {
       ->PerformWindowMove(
           change_id,
           child_tree->ClientWindowIdToTransportId(embed_window_id2_in_child),
-          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0));
+          mojom::MoveLoopSource::MOUSE, gfx::Point(0, 0), gfx::Vector2d());
 
   ServerWindow* server_window =
       wm_tree()->GetWindowByClientId(embed_window_id2);
@@ -1506,7 +1506,7 @@ TEST_F(WindowTreeTest, InvalidMoveLoopStillAcksAttempt) {
   const Id kInvalidWindowId = 1234567890;
   static_cast<mojom::WindowTree*>(tree)->PerformWindowMove(
       kChangeId, kInvalidWindowId, mojom::MoveLoopSource::MOUSE,
-      gfx::Point(0, 0));
+      gfx::Point(0, 0), gfx::Vector2d());
 
   EXPECT_EQ("ChangeCompleted id=8 sucess=false",
             SingleChangeToDescription(*embed_client->tracker()->changes()));

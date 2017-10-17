@@ -357,7 +357,8 @@ void TestWindowTree::CancelDragDrop(ui::Id window_id) {}
 void TestWindowTree::PerformWindowMove(uint32_t change_id,
                                        ui::Id window_id,
                                        ui::mojom::MoveLoopSource source,
-                                       const gfx::Point& cursor_location) {
+                                       const gfx::Point& cursor_location,
+                                       const gfx::Vector2d& drag_offset) {
   OnChangeReceived(change_id);
 }
 

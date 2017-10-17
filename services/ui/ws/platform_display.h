@@ -96,6 +96,11 @@ class PlatformDisplay : public ui::EventSource {
   // the |hittest|.
   virtual void PerformNativeWindowDragOrResize(uint32_t hittest) {}
 
+  // Instantiates a move loop of a platform window.
+  virtual bool RunMoveLoop(const gfx::Vector2d& drag_offset);
+
+  virtual void StopMoveLoop();
+
  private:
   // Static factory instance (always NULL for non-test).
   static PlatformDisplayFactory* factory_;

@@ -29,6 +29,7 @@
 #include "services/ui/ws/window_tree.h"
 #include "services/ui/ws/window_tree_binding.h"
 #include "ui/gfx/geometry/size_conversions.h"
+#include "services/ui/ws/platform_display_default.h"
 
 namespace ui {
 namespace ws {
@@ -593,16 +594,42 @@ void WindowServer::SetSurfaceActivationCallback(
   surface_activation_callback_ = std::move(callback);
 }
 
-void WindowServer::StartMoveLoop(uint32_t change_id,
+bool WindowServer::StartMoveLoop(uint32_t change_id,
                                  ServerWindow* window,
                                  WindowTree* initiator,
-                                 const gfx::Rect& revert_bounds) {
+                                 const gfx::Rect& revert_bounds,
+                                 const gfx::Vector2d& drag_offset) {
   current_move_loop_.reset(
       new CurrentMoveLoopState{change_id, window, initiator, revert_bounds});
+
+  bool result = false;
+  if (IsInExternalWindowMode()) {
+    PlatformDisplay* display =
+        GetPlatformDisplayOfVisibleRoot(current_move_loop_->window);
+    if (display)
+      result = display->RunMoveLoop(drag_offset);
+  }
+  return result;
 }
 
 void WindowServer::EndMoveLoop() {
+  if (IsInExternalWindowMode() && current_move_loop_) {
+    PlatformDisplay* display =
+        GetPlatformDisplayOfVisibleRoot(current_move_loop_->window);
+    if (display)
+      display->StopMoveLoop();
+  }
   current_move_loop_.reset();
+}
+
+PlatformDisplay* WindowServer::GetPlatformDisplayOfVisibleRoot(
+    const ServerWindow* window) {
+  WindowManagerDisplayRoot* display_root =
+      display_manager_->GetWindowManagerDisplayRoot(window);
+  PlatformDisplay* display = nullptr;
+  if (display_root && display_root->GetClientVisibleRoot() == window)
+    display = display_root->display()->platform_display();
+  return display;
 }
 
 uint32_t WindowServer::GetCurrentMoveLoopChangeId() {

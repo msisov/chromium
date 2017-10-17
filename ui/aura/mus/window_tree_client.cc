@@ -2530,6 +2530,7 @@ void WindowTreeClient::OnWindowTreeHostPerformWindowMove(
     WindowTreeHostMus* window_tree_host,
     ui::mojom::MoveLoopSource source,
     const gfx::Point& cursor_location,
+    const gfx::Vector2d& drag_offset,
     const base::Callback<void(bool)>& callback) {
   DCHECK(on_current_move_finished_.is_null());
   on_current_move_finished_ = callback;
@@ -2539,7 +2540,7 @@ void WindowTreeClient::OnWindowTreeHostPerformWindowMove(
       std::make_unique<InFlightDragChange>(window_mus, ChangeType::MOVE_LOOP));
   // Tell the window manager to take over moving us.
   tree_->PerformWindowMove(current_move_loop_change_, window_mus->server_id(),
-                           source, cursor_location);
+                           source, cursor_location, drag_offset);
 }
 
 void WindowTreeClient::OnWindowTreeHostPerformNativeWindowDragOrResize(
