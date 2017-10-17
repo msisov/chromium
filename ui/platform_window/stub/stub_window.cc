@@ -80,4 +80,10 @@ gfx::Rect StubWindow::GetRestoredBoundsInPixels() const {
   return gfx::Rect();
 }
 
+bool StubWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void StubWindow::StopMoveLoop() {}
+
 }  // namespace ui
