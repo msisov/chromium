@@ -71,6 +71,11 @@ class PlatformWindow : public PropertyHandler {
   // Sets and gets the restored bounds of the platform-window.
   virtual void SetRestoredBoundsInPixels(const gfx::Rect& bounds) = 0;
   virtual gfx::Rect GetRestoredBoundsInPixels() const = 0;
+
+  // Asks to window move client to start move loop.
+  virtual bool RunMoveLoop(const gfx::Vector2d& drag_offset) = 0;
+
+  virtual void StopMoveLoop() = 0;
 };
 
 }  // namespace ui
