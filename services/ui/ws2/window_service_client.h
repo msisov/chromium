@@ -298,7 +298,8 @@ class COMPONENT_EXPORT(WINDOW_SERVICE) WindowServiceClient
   void PerformWindowMove(uint32_t change_id,
                          Id window_id,
                          ::ui::mojom::MoveLoopSource source,
-                         const gfx::Point& cursor) override;
+                         const gfx::Point& cursor,
+                         const gfx::Vector2d& drag_offset) override;
   void CancelWindowMove(Id window_id) override;
   void PerformNativeWindowDragOrResize(ui::Id window_id,
                                        uint32_t hittest) override;

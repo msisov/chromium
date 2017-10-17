@@ -61,6 +61,8 @@ class PlatformDisplayDefault : public PlatformDisplay,
   void SetNativeWindowState(ui::mojom::ShowState state) override;
   void GetWindowType(PlatformWindowType* window_type) override;
   void PerformNativeWindowDragOrResize(uint32_t hittest) override;
+  bool RunMoveLoop(const gfx::Vector2d& drag_offset) override;
+  void StopMoveLoop() override;
 
  private:
   // ui::PlatformWindowDelegate:

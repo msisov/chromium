@@ -68,5 +68,11 @@ std::unique_ptr<PlatformWindow> PlatformDisplay::CreatePlatformWindow(
   return platform_window;
 }
 
+bool PlatformDisplay::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void PlatformDisplay::StopMoveLoop() {}
+
 }  // namespace ws
 }  // namespace ui

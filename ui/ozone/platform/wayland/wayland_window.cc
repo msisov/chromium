@@ -338,6 +338,12 @@ void WaylandWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {
     xdg_surface_->SurfaceResize(connection_, hittest);
 }
 
+bool WaylandWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return true;
+}
+
+void WaylandWindow::StopMoveLoop() {}
+
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
   if (child_window_ && child_window_->is_popup())
     return is_popup();
