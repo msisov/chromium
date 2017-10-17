@@ -944,7 +944,8 @@ void WindowServiceClient::GetCursorLocationMemory(
 void WindowServiceClient::PerformWindowMove(uint32_t change_id,
                                             Id window_id,
                                             ::ui::mojom::MoveLoopSource source,
-                                            const gfx::Point& cursor) {
+                                            const gfx::Point& cursor,
+                                            const gfx::Vector2d& drag_offset) {
   NOTIMPLEMENTED();
 }
 
