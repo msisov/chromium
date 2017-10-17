@@ -38,6 +38,7 @@ class AccessPolicy;
 class Display;
 class DisplayManager;
 class GpuHost;
+class PlatformDisplay;
 class ServerWindow;
 class ThreadedImageCursorsFactory;
 class UserActivityMonitor;
@@ -242,10 +243,11 @@ class WindowServer : public ServerWindowDelegate,
   void SetSurfaceActivationCallback(
       base::OnceCallback<void(ServerWindow*)> callback);
 
-  void StartMoveLoop(uint32_t change_id,
+  bool StartMoveLoop(uint32_t change_id,
                      ServerWindow* window,
                      WindowTree* initiator,
-                     const gfx::Rect& revert_bounds);
+                     const gfx::Rect& revert_bounds,
+                     const gfx::Vector2d& drag_offset);
   void EndMoveLoop();
   uint32_t GetCurrentMoveLoopChangeId();
   ServerWindow* GetCurrentMoveLoopWindow();
@@ -386,6 +388,8 @@ class WindowServer : public ServerWindowDelegate,
 
   // GpuHostDelegate:
   void OnGpuServiceInitialized() override;
+
+  PlatformDisplay* GetPlatformDisplayOfVisibleRoot(const ServerWindow* window);
 
   WindowServerDelegate* delegate_;
 

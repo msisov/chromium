@@ -80,4 +80,10 @@ PlatformImeController* HeadlessWindow::GetPlatformImeController() {
 
 void HeadlessWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {}
 
+bool HeadlessWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void HeadlessWindow::StopMoveLoop() {}
+
 }  // namespace ui
