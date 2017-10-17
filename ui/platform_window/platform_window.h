@@ -71,6 +71,11 @@ class PlatformWindow {
   // the |hittest|.
   virtual void StartWindowMoveOrResize(int hittest,
                                        gfx::Point pointer_location) = 0;
+
+  // Asks to window move client to start move loop.
+  virtual bool RunMoveLoop(const gfx::Vector2d& drag_offset) = 0;
+
+  virtual void StopMoveLoop() = 0;
 };
 
 }  // namespace ui

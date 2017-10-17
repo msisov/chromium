@@ -8,6 +8,7 @@
 #include "base/macros.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/events/platform/x11/x11_event_source_libevent.h"
+#include "ui/platform_window/x11/window_move_loop_client.h"
 #include "ui/platform_window/x11/x11_window_base.h"
 
 namespace ui {
@@ -30,8 +31,11 @@ class X11WindowOzone : public X11WindowBase,
   // PlatformWindow:
   void PrepareForShutdown() override;
   void SetCapture() override;
+
   void ReleaseCapture() override;
   void SetCursor(PlatformCursor cursor) override;
+  bool RunMoveLoop(const gfx::Vector2d& drag_offset) override;
+  void StopMoveLoop() override;
 
   // XEventDispatcher:
   void CheckCanDispatchNextPlatformEvent(XEvent* xev) override;
@@ -45,6 +49,11 @@ class X11WindowOzone : public X11WindowBase,
   uint32_t DispatchEvent(const PlatformEvent& event) override;
 
   X11WindowManagerOzone* window_manager_;
+
+// TODO(msisov, tonikitoo): Add a dummy implementation for chromeos.
+#if !defined(OS_CHROMEOS)
+  std::unique_ptr<WindowMoveLoopClient> move_loop_client_;
+#endif
 
   // Tells if this dispatcher can process next translated event based on a
   // previous check in ::CheckCanDispatchNextPlatformEvent based on a XID

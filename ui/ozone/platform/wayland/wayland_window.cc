@@ -390,6 +390,12 @@ void WaylandWindow::StartWindowMoveOrResize(int hittest,
     xdg_surface_->SurfaceResize(connection_, hittest);
 }
 
+bool WaylandWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return true;
+}
+
+void WaylandWindow::StopMoveLoop() {}
+
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
   // This window is a nested popup window, all the events must be forwarded
   // to the main popup window.

@@ -77,4 +77,10 @@ PlatformImeController* StubWindow::GetPlatformImeController() {
 void StubWindow::StartWindowMoveOrResize(int hittest,
                                          gfx::Point pointer_location) {}
 
+bool StubWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
+  return false;
+}
+
+void StubWindow::StopMoveLoop() {}
+
 }  // namespace ui
