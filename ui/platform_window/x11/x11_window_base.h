@@ -50,6 +50,8 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   PlatformImeController* GetPlatformImeController() override;
   void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
   gfx::Rect GetRestoredBoundsInPixels() const override;
+  bool RunMoveLoop(const gfx::Vector2d& drag_offset) override;
+  void StopMoveLoop() override;
 
  protected:
   // Creates new underlying XWindow. Does not map XWindow.
@@ -58,6 +60,7 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   void Destroy();
 
   PlatformWindowDelegate* delegate() { return delegate_; }
+
   XDisplay* xdisplay() { return xdisplay_; }
   XID xwindow() const { return xwindow_; }
 
