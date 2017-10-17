@@ -34,7 +34,18 @@ jumbo_component("x11") {
     "x11_window_export.h",
   ]
 
-  if (use_x11) {
+  if (ozone_platform_x11) {
+    sources += [
+      "whole_screen_move_loop.cc",
+      "whole_screen_move_loop.h",
+      "window_move_loop_client.cc",
+      "window_move_loop_client.h",
+    ]
+    deps += [
+      "//ui/base",
+      "//ui/base/x",
+    ]
+  } else if (use_x11) {
     sources += [
       "x11_window.cc",
       "x11_window.h",
