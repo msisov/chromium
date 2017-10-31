@@ -265,7 +265,9 @@ void WindowTreeHostPlatform::GetWindowType(
     case client::WindowType::WINDOW_TYPE_POPUP:
       *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_POPUP;
       break;
-    // TODO(msisov, jkim): add other window type cases.
+    case client::WindowType::WINDOW_TYPE_TOOLTIP:
+      *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_TOOLTIP;
+      break;
     default:
       *window_type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
       break;
