@@ -82,6 +82,16 @@ void (*ObjectTraits<wl_shm_pool>::deleter)(wl_shm_pool*) = &wl_shm_pool_destroy;
 const wl_interface* ObjectTraits<wl_surface>::interface = &wl_surface_interface;
 void (*ObjectTraits<wl_surface>::deleter)(wl_surface*) = &wl_surface_destroy;
 
+const wl_interface* ObjectTraits<wl_subcompositor>::interface =
+    &wl_subcompositor_interface;
+void (*ObjectTraits<wl_subcompositor>::deleter)(wl_subcompositor*) =
+    &wl_subcompositor_destroy;
+
+const wl_interface* ObjectTraits<wl_subsurface>::interface =
+    &wl_subsurface_interface;
+void (*ObjectTraits<wl_subsurface>::deleter)(wl_subsurface*) =
+    &wl_subsurface_destroy;
+
 const wl_interface* ObjectTraits<xdg_shell>::interface = &xdg_shell_interface;
 void (*ObjectTraits<xdg_shell>::deleter)(xdg_shell*) = &xdg_shell_destroy;
 

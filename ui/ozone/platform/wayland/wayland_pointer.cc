@@ -63,6 +63,7 @@ void WaylandPointer::Leave(void* data,
   MouseEvent event(ET_MOUSE_EXITED, gfx::Point(), gfx::Point(),
                    EventTimeForNow(), pointer->flags_, 0);
   pointer->callback_.Run(&event);
+
   if (surface)
     WaylandWindow::FromSurface(surface)->set_pointer_focus(false);
 }
