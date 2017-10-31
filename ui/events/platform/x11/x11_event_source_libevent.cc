@@ -106,7 +106,6 @@ std::unique_ptr<ui::Event> TranslateXEventToEvent(const XEvent& xev) {
                                           EventLocationFromXEvent(xev),
                                           EventSystemLocationFromXEvent(xev),
                                           EventTimeFromXEvent(xev), flags, 0);
-
     case KeyPress:
     case KeyRelease:
       return std::make_unique<KeyEvent>(EventTypeFromXEvent(xev),
