@@ -11,6 +11,7 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkRect.h"
+#include "ui/aura/client/aura_constants.h"
 #include "ui/aura/mus/window_tree_host_mus.h"
 #include "ui/aura/window.h"
 #include "ui/aura_extra/image_window_delegate.h"
@@ -83,6 +84,7 @@ void WindowTreeData::Init(
   bitmap_window->Show();
   bitmap_window->SetName("Bitmap");
   root_window->AddChild(bitmap_window);
+  root_window->SetProperty(aura::client::kShowStateKey, ui::SHOW_STATE_DEFAULT);
 
   // Draw initial frame and start the timer to regularly draw frames.
   DrawFrame();
