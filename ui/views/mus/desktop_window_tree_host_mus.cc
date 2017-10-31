@@ -345,7 +345,10 @@ void DesktopWindowTreeHostMus::Init(aura::Window* content_window,
   content_window->SetTransparent(transparent);
   window()->SetTransparent(transparent);
 
+#if !defined(OS_LINUX) || !defined(USE_OZONE) || defined(OS_CHROMEOS)
+  // Do not set "show-state" in Ozone/Linux at the time widget is being created.
   window()->SetProperty(aura::client::kShowStateKey, params.show_state);
+#endif
 
   if (!params.bounds.IsEmpty())
     SetBoundsInDIP(params.bounds);
@@ -486,8 +489,13 @@ aura::WindowTreeHost* DesktopWindowTreeHostMus::AsWindowTreeHost() {
 }
 
 void DesktopWindowTreeHostMus::ShowWindowWithState(ui::WindowShowState state) {
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  // On Ozone/Linux we need to notify the server of any show-state change.
+  window()->SetProperty(aura::client::kShowStateKey, state);
+#else
   if (state == ui::SHOW_STATE_MAXIMIZED || state == ui::SHOW_STATE_FULLSCREEN)
     window()->SetProperty(aura::client::kShowStateKey, state);
+#endif
   window()->Show();
   if (compositor())
     compositor()->SetVisible(true);
