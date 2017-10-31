@@ -15,6 +15,7 @@ enum PlatformWindowType {
   PLATFORM_WINDOW_TYPE_WINDOW,
   PLATFORM_WINDOW_TYPE_POPUP,
   PLATFORM_WINDOW_TYPE_MENU,
+  PLATFORM_WINDOW_TYPE_TOOLTIP,
 };
 
 // Initial properties which are passed to PlatformWindow to be initialized

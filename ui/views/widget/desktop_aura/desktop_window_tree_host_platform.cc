@@ -36,6 +36,9 @@ void ConvertWidgetInitParamsToInitProperties(
     case Widget::InitParams::TYPE_MENU:
       type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_MENU;
       break;
+    case Widget::InitParams::TYPE_TOOLTIP:
+      type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_TOOLTIP;
+      break;
     case Widget::InitParams::TYPE_WINDOW:
     default:
       type = ui::PlatformWindowType::PLATFORM_WINDOW_TYPE_WINDOW;
