@@ -122,6 +122,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void CreateXdgPopup();
   // Creates a surface window, which is visible as a main window.
   void CreateXdgSurface();
+  // Creates a subsurface window, to host tooltip's content.
+  void CreateTooltipSubSurface();
 
   // Gets a parent window for this window.
   WaylandWindow* GetParentWindow();
@@ -135,6 +137,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   std::unique_ptr<XDGShellObjectFactory> xdg_shell_objects_factory_;
 
   wl::Object<wl_surface> surface_;
+  wl::Object<wl_subsurface> tooltip_subsurface_;
 
   // Wrappers around xdg v5 and xdg v6 objects. WaylandWindow doesn't
   // know anything about the version.
@@ -157,6 +160,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   ui::PlatformWindowState state_;
 
   bool is_active_ = false;
+
+  bool is_tooltip_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandWindow);
 };
