@@ -277,7 +277,8 @@ if (!is_android && !is_mac) {
           ldflags += [ "-Wl,--long-plt" ]
         }
 
-        if (is_desktop_linux && !is_component_build && !using_sanitizer) {
+        if (is_desktop_linux && !is_component_build && !using_sanitizer &&
+            !use_ozone) {
           version_script = "//build/linux/chrome.map"
           inputs = [
             version_script,
