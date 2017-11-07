@@ -111,7 +111,10 @@ void Display::InitWindowManagerDisplayRoots() {
 }
 
 int64_t Display::GetId() const {
-  // TODO(tonikitoo): Implement a different ID for external window mode.
+  if (window_server_->IsInExternalWindowMode()) {
+    DCHECK_NE(external_window_id_, -1);
+    return external_window_id_;
+  }
   return display_.id();
 }
 
@@ -326,6 +329,11 @@ void Display::CreateRootWindow(const gfx::Rect& bounds) {
   root_->SetVisible(true);
   focus_controller_ = std::make_unique<FocusController>(root_.get());
   focus_controller_->AddObserver(this);
+
+  if (window_server_->IsInExternalWindowMode()) {
+    DCHECK_EQ(external_window_id_, -1);
+    external_window_id_ = (id.client_id << 16) | id.window_id;
+  }
 }
 
 void Display::UpdateCursorConfig() {
