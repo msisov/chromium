@@ -70,15 +70,15 @@ class Display : public PlatformDisplayDelegate,
   // Initialize the display's root window to host window manager content.
   void InitWindowManagerDisplayRoots();
 
-  // Returns the ID for this display. In internal mode this is the
-  // display::Display ID. In external mode this hasn't been defined yet.
-  int64_t GetId() const;
-
   // Sets the display::Display corresponding to this ws::Display.
   void SetDisplay(const display::Display& display);
 
   // PlatformDisplayDelegate:
   const display::Display& GetDisplay() override;
+
+  // Returns the ID for this display. In internal mode this is the
+  // display::Display ID. In external mode this hasn't been defined yet.
+  int64_t GetId() const override;
 
   const display::ViewportMetrics& GetViewportMetrics() const;
 
@@ -213,8 +213,12 @@ class Display : public PlatformDisplayDelegate,
   std::unique_ptr<FocusController> focus_controller_;
 
   // In internal window mode this contains information about the display. In
-  // external window mode this will be invalid.
+  // external window mode this will be invalid. See below.
   display::Display display_;
+
+  // Unique identifier of this ws::Display instance. This is returned
+  // from ::GetId in external window mode.
+  int64_t external_window_id_ = -1;
 
   viz::ParentLocalSurfaceIdAllocator allocator_;
 
