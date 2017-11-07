@@ -214,8 +214,12 @@ class Display : public PlatformDisplayDelegate,
   std::unique_ptr<FocusController> focus_controller_;
 
   // In internal window mode this contains information about the display. In
-  // external window mode this will be invalid.
+  // external window mode this will be invalid. See below.
   display::Display display_;
+
+  // Unique identifier of this ws::Display instance. This is returned
+  // from ::GetId in external window mode.
+  int64_t external_window_id_ = -1;
 
   viz::ParentLocalSurfaceIdAllocator allocator_;
 
