@@ -53,6 +53,7 @@ class TestPlatformDisplayDelegate : public PlatformDisplayDelegate {
 
   // PlatformDisplayDelegate:
   const display::Display& GetDisplay() override { return stub_display_; }
+  int64_t GetId() const override { return stub_display_.id(); }
   ServerWindow* GetRootWindow() override { return nullptr; }
   EventSink* GetEventSink() override { return sink_; }
   void OnAcceleratedWidgetAvailable() override {}

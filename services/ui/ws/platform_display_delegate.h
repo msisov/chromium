@@ -25,6 +25,9 @@ class PlatformDisplayDelegate {
   // Returns a display::Display for this display.
   virtual const display::Display& GetDisplay() = 0;
 
+  // Returns a display::Display for this display.
+  virtual int64_t GetId() const = 0;
+
   // Returns the root window of this display.
   virtual ServerWindow* GetRootWindow() = 0;
 
