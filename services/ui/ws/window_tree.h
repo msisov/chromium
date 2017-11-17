@@ -479,11 +479,16 @@ class WindowTree : public mojom::WindowTree,
   bool ProcessSetBlockingContainers(std::vector<mojom::BlockingContainersPtr>
                                         transport_all_blocking_containers);
 
+ public:
+  // TODO(tonikitoo,msisov): Make these methods public in order to use them
+  // from ExternalWindowTreeHostFactory.
+  //
   // Returns the ClientWindowId from a transport id. Uses id_ as the
   // ClientWindowId::client_id part if it was invalid. This function
   // do a straight mapping, there may not be a window with the returned id.
   ClientWindowId MakeClientWindowId(Id transport_window_id) const;
 
+ private:
   // Returns the WindowTreeClient previously scheduled for an embed with the
   // given |token| from ScheduleEmbed(). If this client is the result of an
   // Embed() and ScheduleEmbed() was not called on this client, then this

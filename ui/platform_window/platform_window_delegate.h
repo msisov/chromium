@@ -14,6 +14,7 @@ class Rect;
 namespace ui {
 
 class Event;
+class PlatformWindow;
 
 enum PlatformWindowState {
   PLATFORM_WINDOW_STATE_UNKNOWN,
@@ -61,6 +62,9 @@ class PlatformWindowDelegate {
   // we can have a default implementation here and not need to add stubs to
   // all subclasses. To be discussed when upstraming.
   virtual void GetWindowType(PlatformWindowType* window_type) {}
+
+  virtual void GetParentWindowAcceleratedWidget(
+      gfx::AcceleratedWidget* widget) {}
 };
 
 }  // namespace ui
