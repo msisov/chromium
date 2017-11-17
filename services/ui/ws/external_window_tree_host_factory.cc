@@ -9,6 +9,8 @@
 #include "services/ui/public/cpp/property_type_converters.h"
 #include "services/ui/ws/display.h"
 #include "services/ui/ws/display_binding.h"
+#include "services/ui/ws/display_manager.h"
+#include "services/ui/ws/window_manager_display_root.h"
 #include "services/ui/ws/window_server.h"
 #include "services/ui/ws/window_tree.h"
 
@@ -57,7 +59,31 @@ void ExternalWindowTreeHostFactory::CreatePlatformWindow(
         mojo::ConvertTo<int32_t>(iter->second));
   }
 
+  iter =
+      properties.find(ui::mojom::WindowManager::kParentWindowId_InitProperty);
+  metrics.parent_window_widget_id = gfx::kNullAcceleratedWidget;
+  if (iter != properties.end()) {
+    ClientWindowId client_window_id(
+        tree->MakeClientWindowId(mojo::ConvertTo<int32_t>(iter->second)));
+    ServerWindow* server_window = tree->GetWindowByClientId(client_window_id);
+    DCHECK(server_window);
+    PlatformDisplay* platform_display = GetPlatformDisplay(server_window);
+    metrics.parent_window_widget_id = platform_display->GetAcceleratedWidget();
+    DCHECK_NE(gfx::kNullAcceleratedWidget, metrics.parent_window_widget_id);
+  }
+
   ws_display->Init(metrics, std::move(display_binding));
+}
+
+PlatformDisplay* ExternalWindowTreeHostFactory::GetPlatformDisplay(
+    ServerWindow* server_window) {
+  WindowManagerDisplayRoot* display_root =
+      window_server_->display_manager()->GetWindowManagerDisplayRoot(
+          server_window);
+  PlatformDisplay* platform_display =
+      display_root->display()->platform_display();
+  DCHECK(platform_display);
+  return platform_display;
 }
 
 }  // namespace ws
