@@ -9,6 +9,7 @@
 
 #include "services/ui/public/interfaces/window_manager_constants.mojom.h"
 #include "ui/gfx/geometry/rect.h"
+#include "ui/gfx/native_widget_types.h"
 
 namespace display {
 
@@ -23,6 +24,10 @@ struct ViewportMetrics {
   // and for upstreaming, we should likely consider renaming ViewportMetrics
   // to DisplayProperties or so.
   ui::mojom::WindowType window_type = ui::mojom::WindowType::WINDOW;
+
+  // An id of a suggested parent window. Used by ozone platforms (currently by
+  // Wayland) to get a parent window and form parent-child relationship.
+  gfx::AcceleratedWidget parent_window_widget_id = gfx::kNullAcceleratedWidget;
 };
 
 inline bool operator==(const ViewportMetrics& lhs, const ViewportMetrics& rhs) {

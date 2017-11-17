@@ -118,6 +118,9 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   // Tells if |this| has capture.
   bool HasCapture();
 
+  // Gets a parent window for this window.
+  WaylandWindow* GetParentWindow();
+
   PlatformWindowDelegate* delegate_;
   WaylandConnection* connection_;
   WaylandWindow* parent_window_ = nullptr;

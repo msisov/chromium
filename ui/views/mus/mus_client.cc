@@ -19,6 +19,7 @@
 #include "ui/aura/mus/capture_synchronizer.h"
 #include "ui/aura/mus/mus_context_factory.h"
 #include "ui/aura/mus/property_converter.h"
+#include "ui/aura/mus/window_port_mus.h"
 #include "ui/aura/mus/window_tree_client.h"
 #include "ui/aura/mus/window_tree_host_mus.h"
 #include "ui/aura/mus/window_tree_host_mus_init_params.h"
@@ -213,6 +214,15 @@ MusClient::ConfigurePropertiesFromParams(
 
   properties[WindowManager::kRemoveStandardFrame_InitProperty] =
       mojo::ConvertTo<TransportType>(init_params.remove_standard_frame);
+
+  if (init_params.parent) {
+    aura::WindowPortMus* window_port_parent =
+        aura::WindowPortMus::Get(init_params.parent);
+    DCHECK(window_port_parent);
+    int window_id = window_port_parent->server_id();
+    properties[WindowManager::kParentWindowId_InitProperty] =
+        mojo::ConvertTo<std::vector<uint8_t>>(window_id);
+  }
 
   if (!Widget::RequiresNonClientView(init_params.type))
     return properties;

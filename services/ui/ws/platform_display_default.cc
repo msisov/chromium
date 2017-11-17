@@ -381,5 +381,13 @@ void PlatformDisplayDefault::OnAcceleratedWidgetDestroyed() {
 
 void PlatformDisplayDefault::OnActivationChanged(bool active) {}
 
+void PlatformDisplayDefault::GetParentWindowAcceleratedWidget(
+    gfx::AcceleratedWidget* widget) {
+  if (metrics_.parent_window_widget_id == gfx::kNullAcceleratedWidget)
+    return;
+
+  *widget = metrics_.parent_window_widget_id;
+}
+
 }  // namespace ws
 }  // namespace ui
