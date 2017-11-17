@@ -14,6 +14,8 @@
 namespace ui {
 namespace ws {
 
+class PlatformDisplay;
+class ServerWindow;
 class WindowServer;
 
 class ExternalWindowTreeHostFactory
@@ -32,6 +34,8 @@ class ExternalWindowTreeHostFactory
       mojom::WindowTreeHostRequest tree_host_request,
       Id transport_window_id,
       const TransportProperties& transport_properties) override;
+
+  PlatformDisplay* GetPlatformDisplay(ServerWindow* server_window);
 
   WindowServer* window_server_;
   mojo::BindingSet<mojom::ExternalWindowTreeHostFactory> bindings_;

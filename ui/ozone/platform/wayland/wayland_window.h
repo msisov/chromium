@@ -121,6 +121,9 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   // Creates a surface window, which is visible as a main window.
   void CreateXdgSurface();
 
+  // Gets a parent window for this window.
+  WaylandWindow* GetParentWindow();
+
   PlatformWindowDelegate* delegate_;
   WaylandConnection* connection_;
   WaylandWindow* parent_window_ = nullptr;
