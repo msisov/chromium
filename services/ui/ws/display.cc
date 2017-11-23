@@ -365,8 +365,16 @@ void Display::OnAcceleratedWidgetAvailable() {
 
 void Display::OnNativeCaptureLost() {
   WindowManagerDisplayRoot* display_root = GetActiveWindowManagerDisplayRoot();
-  if (display_root)
-    display_root->window_manager_state()->SetCapture(nullptr, kInvalidClientId);
+  if (display_root) {
+    WindowManagerState* wms = display_root->window_manager_state();
+    wms->SetCapture(nullptr, kInvalidClientId);
+    // Reset event dispatcher's leftover states in case of lost capture.
+    // This is especially useful when another native window is created, and
+    // the previous window's event dispatcher is left with an outdated state
+    // leading to missed events.
+    if (window_server_->IsInExternalWindowMode())
+      wms->event_dispatcher()->Reset();
+  }
 }
 
 void Display::OnBoundsChanged(const gfx::Rect& new_bounds) {
