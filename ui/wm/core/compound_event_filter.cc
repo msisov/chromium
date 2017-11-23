@@ -97,6 +97,18 @@ void CompoundEventFilter::UpdateCursor(aura::Window* target,
   aura::client::CursorClient* cursor_client =
       aura::client::GetCursorClient(root_window);
   if (cursor_client) {
+    // In some configurations, notably Linux/Ozone, cursor data are only
+    // set in Ozone side. This makes the check in CursorManager::SetCursor
+    // unreliable and fail in some circumstances where it passes on regular
+    // Linux/X11 builds.
+    // To make sure, cursor is properly set when it reenters a browser window
+    // through the same end, we reset it when it exits, otherwise the check in
+    // CursorManager::SetCursor will comparent Cursors of the same type.
+    if (event->type() == ui::ET_MOUSE_EXITED) {
+      cursor_client->SetCursor(ui::CursorType::kPointer);
+      return;
+    }
+
     gfx::NativeCursor cursor = target->GetCursor(event->location());
     if ((event->flags() & ui::EF_IS_NON_CLIENT)) {
       if (target->delegate()) {
@@ -196,11 +208,14 @@ void CompoundEventFilter::OnMouseEvent(ui::MouseEvent* event) {
   // on Desktop for testing, or a bug in pointer barrier).
   if (!(event->flags() & ui::EF_FROM_TOUCH) &&
        (event->type() == ui::ET_MOUSE_ENTERED ||
+        event->type() == ui::ET_MOUSE_EXITED ||
         event->type() == ui::ET_MOUSE_MOVED ||
         event->type() == ui::ET_MOUSE_PRESSED ||
         event->type() == ui::ET_MOUSEWHEEL)) {
-    SetMouseEventsEnableStateOnEvent(window, event, true);
-    SetCursorVisibilityOnEvent(window, event, true);
+    if (event->type() != ui::ET_MOUSE_EXITED) {
+      SetMouseEventsEnableStateOnEvent(window, event, true);
+      SetCursorVisibilityOnEvent(window, event, true);
+    }
     UpdateCursor(window, event);
   }
 
