@@ -232,9 +232,9 @@ bool SearchTable(const CursorData* table,
   for (size_t i = 0; i < table_length; ++i) {
     if (table[i].id == id) {
       *resource_id = table[i].resource_id;
-      *point = scale_factor == 1.0f || !resource_2x_available ?
-               gfx::Point(table[i].hot_1x.x, table[i].hot_1x.y) :
-               gfx::Point(table[i].hot_2x.x, table[i].hot_2x.y);
+      *point = scale_factor == 2.0f && resource_2x_available ?
+               gfx::Point(table[i].hot_2x.x, table[i].hot_2x.y) :
+               gfx::Point(table[i].hot_1x.x, table[i].hot_1x.y);
       return true;
     }
   }
