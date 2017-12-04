@@ -103,7 +103,7 @@ class X11WindowOzoneTest : public testing::Test {
 // case is when XEvent is sent for a certain target and processed by it.
 // Another case is when a window sets an explicit capture and must intercept and
 // process an event even though it has been sent to another window.
-TEST_F(X11WindowOzoneTest, SendPlatformEventToRightTarget) {
+TEST_F(X11WindowOzoneTest, DISABLED_SendPlatformEventToRightTarget) {
   MockPlatformWindowDelegate delegate;
   gfx::AcceleratedWidget widget;
   gfx::Rect bounds(30, 80, 800, 600);
