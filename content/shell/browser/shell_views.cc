@@ -320,7 +320,7 @@ class ShellWindowDelegateView : public views::WidgetDelegateView,
 wm::WMTestHelper* Shell::wm_test_helper_ = nullptr;
 // static
 display::Screen* Shell::test_screen_ = nullptr;
-#elif defined(USE_AURA)
+#elif defined(USE_AURA) && !defined(USE_OZONE)
 // static
 wm::WMState* Shell::wm_state_ = nullptr;
 #endif
@@ -345,14 +345,15 @@ void Shell::PlatformInitialize(const gfx::Size& default_window_size) {
       ServiceManagerConnection::GetForProcess()->GetConnector(),
       ui_context_factory);
 #else
-#if defined(USE_AURA)
+#if defined(USE_AURA) && !defined(USE_OZONE)
   wm_state_ = new wm::WMState;
 #endif
 #if !defined(USE_OZONE)
   display::Screen::SetScreenInstance(views::CreateDesktopScreen());
 #endif
 #endif
-  views_delegate_ = new views::DesktopTestViewsDelegate();
+  if (!views::ViewsDelegate::GetInstance())
+    views_delegate_ = new views::DesktopTestViewsDelegate();
 }
 
 void Shell::PlatformExit() {
@@ -363,11 +364,12 @@ void Shell::PlatformExit() {
   delete test_screen_;
   test_screen_ = nullptr;
 #endif
-  delete views_delegate_;
+  if (views_delegate_)
+    delete views_delegate_;
   views_delegate_ = nullptr;
   delete platform_;
   platform_ = nullptr;
-#if defined(USE_AURA) && !defined(OS_CHROMEOS)
+#if defined(USE_AURA) && !defined(OS_CHROMEOS) && !defined(USE_OZONE)
   delete wm_state_;
   wm_state_ = nullptr;
 #endif
