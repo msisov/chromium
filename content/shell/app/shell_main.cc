@@ -5,6 +5,7 @@
 #include "build/build_config.h"
 #include "content/public/app/content_main.h"
 #include "content/shell/app/shell_main_delegate.h"
+#include "ui/base/ui_features.h"
 
 #if defined(OS_WIN)
 #include "content/public/app/sandbox_helper_win.h"
@@ -13,6 +14,11 @@
 
 #if defined(OS_MACOSX)
 #include "content/shell/app/shell_content_main.h"
+#endif
+
+#if BUILDFLAG(ENABLE_MUS)
+#include "base/command_line.h"
+#include "ui/base/ui_base_switches.h"
 #endif
 
 #if defined(OS_WIN)

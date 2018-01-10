@@ -18,6 +18,25 @@ namespace net {
 class NetLog;
 }
 
+namespace views {
+class ViewsDelegate;
+}
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+#if defined(USE_AURA)
+namespace ui {
+class InputDeviceClient;
+}
+
+namespace views {
+class MusClient;
+}
+namespace wm {
+class WMState;
+}
+#endif
+#endif
+
 namespace content {
 
 class ShellBrowserMainParts : public BrowserMainParts {
@@ -34,6 +53,9 @@ class ShellBrowserMainParts : public BrowserMainParts {
   bool MainMessageLoopRun(int* result_code) override;
   void PostMainMessageLoopRun() override;
   void PostDestroyThreads() override;
+  void ToolkitInitialized() override;
+  void ServiceManagerConnectionStarted(
+      ServiceManagerConnection* connection) override;
 
   ShellBrowserContext* browser_context() { return browser_context_.get(); }
   ShellBrowserContext* off_the_record_browser_context() {
@@ -67,6 +89,23 @@ class ShellBrowserMainParts : public BrowserMainParts {
   // Statistical testing infrastructure for the entire browser. nullptr until
   // |SetupFieldTrials()| is called.
   std::unique_ptr<base::FieldTrialList> field_trial_list_;
+
+#if !defined(OS_CHROMEOS)
+  std::unique_ptr<views::ViewsDelegate> views_delegate_;
+#endif
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+#if defined(USE_AURA)
+  // Used in Ozone/Linux builds.
+  std::unique_ptr<wm::WMState> wm_state_;
+
+  // Used in Ozone/Linux builds.
+  std::unique_ptr<views::MusClient> mus_client_;
+
+  // Subscribes to updates about input-devices.
+  std::unique_ptr<ui::InputDeviceClient> input_device_client_;
+#endif
+#endif
 
   DISALLOW_COPY_AND_ASSIGN(ShellBrowserMainParts);
 };
