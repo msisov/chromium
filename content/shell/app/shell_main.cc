@@ -5,6 +5,7 @@
 #include "build/build_config.h"
 #include "content/public/app/content_main.h"
 #include "content/shell/app/shell_main_delegate.h"
+#include "ui/base/ui_features.h"
 
 #if defined(OS_WIN)
 #include "content/public/app/sandbox_helper_win.h"
@@ -13,6 +14,11 @@
 
 #if defined(OS_MACOSX)
 #include "content/shell/app/shell_content_main.h"
+#endif
+
+#if BUILDFLAG(ENABLE_MUS)
+#include "base/command_line.h"
+#include "ui/base/ui_base_switches.cc"
 #endif
 
 #if defined(OS_WIN)
@@ -45,6 +51,18 @@ int main(int argc, const char** argv) {
   content::ContentMainParams params(&delegate);
   params.argc = argc;
   params.argv = argv;
+
+#if BUILDFLAG(ENABLE_MUS)
+  base::CommandLine::Init(params.argc, params.argv);
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kMus)) {
+    // TODO(msisov, tonikitoo): remove this once viz is decoupled from
+    // Linux/Mus.
+    base::CommandLine::ForCurrentProcess()->AppendSwitch(
+        switches::kMusHostingViz);
+    params.env_mode = aura::Env::Mode::MUS;
+  }
+#endif
+
   return content::ContentMain(params);
 #endif  // OS_MACOSX
 }

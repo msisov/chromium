@@ -34,6 +34,8 @@
 #include "ui/base/resource/resource_bundle.h"
 #include "url/gurl.h"
 
+#include "ui/views/test/desktop_test_views_delegate.h"
+
 #if defined(OS_ANDROID)
 #include "base/message_loop/message_loop.h"
 #include "components/crash/content/browser/child_process_crash_observer_android.h"
@@ -56,6 +58,18 @@
 #include "device/bluetooth/dbus/bluez_dbus_manager.h"
 #elif defined(OS_LINUX)
 #include "device/bluetooth/dbus/dbus_bluez_manager_wrapper_linux.h"
+#endif
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+#if defined(USE_AURA)
+#include "content/public/common/service_manager_connection.h"
+#include "services/service_manager/public/cpp/connector.h"
+#include "services/ui/public/cpp/input_devices/input_device_client.h"
+#include "services/ui/public/interfaces/constants.mojom.h"
+#include "services/ui/public/interfaces/input_devices/input_device_server.mojom.h"
+#include "ui/views/mus/mus_client.h"
+#include "ui/wm/core/wm_state.h"
+#endif
 #endif
 
 namespace content {
@@ -229,6 +243,42 @@ void ShellBrowserMainParts::PostDestroyThreads() {
 #elif defined(OS_LINUX)
   device::BluetoothAdapterFactory::Shutdown();
   bluez::DBusBluezManagerWrapperLinux::Shutdown();
+#endif
+}
+
+void ShellBrowserMainParts::ToolkitInitialized() {
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  // The delegate needs to be set before any UI is created so that windows
+  // display the correct icon.
+  if (!views::ViewsDelegate::GetInstance())
+    views_delegate_ = base::MakeUnique<views::DesktopTestViewsDelegate>();
+
+#if defined(USE_AURA)
+  wm_state_.reset(new wm::WMState);
+#endif
+
+#endif
+}
+
+void ShellBrowserMainParts::ServiceManagerConnectionStarted(
+    ServiceManagerConnection* connection) {
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+#if defined(USE_AURA)
+  if (aura::Env::GetInstance()->mode() == aura::Env::Mode::LOCAL)
+    return;
+
+  input_device_client_ = base::MakeUnique<ui::InputDeviceClient>();
+  ui::mojom::InputDeviceServerPtr server;
+  connection->GetConnector()->BindInterface(ui::mojom::kServiceName, &server);
+  input_device_client_->Connect(std::move(server));
+
+  const bool create_wm_state = false;
+  mus_client_ = base::MakeUnique<views::MusClient>(
+      connection->GetConnector(), service_manager::Identity(),
+      content::BrowserThread::GetTaskRunnerForThread(
+          content::BrowserThread::IO),
+      create_wm_state);
+#endif  // USE_AURA
 #endif
 }
 
