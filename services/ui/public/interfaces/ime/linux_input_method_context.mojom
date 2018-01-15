@@ -1,0 +1,51 @@
+// Copyright 2018 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module ui.mojom;
+
+import "mojo/public/mojom/base/string16.mojom";
+import "ui/events/mojo/event.mojom";
+import "ui/gfx/geometry/mojo/geometry.mojom";
+import "services/ui/public/interfaces/ime/ime.mojom";
+
+// An interface of input method context for input method frameworks on
+// GNU/Linux
+interface LinuxInputMethodContext {
+  Initialize(LinuxInputMethodContextDelegate delegate, bool is_simple);
+
+  // Dispatches the key event to an underlying IME.  Returns true if the key
+  // event is handled, otherwise false. A client must set the text input type
+  // before dispatching a key event.
+  DispatchKeyEvent(ui.mojom.Event key_event) => (bool handled);
+
+  // Tells the system IME for the cursor rect which is relative to the
+  // client window rect.
+  SetCursorLocation(gfx.mojom.Rect rect);
+
+  // Resets the context.  A client needs to call OnTextInputTypeChanged() again
+  // before calling DispatchKeyEvent().
+  Reset();
+
+  // Focuses the context.
+  Focus();
+
+  // Blurs the context.
+  Blur();
+};
+
+// An interface of callback functions called from LinuxInputMethodContext.
+interface LinuxInputMethodContextDelegate {
+  // Commits the |text| to the text input client.
+  OnCommit(mojo_base.mojom.String16 text);
+
+  // Sets the composition text to the text input client.
+  OnPreeditChanged(ui.mojom.CompositionText composition_text);
+
+  // Cleans up a composition session and makes sure that the composition text is
+  // cleared.
+  OnPreeditEnd();
+
+  // Prepares things for a new composition session.
+  OnPreeditStart();
+};
