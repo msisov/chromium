@@ -15,11 +15,35 @@ source_set("text_input_types") {
   ]
 }
 
-jumbo_component("ime") {
-  output_name = "ui_base_ime"
+jumbo_component("ime_types") {
+  output_name = "ui_base_ime_types"
   sources = [
     "candidate_window.cc",
     "candidate_window.h",
+    "composition_text.cc",
+    "composition_text.h",
+    "ime_text_span.cc",
+    "ime_text_span.h",
+    "infolist_entry.cc",
+    "infolist_entry.h",
+    "ui_base_ime_types_export.h",
+  ]
+
+  defines = [ "UI_BASE_IME_TYPES_IMPLEMENTATION" ]
+
+  deps = [
+    "//base",
+  ]
+
+  public_deps = [
+    ":text_input_types",
+    "//skia",
+  ]
+}
+
+jumbo_component("ime") {
+  output_name = "ui_base_ime"
+  sources = [
     "chromeos/character_composer.cc",
     "chromeos/character_composer.h",
     "chromeos/component_extension_ime_manager.cc",
@@ -50,16 +74,10 @@ jumbo_component("ime") {
     "chromeos/mock_ime_candidate_window_handler.h",
     "chromeos/mock_ime_engine_handler.cc",
     "chromeos/mock_ime_engine_handler.h",
-    "composition_text.cc",
-    "composition_text.h",
     "ime_bridge.cc",
     "ime_bridge.h",
     "ime_engine_handler_interface.h",
     "ime_input_context_handler_interface.h",
-    "ime_text_span.cc",
-    "ime_text_span.h",
-    "infolist_entry.cc",
-    "infolist_entry.h",
     "input_method.h",
     "input_method_auralinux.cc",
     "input_method_auralinux.h",
@@ -127,8 +145,7 @@ jumbo_component("ime") {
   ]
 
   public_deps = [
-    ":text_input_types",
-    "//skia",
+    ":ime_types",
   ]
 
   if (!use_aura || is_chromeos || (!is_linux && !use_ozone)) {

@@ -16,6 +16,7 @@
           "ui::mojom::Gpu",
           "ui::mojom::IMEDriver",
           "ui::mojom::InputDeviceServer",
+          "ui::mojom::LinuxInputMethodContext",
           "ui::mojom::WindowTreeFactory"
         ],
         "arc_manager" : [
