@@ -12,6 +12,7 @@ mojom("ime") {
 
   sources = [
     "ime.mojom",
+    "linux_input_method_context.mojom",
   ]
 
   public_deps = [
