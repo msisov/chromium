@@ -5,6 +5,7 @@
 #include "ui/ozone/platform/wayland/ozone_platform_wayland.h"
 
 #include "base/memory/ptr_util.h"
+#include "mojo/public/cpp/bindings/strong_binding.h"
 #include "ui/base/cursor/ozone/bitmap_cursor_factory_ozone.h"
 #include "ui/base/ui_features.h"
 #include "ui/display/manager/fake_display_delegate.h"
@@ -12,6 +13,7 @@
 #include "ui/events/system_input_injector.h"
 #include "ui/ozone/common/stub_overlay_manager.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
+#include "ui/ozone/platform/wayland/wayland_input_method_context.h"
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
@@ -121,6 +123,22 @@ class OzonePlatformWayland : public OzonePlatform {
       // gracefully fail.
       surface_factory_.reset(new WaylandSurfaceFactory(nullptr));
     }
+  }
+
+  void AddInterfaces(
+      service_manager::BinderRegistryWithArgs<
+          const service_manager::BindSourceInfo&>* registry) override {
+    registry->AddInterface<ui::mojom::LinuxInputMethodContext>(
+        base::Bind(&OzonePlatformWayland::CreateInputMethodContext,
+                   base::Unretained(this)));
+  }
+
+  void CreateInputMethodContext(
+      ui::mojom::LinuxInputMethodContextRequest request,
+      const service_manager::BindSourceInfo& source_info) {
+    mojo::MakeStrongBinding(
+        std::make_unique<WaylandInputMethodContext>(connection_.get()),
+        std::move(request));
   }
 
  private:
