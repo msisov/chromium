@@ -14,6 +14,7 @@
 #include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 #include "ui/ozone/platform/wayland/wayland_connection_connector.h"
+#include "ui/ozone/platform/wayland/wayland_input_method_context_factory.h"
 #include "ui/ozone/platform/wayland/wayland_native_display_delegate.h"
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
@@ -105,6 +106,9 @@ class OzonePlatformWayland : public OzonePlatform {
     overlay_manager_.reset(new StubOverlayManager);
     input_controller_ = CreateStubInputController();
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
+
+    wayland_input_method_context_factory_.reset(
+        new WaylandInputMethodContextFactory(connection_.get()));
   }
 
   void InitializeGPU(const InitParams& args) override {
@@ -161,6 +165,8 @@ class OzonePlatformWayland : public OzonePlatform {
   std::unique_ptr<StubOverlayManager> overlay_manager_;
   std::unique_ptr<InputController> input_controller_;
   std::unique_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
+  std::unique_ptr<WaylandInputMethodContextFactory>
+      wayland_input_method_context_factory_;
 
 #if BUILDFLAG(USE_XKBCOMMON)
   XkbEvdevCodes xkb_evdev_code_converter_;

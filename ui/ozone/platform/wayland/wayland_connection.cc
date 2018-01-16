@@ -31,6 +31,7 @@ const uint32_t kMaxLinuxDmabufVersion = 1;
 const uint32_t kMaxSeatVersion = 4;
 const uint32_t kMaxShmVersion = 1;
 const uint32_t kMaxXdgShellVersion = 1;
+const uint32_t kMaxTextInputManagerVersion = 1;
 }  // namespace
 
 WaylandConnection::WaylandConnection()
@@ -119,6 +120,15 @@ WaylandWindow* WaylandConnection::GetCurrentFocusedWindow() {
   for (auto entry : window_map_) {
     WaylandWindow* window = entry.second;
     if (window->has_pointer_focus())
+      return window;
+  }
+  return nullptr;
+}
+
+WaylandWindow* WaylandConnection::GetCurrentKeyboardFocusedWindow() {
+  for (auto entry : window_map_) {
+    WaylandWindow* window = entry.second;
+    if (window->has_keyboard_focus())
       return window;
   }
   return nullptr;
@@ -518,6 +528,14 @@ void WaylandConnection::Global(void* data,
     // A roundtrip after binding guarantees that the client has received all
     // supported formats.
     wl_display_roundtrip(connection->display_.get());
+  } else if (!connection->text_input_manager_v1_ &&
+             strcmp(interface, "zwp_text_input_manager_v1") == 0) {
+    connection->text_input_manager_v1_ = wl::Bind<zwp_text_input_manager_v1>(
+        registry, name, std::min(version, kMaxTextInputManagerVersion));
+    if (!connection->text_input_manager_v1_) {
+      LOG(ERROR) << "Failed to bind to zwp_text_input_manager_v1 global";
+      return;
+    }
   }
 
   connection->ScheduleFlush();
