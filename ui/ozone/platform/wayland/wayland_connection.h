@@ -39,9 +39,13 @@ class WaylandConnection : public PlatformEventSource,
   xdg_shell* shell() { return shell_.get(); }
   zxdg_shell_v6* shell_v6() { return shell_v6_.get(); }
   wl_seat* seat() { return seat_.get(); }
+  zwp_text_input_manager_v1* text_input_manager_v1() {
+    return text_input_manager_v1_.get();
+  }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
   WaylandWindow* GetCurrentFocusedWindow();
+  WaylandWindow* GetCurrentKeyboardFocusedWindow();
   void AddWindow(gfx::AcceleratedWidget widget, WaylandWindow* window);
   void RemoveWindow(gfx::AcceleratedWidget widget);
 
@@ -55,6 +59,7 @@ class WaylandConnection : public PlatformEventSource,
                        const gfx::Point& location);
 
   int GetKeyboardModifiers();
+  void DispatchUiEvent(Event* event);
 
   // Resets flags and keyboard modifiers.
   //
@@ -65,7 +70,6 @@ class WaylandConnection : public PlatformEventSource,
 
  private:
   void Flush();
-  void DispatchUiEvent(Event* event);
 
   // PlatformEventSource
   void OnDispatcherListChanged() override;
@@ -102,6 +106,7 @@ class WaylandConnection : public PlatformEventSource,
   wl::Object<wl_shm> shm_;
   wl::Object<xdg_shell> shell_;
   wl::Object<zxdg_shell_v6> shell_v6_;
+  wl::Object<zwp_text_input_manager_v1> text_input_manager_v1_;
 
   std::unique_ptr<WaylandPointer> pointer_;
   std::unique_ptr<WaylandKeyboard> keyboard_;
