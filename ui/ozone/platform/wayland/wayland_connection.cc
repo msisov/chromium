@@ -25,6 +25,7 @@ const uint32_t kMaxCompositorVersion = 4;
 const uint32_t kMaxSeatVersion = 4;
 const uint32_t kMaxShmVersion = 1;
 const uint32_t kMaxXdgShellVersion = 1;
+const uint32_t kMaxTextInputManagerVersion = 1;
 }  // namespace
 
 WaylandConnection::WaylandConnection() : controller_(FROM_HERE) {}
@@ -111,6 +112,15 @@ WaylandWindow* WaylandConnection::GetCurrentFocusedWindow() {
   for (auto entry : window_map_) {
     WaylandWindow* window = entry.second;
     if (window->has_pointer_focus())
+      return window;
+  }
+  return nullptr;
+}
+
+WaylandWindow* WaylandConnection::GetCurrentKeyboardFocusedWindow() {
+  for (auto entry : window_map_) {
+    WaylandWindow* window = entry.second;
+    if (window->has_keyboard_focus())
       return window;
   }
   return nullptr;
@@ -326,6 +336,14 @@ void WaylandConnection::Global(void* data,
 
     connection->output_list_.push_back(
         base::WrapUnique(new WaylandOutput(output.release())));
+  } else if (!connection->text_input_manager_v1_ &&
+             strcmp(interface, "zwp_text_input_manager_v1") == 0) {
+    connection->text_input_manager_v1_ = wl::Bind<zwp_text_input_manager_v1>(
+        registry, name, std::min(version, kMaxTextInputManagerVersion));
+    if (!connection->text_input_manager_v1_) {
+      LOG(ERROR) << "Failed to bind to zwp_text_input_manager_v1 global";
+      return;
+    }
   } else if (!connection->data_device_manager_ &&
              strcmp(interface, "wl_data_device_manager") == 0) {
     connection->data_device_manager_ =
