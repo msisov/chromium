@@ -15,12 +15,25 @@
 
 #if defined(OS_CHROMEOS)
 #include "chrome/browser/ui/views/ime_driver/input_method_bridge_chromeos.h"
+#elif defined(OS_LINUX) && defined(USE_OZONE)
+#include "chrome/browser/ui/views/ime_driver/input_method_bridge_linux.h"
+#include "ui/aura/mus/linux_input_method_context_factory_mus.h"
+#include "ui/aura/mus/linux_input_method_context_mus.h"
+#include "ui/base/ime/linux/linux_input_method_context_factory.h"
 #else
 #include "chrome/browser/ui/views/ime_driver/simple_input_method.h"
 #endif  // defined(OS_CHROMEOS)
 
 IMEDriver::IMEDriver() {
   ui::IMEBridge::Initialize();
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  input_method_context_factory_ =
+      std::make_unique<aura::LinuxInputMethodContextFactoryMus>(
+          content::ServiceManagerConnection::GetForProcess()->GetConnector());
+  ui::LinuxInputMethodContextFactory::SetInstance(
+      input_method_context_factory_.get());
+#endif
 }
 
 IMEDriver::~IMEDriver() {}
@@ -48,6 +61,16 @@ void IMEDriver::StartSession(ui::mojom::StartSessionDetailsPtr details) {
           details->caret_bounds);
   mojo::MakeStrongBinding(
       std::make_unique<InputMethodBridge>(std::move(remote_client)),
+      std::move(details->input_method_request));
+#elif defined(OS_LINUX) && defined(USE_OZONE)
+  std::unique_ptr<RemoteTextInputClient> remote_client =
+      std::make_unique<RemoteTextInputClient>(
+          ui::mojom::TextInputClientPtr(std::move(details->client)),
+          details->text_input_type, details->text_input_mode,
+          details->text_direction, details->text_input_flags,
+          details->caret_bounds);
+  mojo::MakeStrongBinding(
+      std::make_unique<InputMethodBridgeLinux>(std::move(remote_client)),
       std::move(details->input_method_request));
 #else
   mojo::MakeStrongBinding(
