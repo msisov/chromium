@@ -2974,6 +2974,8 @@ split_static_library("ui") {
         # apart from aura::Window, which is also not supported).
         "views/ime_driver/ime_driver_mus.cc",
         "views/ime_driver/ime_driver_mus.h",
+        "views/ime_driver/input_method_bridge_linux.cc",
+        "views/ime_driver/input_method_bridge_linux.h",
         "views/ime_driver/remote_text_input_client.cc",
         "views/ime_driver/remote_text_input_client.h",
         "views/ime_driver/simple_input_method.cc",

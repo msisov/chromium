@@ -26,6 +26,10 @@ class UI_BASE_IME_EXPORT InputMethodAuraLinux
 
   LinuxInputMethodContext* GetContextForTesting(bool is_simple);
 
+  using AckCallback = base::OnceCallback<void(bool)>;
+  ui::EventDispatchDetails DispatchKeyEvent(ui::KeyEvent* event,
+                                            AckCallback ack_callback);
+
   // Overriden from InputMethod.
   bool OnUntranslatedIMEMessage(const base::NativeEvent& event,
                                 NativeEventResult* result) override;
@@ -61,6 +65,7 @@ class UI_BASE_IME_EXPORT InputMethodAuraLinux
   // Processes the key event after the event is processed by the system IME or
   // the extension.
   ui::EventDispatchDetails ProcessKeyEventDone(ui::KeyEvent* event,
+                                               AckCallback ack_callback,
                                                bool filtered,
                                                bool is_handled)
       WARN_UNUSED_RESULT;
@@ -71,6 +76,7 @@ class UI_BASE_IME_EXPORT InputMethodAuraLinux
   // as this method is async. The environment may be changed by other generated
   // key events by the time the callback is run.
   void ProcessKeyEventByEngineDone(ui::KeyEvent* event,
+                                   AckCallback ack_callback,
                                    bool filtered,
                                    bool composition_changed,
                                    ui::CompositionText* composition,

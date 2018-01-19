@@ -12,6 +12,12 @@
 
 #include "services/ui/public/interfaces/ime/ime.mojom.h"
 
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+namespace aura {
+class LinuxInputMethodContextFactoryMus;
+}
+#endif
+
 class IMEDriver : public ui::mojom::IMEDriver {
  public:
   IMEDriver();
@@ -23,6 +29,11 @@ class IMEDriver : public ui::mojom::IMEDriver {
  private:
   // ui::mojom::IMEDriver:
   void StartSession(ui::mojom::StartSessionDetailsPtr details) override;
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  std::unique_ptr<aura::LinuxInputMethodContextFactoryMus>
+      input_method_context_factory_;
+#endif
 
   DISALLOW_COPY_AND_ASSIGN(IMEDriver);
 };

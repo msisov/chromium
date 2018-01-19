@@ -4193,6 +4193,9 @@ test("unit_tests") {
         "../browser/ui/views/relaunch_notification/relaunch_notification_controller_unittest.cc",
         "../browser/ui/views/relaunch_notification/relaunch_required_dialog_view_unittest.cc",
       ]
+      if (is_linux) {
+        sources += [ "../browser/ui/views/ime_driver/input_method_bridge_linux_unittest.cc" ]
+      }
     }
     if (!is_chromeos && (!is_mac || mac_views_browser)) {
       sources += [

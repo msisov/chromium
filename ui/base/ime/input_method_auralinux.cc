@@ -44,33 +44,31 @@ LinuxInputMethodContext* InputMethodAuraLinux::GetContextForTesting(
   return is_simple ? context_simple_.get() : context_.get();
 }
 
-// Overriden from InputMethod.
-
-bool InputMethodAuraLinux::OnUntranslatedIMEMessage(
-    const base::NativeEvent& event,
-    NativeEventResult* result) {
-  return false;
-}
-
 ui::EventDispatchDetails InputMethodAuraLinux::DispatchKeyEvent(
-    ui::KeyEvent* event) {
+    ui::KeyEvent* event,
+    AckCallback ack_callback) {
   DCHECK(event->type() == ET_KEY_PRESSED || event->type() == ET_KEY_RELEASED);
 
   // If no text input client, do nothing.
   if (!GetTextInputClient())
-    return DispatchKeyEventPostIME(event);
+    return DispatchKeyEventPostIME(
+        event, std::make_unique<AckCallback>(std::move(ack_callback)));
 
   if (!event->HasNativeEvent() && sending_key_event()) {
     // Faked key events that are sent from input.ime.sendKeyEvents.
     ui::EventDispatchDetails details = DispatchKeyEventPostIME(event);
     if (details.dispatcher_destroyed || details.target_destroyed ||
         event->stopped_propagation()) {
+      if (!ack_callback.is_null())
+        std::move(ack_callback).Run(event->stopped_propagation());
       return details;
     }
     if ((event->is_char() || event->GetDomKey().IsCharacter()) &&
         event->type() == ui::ET_KEY_PRESSED) {
       GetTextInputClient()->InsertChar(*event);
     }
+    if (!ack_callback.is_null())
+      std::move(ack_callback).Run(event->stopped_propagation());
     return details;
   }
 
@@ -102,7 +100,8 @@ ui::EventDispatchDetails InputMethodAuraLinux::DispatchKeyEvent(
     ui::IMEEngineHandlerInterface::KeyEventDoneCallback callback =
         base::BindOnce(&InputMethodAuraLinux::ProcessKeyEventByEngineDone,
                        weak_ptr_factory_.GetWeakPtr(),
-                       base::Owned(new ui::KeyEvent(*event)), filtered,
+                       base::Owned(new ui::KeyEvent(*event)),
+                       Passed(&ack_callback), filtered,
                        composition_changed_,
                        base::Owned(new ui::CompositionText(composition_)),
                        base::Owned(new base::string16(result_text_)));
@@ -110,11 +109,25 @@ ui::EventDispatchDetails InputMethodAuraLinux::DispatchKeyEvent(
     return ui::EventDispatchDetails();
   }
 
-  return ProcessKeyEventDone(event, filtered, false);
+  return ProcessKeyEventDone(event, std::move(ack_callback), filtered, false);
+}
+
+// Overriden from InputMethod.
+
+bool InputMethodAuraLinux::OnUntranslatedIMEMessage(
+    const base::NativeEvent& event,
+    NativeEventResult* result) {
+  return false;
+}
+
+ui::EventDispatchDetails InputMethodAuraLinux::DispatchKeyEvent(
+    ui::KeyEvent* event) {
+  return DispatchKeyEvent(event, AckCallback());
 }
 
 void InputMethodAuraLinux::ProcessKeyEventByEngineDone(
     ui::KeyEvent* event,
+    AckCallback ack_callback,
     bool filtered,
     bool composition_changed,
     ui::CompositionText* composition,
@@ -123,16 +136,21 @@ void InputMethodAuraLinux::ProcessKeyEventByEngineDone(
   composition_changed_ = composition_changed;
   composition_ = *composition;
   result_text_ = *result_text;
-  ignore_result(ProcessKeyEventDone(event, filtered, is_handled));
+  ignore_result(ProcessKeyEventDone(event, std::move(ack_callback), filtered,
+                                    is_handled));
 }
 
 ui::EventDispatchDetails InputMethodAuraLinux::ProcessKeyEventDone(
     ui::KeyEvent* event,
+    AckCallback ack_callback,
     bool filtered,
     bool is_handled) {
   DCHECK(event);
-  if (is_handled)
+  if (is_handled) {
+    if (!ack_callback.is_null())
+      std::move(ack_callback).Run(true);
     return ui::EventDispatchDetails();
+  }
 
   // If the IME extension has not handled the key event, passes the keyevent
   // back to the previous processing flow. Preconditions for this situation:
@@ -144,12 +162,17 @@ ui::EventDispatchDetails InputMethodAuraLinux::ProcessKeyEventDone(
       details = DispatchKeyEventPostIME(event);
     else if (HasInputMethodResult())
       details = SendFakeProcessKeyEvent(event);
-    if (details.dispatcher_destroyed)
+    if (details.dispatcher_destroyed) {
+      if (!ack_callback.is_null())
+        std::move(ack_callback).Run(event->stopped_propagation());
       return details;
+    }
     // If the KEYDOWN is stopped propagation (e.g. triggered an accelerator),
     // don't InsertChar/InsertText to the input field.
     if (event->stopped_propagation() || details.target_destroyed) {
       ResetContext();
+      if (!ack_callback.is_null())
+        std::move(ack_callback).Run(event->stopped_propagation());
       return details;
     }
 
@@ -204,6 +227,8 @@ ui::EventDispatchDetails InputMethodAuraLinux::ProcessKeyEventDone(
     if (details.dispatcher_destroyed) {
       if (should_stop_propagation)
         event->StopPropagation();
+      if (!ack_callback.is_null())
+        std::move(ack_callback).Run(event->stopped_propagation());
       return details;
     }
     if (event->stopped_propagation() || details.target_destroyed) {
@@ -227,6 +252,8 @@ ui::EventDispatchDetails InputMethodAuraLinux::ProcessKeyEventDone(
   if (should_stop_propagation)
     event->StopPropagation();
 
+  if (!ack_callback.is_null())
+    std::move(ack_callback).Run(event->stopped_propagation());
   return details;
 }
 
