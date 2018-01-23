@@ -187,6 +187,3 @@
 -SSLUITestWithExtendedReporting.TestBrokenHTTPSProceedShowNoCheckYesReportNo/1
 -WebUsbTest.AddRemoveDevice
 -ChromeOriginTrialsDisabledFeaturesTest.DisabledFeaturesSetOnCommandLine/0
--SitePerProcessBrowserTest.AsynchronousHitTestChildTimeout
--SitePerProcessBrowserTest.InputEventRouterWheelCoalesceTest
--NetworkServiceInProcessBrowserTest.Basic
