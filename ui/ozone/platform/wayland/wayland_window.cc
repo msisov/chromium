@@ -281,7 +281,7 @@ void WaylandWindow::ReleaseCapture() {
 
 void WaylandWindow::ToggleFullscreen() {
   DCHECK(xdg_surface_ && !xdg_popup_);
-
+  
   // TODO(msisov, tonikitoo): add multiscreen support. As the documentation says
   // if xdg_surface_set_fullscreen() is not provided with wl_output, it's up to
   // the compositor to choose which display will be used to map this surface.
@@ -292,8 +292,10 @@ void WaylandWindow::ToggleFullscreen() {
     // are empty, save the current bounds and request wayland to set window to
     // be fullscreen. The |restored_bounds_| are reset once the state of the
     // window becomes normal again.
-    if (restored_bounds_.IsEmpty())
+    if (restored_bounds_.IsEmpty()) {
+      LOG(ERROR) << "----------- Toggle save bounds " << bounds_.ToString() << " -----------";
       restored_bounds_ = bounds_;
+    }
     xdg_surface_->SetFullscreen();
   } else {
     xdg_surface_->UnSetFullscreen();
@@ -304,15 +306,17 @@ void WaylandWindow::ToggleFullscreen() {
 
 void WaylandWindow::Maximize() {
   DCHECK(xdg_surface_ && !xdg_popup_);
-
+  
   if (IsFullscreen())
     ToggleFullscreen();
 
   // Save previous bounds in order to restore them when wayland requests so.
   // If there are previous restored bounds (ToggleFullscreen() saved bounds,
   // check the comments above), use them.
-  if (restored_bounds_.IsEmpty())
+  if (restored_bounds_.IsEmpty()) {
+    LOG(ERROR) << "----------- Maximize save bounds " << bounds_.ToString() << " -----------";
     restored_bounds_ = bounds_;
+  }
   xdg_surface_->SetMaximized();
   connection_->ScheduleFlush();
 }
@@ -425,6 +429,7 @@ void WaylandWindow::HandleSurfaceConfigure(int32_t width,
                                            bool is_maximized,
                                            bool is_fullscreen,
                                            bool is_activated) {
+  LOG(ERROR) << "WIDTH  " << width << " HEIGHT " << height;
   // Propagate the window state information to the client.
   PlatformWindowState old_state = state_;
   if (IsMinimized() && !is_activated)
@@ -507,6 +512,8 @@ void WaylandWindow::SetPendingBounds(int32_t width, int32_t height) {
   } else {
     pending_bounds_ = gfx::Rect(0, 0, width, height);
   }
+
+  LOG(ERROR) << "------------- Pending " << pending_bounds_.ToString() << " ------------";
 
   if (!IsFullscreen() && !IsMaximized())
     restored_bounds_ = gfx::Rect();

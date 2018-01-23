@@ -189,6 +189,145 @@ TEST_P(WaylandWindowTest, SetMaximizedFullscreenAndRestore) {
   Sync();
 }
 
+TEST_P(WaylandWindowTest, RestoreBoundsAfterMaximize) {
+  wl_array states;
+  InitializeWlArrayWithActivatedState(&states);
+
+  const gfx::Rect current_bounds = gfx::Rect(0, 0, 341, 512);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  window->SetBounds(current_bounds);
+
+  const gfx::Rect maximized_bounds = gfx::Rect(0, 0, 1024, 768);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(maximized_bounds)));
+  EXPECT_CALL(delegate,
+              OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_MAXIMIZED)));
+  window->Maximize();
+  SetWlArrayWithState(XDG_SURFACE_STATE_MAXIMIZED, &states);
+  SendConfigureEvent(maximized_bounds.width(), maximized_bounds.height(), 1,
+                     &states);
+  Sync();
+
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  EXPECT_CALL(delegate, OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_NORMAL)));
+  EXPECT_CALL(*GetXdgSurface(), SetWindowGeometry(0, 0, current_bounds.width(),
+                                                  current_bounds.height()));
+  window->Restore();
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SendConfigureEvent(0, 0, 2, &states);
+  Sync();
+}
+
+TEST_P(WaylandWindowTest, RestoreBoundsAfterFullscreen) {
+  wl_array states;
+  InitializeWlArrayWithActivatedState(&states);
+
+  const gfx::Rect current_bounds = gfx::Rect(0, 0, 341, 512);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  window->SetBounds(current_bounds);
+
+  const gfx::Rect fullscreen_bounds = gfx::Rect(0, 0, 1280, 720);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(fullscreen_bounds)));
+  EXPECT_CALL(delegate,
+              OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_FULLSCREEN)));
+  window->ToggleFullscreen();
+  SetWlArrayWithState(XDG_SURFACE_STATE_FULLSCREEN, &states);
+  SendConfigureEvent(fullscreen_bounds.width(), fullscreen_bounds.height(), 1,
+                     &states);
+  Sync();
+
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  EXPECT_CALL(delegate, OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_NORMAL)));
+  EXPECT_CALL(*GetXdgSurface(), SetWindowGeometry(0, 0, current_bounds.width(),
+                                                  current_bounds.height()));
+  window->Restore();
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SendConfigureEvent(0, 0, 2, &states);
+  Sync();
+}
+
+TEST_P(WaylandWindowTest, RestoreBoundsAfterMaximizeAndFullscreen) {
+  wl_array states;
+  InitializeWlArrayWithActivatedState(&states);
+
+  const gfx::Rect current_bounds = gfx::Rect(0, 0, 341, 512);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  window->SetBounds(current_bounds);
+
+  const gfx::Rect maximized_bounds = gfx::Rect(0, 0, 1024, 768);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(maximized_bounds)));
+  EXPECT_CALL(delegate,
+              OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_MAXIMIZED)));
+  window->Maximize();
+  SetWlArrayWithState(XDG_SURFACE_STATE_MAXIMIZED, &states);
+  SendConfigureEvent(maximized_bounds.width(), maximized_bounds.height(), 1,
+                     &states);
+  Sync();
+
+  const gfx::Rect fullscreen_bounds = gfx::Rect(0, 0, 1280, 720);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(fullscreen_bounds)));
+  EXPECT_CALL(delegate,
+              OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_FULLSCREEN)));
+  window->ToggleFullscreen();
+  SetWlArrayWithState(XDG_SURFACE_STATE_FULLSCREEN, &states);
+  SendConfigureEvent(fullscreen_bounds.width(), fullscreen_bounds.height(), 2,
+                     &states);
+  Sync();
+
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(maximized_bounds)));
+  EXPECT_CALL(delegate,
+              OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_MAXIMIZED)));
+  window->ToggleFullscreen();
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SetWlArrayWithState(XDG_SURFACE_STATE_MAXIMIZED, &states);
+  SendConfigureEvent(maximized_bounds.width(), maximized_bounds.height(), 3,
+                     &states);
+  Sync();
+
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  EXPECT_CALL(delegate, OnWindowStateChanged(Eq(PLATFORM_WINDOW_STATE_NORMAL)));
+  wl::MockXdgSurface* surface = GetXdgSurface();
+  EXPECT_CALL(*surface, SetWindowGeometry(0, 0, current_bounds.width(),
+                                                  current_bounds.height()));
+  window->Restore();
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SendConfigureEvent(0, 0, 4, &states);
+  LOG(ERROR) << "BUASDASD";
+  Sync();
+  LOG(ERROR) << "BU";
+}
+
+TEST_P(WaylandWindowTest, SendsBoundsOnRequest) {
+  const gfx::Rect current_bounds = gfx::Rect(0, 0, 341, 512);
+  EXPECT_CALL(delegate, OnBoundsChanged(Eq(current_bounds)));
+  window->SetBounds(current_bounds);
+
+  wl_array states;
+  InitializeWlArrayWithActivatedState(&states);
+
+  // First case is when Wayland sends a configure event with 0,0 height and
+  // widht.
+  EXPECT_CALL(*GetXdgSurface(), SetWindowGeometry(0, 0, current_bounds.width(),
+                                                  current_bounds.height()));
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SendConfigureEvent(0, 0, 1, &states);
+  Sync();
+
+  // Second case is when Wayland sends a configure event with 1, 1 height and
+  // widht. Looks more like a bug in Gnome Shell with Wayland as long as the
+  // documentation says it must be set to 0, 0, when wayland requests bounds.
+  EXPECT_CALL(*GetXdgSurface(), SetWindowGeometry(0, 0, current_bounds.width(),
+                                                  current_bounds.height()));
+  // Reinitialize wl_array, which removes previous old states.
+  InitializeWlArrayWithActivatedState(&states);
+  SendConfigureEvent(0, 0, 2, &states);
+  Sync();
+}
+
 TEST_P(WaylandWindowTest, CanDispatchMouseEventDefault) {
   EXPECT_FALSE(window->CanDispatchEvent(&test_mouse_event));
 }
