@@ -123,6 +123,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   // Gets a parent window for this window.
   WaylandWindow* GetParentWindow();
 
+  void SetPendingBounds(int32_t width, int32_t height);
+
   PlatformWindowDelegate* delegate_;
   WaylandConnection* connection_;
   WaylandWindow* parent_window_ = nullptr;

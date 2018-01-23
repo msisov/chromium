@@ -443,24 +443,7 @@ void WaylandWindow::HandleSurfaceConfigure(int32_t width,
   // most recent bounds, and have WaylandConnection call ApplyPendingBounds
   // when it has finished processing events. We may get many configure events
   // in a row during an interactive resize, and only the last one matters.
-  pending_bounds_ = gfx::Rect(0, 0, width, height);
-
-  // Width or height set 0 means that we should decide on width and height by
-  // ourselves, but we don't want to set to anything else. Use restored bounds
-  // size or the current bounds.
-  //
-  // Hack: if the browser was started with --start-fullscreen and a user exits
-  // the fullscreen mode, wayland may set the width and height to be 1. Instead,
-  // explicitly set the bounds to the current desired ones or the previous
-  // bounds.
-  if (width == 0 || height == 0 || (width == 1 && height == 1)) {
-    pending_bounds_.set_size(restored_bounds_.IsEmpty()
-                                 ? GetBounds().size()
-                                 : restored_bounds_.size());
-  }
-
-  if (!IsFullscreen() && !IsMaximized())
-    restored_bounds_ = gfx::Rect();
+  SetPendingBounds(width, height);
 
   was_active_ = is_active_;
   is_active_ = is_activated;
@@ -506,6 +489,27 @@ WaylandWindow* WaylandWindow::GetParentWindow() {
   if (!parent_window)
     return connection_->GetCurrentFocusedWindow();
   return parent_window;
+}
+
+void WaylandWindow::SetPendingBounds(int32_t width, int32_t height) {
+  // Width or height set to 0 means that we should decide on width and height by
+  // ourselves, but we don't want to set them to anything else. Use restored
+  // bounds size or the current bounds.
+  //
+  // Note: if the browser was started with --start-fullscreen and a user exits
+  // the fullscreen mode, wayland may set the width and height to be 1. Instead,
+  // explicitly set the bounds to the current desired ones or the previous
+  // bounds.
+  if (width <= 1 || height <= 1) {
+    pending_bounds_.set_size(restored_bounds_.IsEmpty()
+                                 ? GetBounds().size()
+                                 : restored_bounds_.size());
+  } else {
+    pending_bounds_ = gfx::Rect(0, 0, width, height);
+  }
+
+  if (!IsFullscreen() && !IsMaximized())
+    restored_bounds_ = gfx::Rect();
 }
 
 }  // namespace ui
