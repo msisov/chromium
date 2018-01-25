@@ -285,6 +285,9 @@ class TestWindowTreeClient2 : public TestWindowTreeClient,
       wait_state_->run_loop.Quit();
     }
   }
+  void OnAcceleratedWidgetAvailable(
+      ui::Id window_id,
+      ::gpu::SurfaceHandle surface_handle) override {}
   void OnEmbed(
       WindowDataPtr root,
       mojom::WindowTreePtr tree,

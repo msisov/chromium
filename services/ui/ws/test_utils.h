@@ -467,6 +467,9 @@ class TestWindowTreeClient : public ui::mojom::WindowTreeClient {
 
  private:
   // WindowTreeClient:
+  void OnAcceleratedWidgetAvailable(
+      Id window_id,
+      ::gpu::SurfaceHandle surface_handle) override;
   void OnEmbed(
       mojom::WindowDataPtr root,
       ui::mojom::WindowTreePtr tree,
