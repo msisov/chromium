@@ -20,6 +20,10 @@ TestWindowTreeClient::~TestWindowTreeClient() = default;
 
 void TestWindowTreeClient::OnChangeAdded() {}
 
+void TestWindowTreeClient::OnAcceleratedWidgetAvailable(
+    ui::Id window_id,
+    ::gpu::SurfaceHandle surface_handle) {}
+
 void TestWindowTreeClient::OnEmbed(
     mojom::WindowDataPtr root,
     mojom::WindowTreePtr tree,

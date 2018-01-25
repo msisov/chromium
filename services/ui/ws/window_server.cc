@@ -690,6 +690,12 @@ void WindowServer::OnDisplayReady(Display* display, bool is_first) {
     delegate_->OnFirstDisplayReady();
   bool wm_is_hosting_viz = !gpu_host_;
   if (wm_is_hosting_viz) {
+    // Notify client about the AcceleratedWidget if it is hosting viz.
+    if (IsInExternalWindowMode()) {
+      GetTreeForExternalWindowMode()->OnAcceleratedWidgetAvailableForDisplay(
+          display);
+      return;
+    }
     // Notify WM about the AcceleratedWidget if it is hosting viz.
     for (auto& pair : tree_map_) {
       if (pair.second->window_manager_state()) {
