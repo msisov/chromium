@@ -303,6 +303,10 @@ void TestWindowTreeClient::Bind(
   binding_.Bind(std::move(request));
 }
 
+void TestWindowTreeClient::OnAcceleratedWidgetAvailable(
+    ui::Id window_id,
+    ::gpu::SurfaceHandle surface_handle) {}
+
 void TestWindowTreeClient::OnEmbed(
     mojom::WindowDataPtr root,
     ui::mojom::WindowTreePtr tree,
