@@ -4,6 +4,7 @@
 
 module ui.mojom;
 
+import "gpu/ipc/common/surface_handle.mojom";
 import "mojo/common/unguessable_token.mojom";
 import "services/ui/public/interfaces/cursor/cursor.mojom";
 import "services/ui/public/interfaces/event_matcher.mojom";
@@ -390,6 +391,12 @@ interface WindowTree {
 // calling SetWindowBounds(), connection 1 does not receive
 // OnWindowBoundsChanged().
 interface WindowTreeClient {
+  // Called to notify about the real AcceleratedWidget associated with a
+  // window. This is called only when mus is not hosting viz, and requires the
+  // browser to instead host viz.
+  OnAcceleratedWidgetAvailable(uint64 window_id,
+                               gpu.mojom.SurfaceHandle surface_handle);
+
   // Invoked when the client application has been embedded at |root|.
   // See Embed() on WindowTree for more details. |tree| will be a handle back to
   // the window manager service, unless the connection is to the root connection

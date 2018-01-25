@@ -217,6 +217,21 @@ void WindowTree::DoOnEmbed(mojom::WindowTreePtr tree,
 
 void WindowTree::OnAcceleratedWidgetAvailableForDisplay(Display* display) {
   DCHECK(window_manager_internal_);
+
+  if (window_server_->IsInExternalWindowMode()) {
+    // It's guaranteed this method is only calle once during initialization of
+    // ws::Display. Thus, |pending_client_window_id_| must always be a valid
+    // client id before ::AddRoot is called.
+    DCHECK(pending_client_window_id_ != kInvalidClientId);
+    ClientWindowId client_window_id =
+        MakeClientWindowId(pending_client_window_id_);
+
+    client()->OnAcceleratedWidgetAvailable(
+        ClientWindowIdToTransportId(client_window_id),
+        display->platform_display()->GetAcceleratedWidget());
+    return;
+  }
+
   // TODO(sad): Use GpuSurfaceTracker on platforms where a gpu::SurfaceHandle is
   // not the same as a gfx::AcceleratedWidget.
   window_manager_internal_->WmOnAcceleratedWidgetForDisplay(

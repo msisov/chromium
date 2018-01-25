@@ -184,6 +184,10 @@ void RendererWindowTreeClient::DestroyFrame(uint32_t frame_routing_id) {
   pending_frames_.erase(frame_routing_id);
 }
 
+void RendererWindowTreeClient::OnAcceleratedWidgetAvailable(
+    ui::Id window_id,
+    gpu::SurfaceHandle surface_handle) {}
+
 void RendererWindowTreeClient::OnEmbed(
     ui::mojom::WindowDataPtr root,
     ui::mojom::WindowTreePtr tree,
