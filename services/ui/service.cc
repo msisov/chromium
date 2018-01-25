@@ -402,7 +402,11 @@ void Service::OnWillCreateTreeForWindowManager(
     screen_manager_ = display::ScreenManager::Create();
   }
   screen_manager_->AddInterfaces(&registry_with_source_info_);
-  if (is_gpu_ready_)
+  // We are calling SM::Init here, in case mus is not hosting viz, without
+  // awaiting for the GPU to be fully initialized.
+  // TODO(msisov, tonikitoo): check if there is any negative consequence of
+  // doing this.
+  if (is_gpu_ready_ || !should_host_viz_)
     screen_manager_->Init(window_server_->display_manager());
 }
 
