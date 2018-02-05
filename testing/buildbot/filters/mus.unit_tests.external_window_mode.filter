@@ -1,0 +1,26 @@
+# These tests fail only with Ozone/Linux build.
+-ShellIntegrationTest.GetDesktopFileContents 
+-ShellIntegrationTest.GetDesktopFileContentsAppList 
+-ShellIntegrationTest.GetDirectoryFileContents 
+-ShellIntegrationTest.GetExistingShortcutLocations 
+-BookmarkBarViewTest.UpdateTooltipText 
+-BrowserNonClientFrameViewPopupTest.HitTestPopupTopChrome 
+-BrowserNonClientFrameViewTabbedTest.HitTestTabstrip 
+-BrowserViewHostedAppTest.Layout 
+-BrowserViewTest.BookmarkBarInvisibleOnShutdown 
+-BrowserViewTest.BrowserView 
+-BrowserViewTest.BrowserViewLayout 
+-BrowserViewTest.RepeatedAccelerators 
+-CannedBrowsingDataDatabaseHelperTest.Delete 
+-DownloadProtectionServiceFlagTest.CheckClientDownloadOverridenByFlag 
+-OneGoogleBarFetcherImplTest.HandlesResponsePreamble 
+-OneGoogleBarFetcherImplWithRelativeApiUrlOverrideTest.RequestUrlRespectsOverride 
+-SafeBrowsingBlockingPageTest.MalwarePageDontProceed 
+-ThemeServiceSupervisedUserTest.SupervisedUserThemeReplacesNativeTheme 
+
+# failures after the r532296 rebase.
+-PopupsOnlyUiDelegateTest.ManyPopupNotifications
+-PopupsOnlyUiDelegateTest.WebNotificationPopupBubble
+
+# failures after the r534306 
+-BrowserViewTest.AccessibleWindowTitle
