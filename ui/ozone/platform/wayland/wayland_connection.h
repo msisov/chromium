@@ -10,17 +10,21 @@
 #include "base/message_loop/message_pump_libevent.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/native_widget_types.h"
+#include "ui/ozone/platform/wayland/wayland_data_device.h"
+#include "ui/ozone/platform/wayland/wayland_data_source.h"
 #include "ui/ozone/platform/wayland/wayland_keyboard.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/ozone/platform/wayland/wayland_output.h"
 #include "ui/ozone/platform/wayland/wayland_pointer.h"
 #include "ui/ozone/platform/wayland/wayland_touch.h"
+#include "ui/ozone/public/clipboard_delegate.h"
 
 namespace ui {
 
 class WaylandWindow;
 
 class WaylandConnection : public PlatformEventSource,
+                          public ClipboardDelegate,
                           public base::MessagePumpLibevent::FdWatcher {
  public:
   WaylandConnection();
@@ -42,6 +46,7 @@ class WaylandConnection : public PlatformEventSource,
   zwp_text_input_manager_v1* text_input_manager_v1() {
     return text_input_manager_v1_.get();
   }
+  wl_data_device* data_device() { return data_device_->data_device(); }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
   WaylandWindow* GetCurrentFocusedWindow();
@@ -70,6 +75,23 @@ class WaylandConnection : public PlatformEventSource,
   // modified by a POINTER_DOWN event, but the respective POINTER_UP event is
   // not delivered.
   void ResetPointerFlags();
+
+  // Clipboard implementation.
+  ClipboardDelegate* GetClipboardDelegate();
+  void DataSourceCancelled();
+  void SetClipboardData(const std::string& contents,
+                        const std::string& mime_type);
+
+  // ClipboardDelegate.
+  void WriteToWMClipboard(const ClipboardDelegate::DataMap& data_map,
+                          ClipboardDelegate::SetDataCallback callback) override;
+  void ReadFromWMClipboard(
+      const std::string& mime_type,
+      ClipboardDelegate::DataMap* data_map,
+      ClipboardDelegate::GetDataCallback callback) override;
+  void GetAvailableMimeTypes(
+      ClipboardDelegate::GetMimeTypesCallback callback) override;
+  bool IsSelectionOwner() override;
 
  private:
   void Flush();
@@ -102,6 +124,7 @@ class WaylandConnection : public PlatformEventSource,
   std::map<gfx::AcceleratedWidget, WaylandWindow*> window_map_;
 
   wl::Object<wl_display> display_;
+  wl::Object<wl_data_device_manager> data_device_manager_;
   wl::Object<wl_registry> registry_;
   wl::Object<wl_compositor> compositor_;
   wl::Object<wl_subcompositor> subcompositor_;
@@ -111,6 +134,8 @@ class WaylandConnection : public PlatformEventSource,
   wl::Object<zxdg_shell_v6> shell_v6_;
   wl::Object<zwp_text_input_manager_v1> text_input_manager_v1_;
 
+  std::unique_ptr<WaylandDataDevice> data_device_;
+  std::unique_ptr<WaylandDataSource> data_source_;
   std::unique_ptr<WaylandPointer> pointer_;
   std::unique_ptr<WaylandKeyboard> keyboard_;
   std::unique_ptr<WaylandTouch> touch_;
@@ -122,6 +147,13 @@ class WaylandConnection : public PlatformEventSource,
   uint32_t serial_ = 0;
 
   std::vector<std::unique_ptr<WaylandOutput>> output_list_;
+
+  // Holds a temporary instance of the client's clipboard content
+  // so that we can asynchronously write to it.
+  ClipboardDelegate::DataMap* data_map_ = nullptr;
+
+  // Stores the callback to be invoked upon data reading from clipboard.
+  GetDataCallback read_clipboard_closure_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandConnection);
 };
