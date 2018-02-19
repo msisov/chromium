@@ -16,6 +16,7 @@
 #include "ui/ozone/platform/wayland/wayland_input_method_context.h"
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
+#include "ui/ozone/public/clipboard_delegate.h"
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/input_controller.h"
 #include "ui/ozone/public/ozone_platform.h"
@@ -87,6 +88,10 @@ class OzonePlatformWayland : public OzonePlatform {
     }
 
     CHECK(false) << "Add support for asynchronous resolution fetch.";
+  }
+
+  ClipboardDelegate* GetClipboardDelegate() override {
+    return connection_->GetClipboardDelegate();
   }
 
   void InitializeUI(const InitParams& args) override {
