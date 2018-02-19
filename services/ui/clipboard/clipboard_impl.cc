@@ -8,6 +8,8 @@
 #include <utility>
 
 #include "base/macros.h"
+#include "ui/ozone/public/clipboard_data_bridge.h"
+#include "ui/ozone/public/ozone_platform.h"
 
 namespace ui {
 namespace clipboard {
@@ -27,6 +29,15 @@ class ClipboardImpl::ClipboardData {
 
   std::vector<std::string> GetMimeTypes() const {
     std::vector<std::string> types(data_types_.size());
+
+    // If there is no mime types cached, it means we need to query the system
+    // clipboard for data.
+    if (!types.size() && delegate_) {
+        for (const auto& mime_type : delegate_->GetAvailableMimeTypes())
+          types.push_back(mime_type);
+      return types;
+    }
+
     int i = 0;
     for (auto it = data_types_.begin(); it != data_types_.end(); ++it, ++i)
       types[i] = it->first;
@@ -37,18 +48,34 @@ class ClipboardImpl::ClipboardData {
   void SetData(const base::Optional<DataMap>& data) {
     sequence_number_++;
     data_types_ = data.value_or(DataMap());
+
+    if (delegate_)
+      delegate_->WriteToWMClipboard(GetMimeTypes());
   }
 
   void GetData(const std::string& mime_type,
                base::Optional<std::vector<uint8_t>>* data) const {
+    // Read from system clipboard first.
+    if (delegate_ && delegate_->ShouldGetClipboardDataFromWMClipboard())
+      delegate_->ReadFromWMClipboard(mime_type);
+
     auto it = data_types_.find(mime_type);
     if (it != data_types_.end())
       data->emplace(it->second);
   }
 
+  void SetupClipboardDataBridge() {
+    clipboard_data_bridge_.reset(new ClipboardDataBridge(data_types_));
+    OzonePlatform::GetInstance()->SetupClipboardDataBridge(
+        clipboard_data_bridge_.get(), &delegate_);
+  }
+
  private:
   uint64_t sequence_number_;
   DataMap data_types_;
+
+  std::unique_ptr<ClipboardDataBridge> clipboard_data_bridge_;
+  ClipboardDelegate* delegate_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(ClipboardData);
 };
@@ -56,6 +83,11 @@ class ClipboardImpl::ClipboardData {
 ClipboardImpl::ClipboardImpl() {
   for (int i = 0; i < kNumClipboards; ++i)
     clipboard_state_[i].reset(new ClipboardData);
+
+#if defined(OS_LINUX) && defined(USE_OZONE) && !defined(OS_CHROMEOS)
+  clipboard_state_[static_cast<int>(Clipboard::Type::COPY_PASTE)]->
+      SetupClipboardDataBridge();
+#endif
 }
 
 ClipboardImpl::~ClipboardImpl() {

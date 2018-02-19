@@ -160,6 +160,63 @@ void WaylandConnection::ResetPointerFlags() {
     pointer_->ResetFlags();
 }
 
+void WaylandConnection::SetupClipboardDataBridge(
+    ClipboardDataBridge* data, ClipboardDelegate** delegate) {
+  DCHECK(data && !*delegate);
+  clipboard_backing_store_ = data;
+  *delegate = this;
+}
+
+void WaylandConnection::WriteToWMClipboard(const std::vector<std::string>& mime_types) {
+  if (!data_source_) {
+    wl_data_source* data_source =
+        wl_data_device_manager_create_data_source(data_device_manager_.get());
+    data_source_.reset(new WaylandDataSource(data_source));
+    data_source_->set_connection(this);
+
+    DCHECK(!clipboard_backing_store_->data_map().empty());
+
+    // TODO(tonikitoo,msisov): Do we need to call WriteToClipboard again
+    // if clipboard mime types changes?
+    data_source_->WriteToClipboard(mime_types);
+  }
+}
+
+void WaylandConnection::ReadFromWMClipboard(const std::string& mime_type) {
+  data_device_->RequestSelectionData(mime_type);
+}
+
+bool WaylandConnection::ShouldGetClipboardDataFromWMClipboard() {
+  return !data_source_;
+}
+
+std::vector<std::string> WaylandConnection::GetAvailableMimeTypes() {
+  return data_device_->GetAvailableMimeTypes();
+}
+
+void WaylandConnection::DataSourceCancelled() {
+  SetClipboardData(base::nullopt);
+  data_source_.reset();
+}
+
+void WaylandConnection::SetClipboardData(
+    const base::Optional<ClipboardDataBridge::DataMap>& data) {
+  clipboard_backing_store_->data_map() =
+      data.value_or(ClipboardDataBridge::DataMap());
+}
+
+void WaylandConnection::GetClipboardData(const std::string& mime_type,
+    base::Optional<std::vector<uint8_t>>* data) {
+  if (ShouldGetClipboardDataFromWMClipboard())
+    ReadFromWMClipboard(mime_type);
+
+  auto it = clipboard_backing_store_->data_map().find(mime_type);
+  if (it != clipboard_backing_store_->data_map().end()) {
+    data->emplace(it->second);
+    return;
+  }
+}
+
 void WaylandConnection::OnDispatcherListChanged() {
   StartProcessingEvents();
 }
@@ -226,6 +283,18 @@ void WaylandConnection::Global(void* data,
       return;
     }
     wl_seat_add_listener(connection->seat_.get(), &seat_listener, connection);
+
+    // TODO(tonikitoo,msisov): The connection passed to WaylandInputDevice must have a
+    // valid data device manager. We should ideally be robust to the compositor
+    // advertising a wl_seat first. No known compositor does this, fortunately.
+    if (!connection->data_device_manager_) {
+      LOG(ERROR) << "No data device manager. Clipboard won't be fully functional";
+      return;
+    }
+    wl_data_device* data_device = wl_data_device_manager_get_data_device(
+        connection->data_device_manager_.get(), connection->seat_.get());
+    connection->data_device_.reset(
+        new WaylandDataDevice(connection, data_device));
   } else if (!connection->shell_v6_ &&
              strcmp(interface, "zxdg_shell_v6") == 0) {
     // Check for zxdg_shell_v6 first.
@@ -269,6 +338,10 @@ void WaylandConnection::Global(void* data,
       LOG(ERROR) << "Failed to bind to zwp_text_input_manager_v1 global";
       return;
     }
+  } else if (!connection->data_device_manager_ &&
+             strcmp(interface, "wl_data_device_manager") == 0) {
+    connection->data_device_manager_ =
+        wl::Bind<wl_data_device_manager>(registry, name, 1);
   }
 
   connection->ScheduleFlush();

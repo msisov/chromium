@@ -35,6 +35,8 @@ class Connector;
 
 namespace ui {
 
+class ClipboardDataBridge;
+class ClipboardDelegate;
 class CursorFactoryOzone;
 class InputController;
 class GpuPlatformSupportHost;
@@ -136,6 +138,9 @@ class OZONE_EXPORT OzonePlatform {
   using QueryHostDisplaysDataCallback =
       base::Callback<void(const std::vector<gfx::Size>&)>;
   virtual void QueryHostDisplaysData(QueryHostDisplaysDataCallback callback);
+
+  virtual void SetupClipboardDataBridge(
+      ClipboardDataBridge* data, ClipboardDelegate** delegate);
 
   // Returns the message loop type required for OzonePlatform instance that
   // will be initialized for the GPU process.

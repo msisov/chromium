@@ -126,6 +126,9 @@ void OzonePlatform::QueryHostDisplaysData(
   NOTREACHED();
 }
 
+void OzonePlatform::SetupClipboardDataBridge(
+    ClipboardDataBridge* data, ClipboardDelegate** delegate) {}
+
 void OzonePlatform::AddInterfaces(
     service_manager::BinderRegistryWithArgs<
         const service_manager::BindSourceInfo&>* registry) {}
