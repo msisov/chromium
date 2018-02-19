@@ -132,6 +132,10 @@ void OzonePlatform::QueryHostDisplaysData(
   NOTREACHED();
 }
 
+ClipboardDelegate* OzonePlatform::GetClipboardDelegate() {
+  return nullptr;
+}
+
 void OzonePlatform::AddInterfaces(
     service_manager::BinderRegistryWithArgs<
         const service_manager::BindSourceInfo&>* registry) {}
