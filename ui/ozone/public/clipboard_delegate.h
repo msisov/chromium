@@ -6,9 +6,9 @@
 #define UI_OZONE_PUBLIC_CLIPBOARD_DELEGATE_H_
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
+#include "base/containers/flat_map.h"
 #include "base/macros.h"
 #include "base/optional.h"
 #include "ui/ozone/ozone_base_export.h"
@@ -24,7 +24,7 @@ class OZONE_BASE_EXPORT ClipboardDelegate {
   // DataMap is a map from "mime type" to associated data, whereas
   // the data can be organized differently for each mime type.
   using Data = std::vector<uint8_t>;
-  using DataMap = std::unordered_map<std::string, Data>;
+  using DataMap = base::flat_map<std::string, Data>;
 
   // Offers a given clipboard data 'data_map' to the host system clipboard.
   //

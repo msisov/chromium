@@ -759,7 +759,7 @@ class WindowTreeClientTest : public WindowServerServiceTestBase {
 
     wt_client1_->set_tree(std::move(tree));
 
-    std::unordered_map<std::string, std::vector<uint8_t>> transport_properties;
+    base::flat_map<std::string, std::vector<uint8_t>> transport_properties;
     tree_host_factory_ptr->CreatePlatformWindow(
         MakeRequest(&host_), BuildWindowId(1, 0), transport_properties);
 #else

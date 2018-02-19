@@ -34,6 +34,7 @@ class Connector;
 
 namespace ui {
 
+class ClipboardDelegate;
 class CursorFactoryOzone;
 class InputController;
 class GpuPlatformSupportHost;
@@ -131,6 +132,7 @@ class OZONE_EXPORT OzonePlatform {
       const gfx::Rect& bounds) = 0;
   virtual std::unique_ptr<display::NativeDisplayDelegate>
   CreateNativeDisplayDelegate() = 0;
+  virtual ClipboardDelegate* GetClipboardDelegate();
 
   using QueryHostDisplaysDataCallback =
       base::Callback<void(const std::vector<gfx::Size>&)>;
