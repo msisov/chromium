@@ -70,6 +70,7 @@ source_set("wayland") {
   }
 
   deps = [
+    ":wayland_nested_compositor",
     "//base",
     "//services/ui/public/interfaces/ime",
     "//skia",
@@ -97,6 +98,28 @@ source_set("wayland") {
   configs += [
     ":wayland-egl",
     "//third_party/khronos:khronos_headers",
+  ]
+}
+
+source_set("wayland_nested_compositor") {
+  sources = [
+    "wayland_nested_compositor.cc",
+    "wayland_nested_compositor.h",
+    "wayland_nested_compositor_client.cc",
+    "wayland_nested_compositor_client.h",
+    "wayland_nested_compositor_watcher.cc",
+    "wayland_nested_compositor_watcher.h",
+    "wayland_nested_surface.cc",
+    "wayland_nested_surface.h",
+  ]
+
+  deps = [
+    "//base",
+    "//skia",
+    "//third_party/angle:libEGL",
+    "//third_party/angle:libGLESv2",
+    "//third_party/wayland:wayland_server",
+    "//ui/gl",
   ]
 }
 
