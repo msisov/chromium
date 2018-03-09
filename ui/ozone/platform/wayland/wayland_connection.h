@@ -49,6 +49,7 @@ class WaylandConnection : public PlatformEventSource,
   }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
+  WaylandWindow* GetLastWindow();
   WaylandWindow* GetCurrentFocusedWindow();
   WaylandWindow* GetCurrentKeyboardFocusedWindow();
   void AddWindow(gfx::AcceleratedWidget widget, WaylandWindow* window);
