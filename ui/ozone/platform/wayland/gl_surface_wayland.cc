@@ -19,10 +19,12 @@ void EGLWindowDeleter::operator()(wl_egl_window* egl_window) {
 }
 
 std::unique_ptr<wl_egl_window, EGLWindowDeleter> CreateWaylandEglWindow(
-    WaylandWindow* window) {
-  gfx::Size size = window->GetBounds().size();
+    wl_surface* surface) {
+  // TODO(msisov, tonikitoo): provide proper surface size. It's ok to set 1x1
+  // here as long as ::Resize fixes the size of the surface right after this
+  // call.
   return std::unique_ptr<wl_egl_window, EGLWindowDeleter>(
-      wl_egl_window_create(window->surface(), size.width(), size.height()));
+      wl_egl_window_create(surface, 1, 1));
 }
 
 GLSurfaceWayland::GLSurfaceWayland(WaylandEglWindowPtr egl_window)
