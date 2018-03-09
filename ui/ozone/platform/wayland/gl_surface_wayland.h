@@ -12,17 +12,16 @@
 #include "ui/gl/gl_surface_egl.h"
 
 struct wl_egl_window;
+struct wl_surface;
 
 namespace ui {
-
-class WaylandWindow;
 
 struct EGLWindowDeleter {
   void operator()(wl_egl_window* egl_window);
 };
 
 std::unique_ptr<wl_egl_window, EGLWindowDeleter> CreateWaylandEglWindow(
-    WaylandWindow* window);
+    wl_surface* surface);
 
 // GLSurface class implementation for wayland.
 class GLSurfaceWayland : public gl::NativeViewGLSurfaceEGL {

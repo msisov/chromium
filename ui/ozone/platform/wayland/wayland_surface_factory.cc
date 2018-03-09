@@ -21,6 +21,10 @@
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 
+#include "ui/gl/gl_bindings.h"
+
+#include "ui/ozone/platform/wayland/wayland_nested_compositor_client.h"
+
 namespace ui {
 
 static void DeleteSharedMemory(void* pixels, void* context) {
@@ -131,6 +135,8 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
  public:
   explicit GLOzoneEGLWayland(WaylandConnection* connection)
       : connection_(connection) {}
+  explicit GLOzoneEGLWayland(WaylandNestedCompositorClient* client)
+      : client_(client) {}
   ~GLOzoneEGLWayland() override {}
 
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
@@ -144,21 +150,18 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
   bool LoadGLES2Bindings(gl::GLImplementation impl) override;
 
  private:
-  WaylandConnection* connection_;
+  WaylandNestedCompositorClient* client_ = nullptr;
+  WaylandConnection* connection_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(GLOzoneEGLWayland);
 };
 
 scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateViewGLSurface(
     gfx::AcceleratedWidget widget) {
-  DCHECK(connection_);
-  WaylandWindow* window = connection_->GetWindow(widget);
-  DCHECK(window);
-  // The wl_egl_window needs to be created before the GLSurface so it can be
-  // used in the GLSurface constructor.
-  auto egl_window = CreateWaylandEglWindow(window);
-  if (!egl_window)
-    return nullptr;
+  wl_surface* surface = client_ ? client_->CreateOrGetSurface()
+                                : connection_->GetWindow(widget)->surface();
+  DCHECK(surface);
+  auto egl_window = CreateWaylandEglWindow(surface);
   return gl::InitializeGLSurface(new GLSurfaceWayland(std::move(egl_window)));
 }
 
@@ -173,7 +176,8 @@ scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateOffscreenGLSurface(
 }
 
 intptr_t GLOzoneEGLWayland::GetNativeDisplay() {
-  return reinterpret_cast<intptr_t>(connection_->display());
+  return client_ ? reinterpret_cast<intptr_t>(client_->display())
+                 : reinterpret_cast<intptr_t>(connection_->display());
 }
 
 bool GLOzoneEGLWayland::LoadGLES2Bindings(gl::GLImplementation impl) {
@@ -192,10 +196,19 @@ WaylandSurfaceFactory::WaylandSurfaceFactory(WaylandConnection* connection)
     egl_implementation_ = std::make_unique<GLOzoneEGLWayland>(connection_);
 }
 
+WaylandSurfaceFactory::WaylandSurfaceFactory(
+    WaylandNestedCompositorClient* client)
+    : client_(client),
+      osmesa_implementation_(std::make_unique<GLOzoneOSMesa>()) {
+  if (client_)
+    egl_implementation_ = std::make_unique<GLOzoneEGLWayland>(client_);
+}
+
 WaylandSurfaceFactory::~WaylandSurfaceFactory() {}
 
 std::unique_ptr<SurfaceOzoneCanvas>
 WaylandSurfaceFactory::CreateCanvasForWidget(gfx::AcceleratedWidget widget) {
+  CHECK(false);
   if (!connection_)
     return nullptr;
   WaylandWindow* window = connection_->GetWindow(widget);

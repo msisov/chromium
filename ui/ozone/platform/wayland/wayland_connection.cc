@@ -106,6 +106,11 @@ WaylandWindow* WaylandConnection::GetWindow(gfx::AcceleratedWidget widget) {
   return it == window_map_.end() ? nullptr : it->second;
 }
 
+WaylandWindow* WaylandConnection::GetLastWindow() {
+  DCHECK(!window_map_.empty());
+  return window_map_.rbegin()->second;
+}
+
 WaylandWindow* WaylandConnection::GetCurrentFocusedWindow() {
   for (auto entry : window_map_) {
     WaylandWindow* window = entry.second;
