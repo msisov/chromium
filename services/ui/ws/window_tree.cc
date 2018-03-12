@@ -229,8 +229,12 @@ void WindowTree::ConfigureWindowManager(
   automatically_create_display_roots_ = automatically_create_display_roots;
   window_manager_internal_ = binding_->GetWindowManager();
   window_manager_internal_->OnConnect();
-  if (window_server_->IsInExternalWindowMode())
+
+  if (window_server_->IsInExternalWindowMode()) {
+    external_window_tree_host_factory_.reset(
+        new ExternalWindowTreeHostFactory(window_server_));
     return;
+  }
   window_manager_state_ = std::make_unique<WindowManagerState>(this);
 }
 
@@ -2367,6 +2371,19 @@ void WindowTree::GetWindowManagerClient(
   window_manager_internal_client_binding_.reset(
       new mojo::AssociatedBinding<mojom::WindowManagerClient>(
           this, std::move(internal)));
+}
+
+void WindowTree::GetExternalWindowTreeHostFactory(
+    mojo::AssociatedInterfaceRequest<mojom::ExternalWindowTreeHostFactory>
+        request) {
+  if (!window_server_->IsInExternalWindowMode() ||
+      !external_window_tree_host_factory_ ||
+      external_window_tree_host_factory_binding_) {
+    return;
+  }
+  external_window_tree_host_factory_binding_.reset(
+      new mojo::AssociatedBinding<mojom::ExternalWindowTreeHostFactory>(
+          external_window_tree_host_factory_.get(), std::move(request)));
 }
 
 void WindowTree::GetCursorLocationMemory(

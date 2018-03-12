@@ -24,7 +24,7 @@
 #include "components/viz/common/surfaces/parent_local_surface_id_allocator.h"
 #include "mojo/public/cpp/bindings/associated_binding.h"
 #include "mojo/public/cpp/bindings/strong_binding.h"
-#include "services/ui/public/interfaces/external_window_mode_registrar.mojom.h"
+#include "services/ui/public/interfaces/external_window_tree_factory.mojom.h"
 #include "services/ui/public/interfaces/remote_event_dispatcher.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host.mojom.h"
@@ -137,8 +137,8 @@ class AURA_EXPORT WindowTreeClient
       WindowTreeClientDelegate* delegate,
       bool create_discardable_memory = true);
 
-  // Establishes the connection by way of the ExternalWindowModeRegistrar.
-  static std::unique_ptr<WindowTreeClient> CreateForExternalWindowMode(
+  // Establishes the connection by way of the ExternalWindowTreeFactory.
+  static std::unique_ptr<WindowTreeClient> CreateForExternalWindowTreeFactory(
       service_manager::Connector* connector,
       WindowTreeClientDelegate* delegate,
       bool create_discardable_memory = false);
@@ -754,7 +754,10 @@ class AURA_EXPORT WindowTreeClient
   // removed.
   bool install_drag_drop_client_ = true;
 
-  ui::mojom::ExternalWindowTreeHostFactoryPtr tree_host_factory_ptr_;
+  ui::mojom::ExternalWindowTreeHostFactoryAssociatedPtr
+      window_tree_host_factory_;
+  ui::mojom::ExternalWindowTreeHostFactory* window_tree_host_factory_ptr_ =
+      nullptr;
 
   base::WeakPtrFactory<WindowTreeClient> weak_factory_;
 

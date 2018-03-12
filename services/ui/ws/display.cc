@@ -57,8 +57,24 @@ Display::~Display() {
   } else if (window_manager_display_root_) {
     // If there is a |binding_| then the tree was created specifically for this
     // display (which corresponds to a WindowTreeHost).
-    window_server_->DestroyTree(
-        window_manager_display_root_->window_manager_state()->window_tree());
+
+    if (window_server_->IsInExternalWindowMode())
+      window_manager_display_root_->window_manager_state()->OnDisplayDestroying(
+          this);
+
+    WindowTree* tree =
+        window_manager_display_root_->window_manager_state()->window_tree();
+    ServerWindow* root = window_manager_display_root_->root();
+    if (tree) {
+      // Delete the window root corresponding to that display.
+      ClientWindowId root_id;
+      if (tree->IsWindowKnown(root, &root_id))
+        tree->DeleteWindow(root_id);
+
+      // Destroy the tree once all the roots have been removed.
+      if (tree->roots().empty())
+        window_server_->DestroyTree(tree);
+    }
   }
 }
 

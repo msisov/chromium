@@ -252,26 +252,25 @@ WindowTreeClient::CreateForWindowTreeHostFactory(
 }
 
 // static
-std::unique_ptr<WindowTreeClient> WindowTreeClient::CreateForExternalWindowMode(
+std::unique_ptr<WindowTreeClient>
+WindowTreeClient::CreateForExternalWindowTreeFactory(
     service_manager::Connector* connector,
     WindowTreeClientDelegate* delegate,
     bool create_discardable_memory) {
   std::unique_ptr<WindowTreeClient> wtc(
       new WindowTreeClient(connector, delegate, nullptr, nullptr, nullptr,
                            create_discardable_memory));
-  ui::mojom::ExternalWindowModeRegistrarPtr factory;
+  ui::mojom::ExternalWindowTreeFactoryPtr factory;
   connector->BindInterface(ui::mojom::kServiceName, &factory);
 
-  ui::mojom::WindowTreePtr tree;
+  ui::mojom::WindowTreePtr window_tree;
 
-  ui::mojom::WindowTreeClientPtr tree_client;
-  wtc->binding_.Bind(MakeRequest(&tree_client));
-  factory->Register(MakeRequest(&tree),
-                    MakeRequest(&wtc->tree_host_factory_ptr_),
-                    std::move(tree_client));
+  ui::mojom::WindowTreeClientPtr client;
+  wtc->binding_.Bind(MakeRequest(&client));
+  factory->Create(MakeRequest(&window_tree), std::move(client));
 
   wtc->in_external_window_mode_ = true;
-  wtc->SetWindowTree(std::move(tree));
+  wtc->SetWindowTree(std::move(window_tree));
   return wtc;
 }
 
@@ -755,6 +754,12 @@ void WindowTreeClient::SetWindowTree(ui::mojom::WindowTreePtr window_tree_ptr) {
         MakeRequest(&window_manager_internal_client_));
     window_manager_client_ = window_manager_internal_client_.get();
   }
+
+  if (in_external_window_mode_) {
+    tree_ptr_->GetExternalWindowTreeHostFactory(
+        MakeRequest(&window_tree_host_factory_));
+    window_tree_host_factory_ptr_ = window_tree_host_factory_.get();
+  }
 }
 
 void WindowTreeClient::WindowTreeConnectionEstablished(
@@ -938,8 +943,8 @@ void WindowTreeClient::OnWindowMusCreated(WindowMus* window) {
     // Triggers the creation of a mojom::WindowTreeHost instance on the server
     // side. Ends up calling back to client side, WindowTreeClient::OnEmbed.
     ui::mojom::WindowTreeHostPtr host;
-    tree_host_factory_ptr_->CreatePlatformWindow(MakeRequest(&host),
-                                                 window->server_id());
+    window_tree_host_factory_ptr_->CreatePlatformWindow(MakeRequest(&host),
+                                                        window->server_id());
     return;
   }
 
@@ -1279,7 +1284,7 @@ void WindowTreeClient::OnEmbed(
     const base::Optional<viz::LocalSurfaceId>& local_surface_id) {
   if (in_external_window_mode_) {
     // No need to set 'tree_ptr_' since it was already set during
-    // CreateForExternalWindowMode.
+    // ConnectViaExternalWindowTreeFactory.
     DCHECK(tree_ptr_);
     DCHECK(!tree);
 

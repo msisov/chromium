@@ -57,6 +57,7 @@
         "removable_storage_writer": [ "removable_storage_writer" ],
         "ui": [
           "display_dev",
+          "external_window_tree_factory",
           "ime_registrar",
           "input_device_controller",
           "window_manager"

@@ -21,7 +21,6 @@
 #include "mojo/public/cpp/bindings/binding.h"
 #include "services/ui/public/interfaces/window_manager_window_tree_factory.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
-#include "services/ui/ws/external_window_tree_host_factory.h"
 #include "services/ui/ws/gpu_host_delegate.h"
 #include "services/ui/ws/ids.h"
 #include "services/ui/ws/operation.h"
@@ -166,12 +165,6 @@ class WindowServer : public ServerWindowDelegate,
   }
   void BindWindowManagerWindowTreeFactory(
       mojo::InterfaceRequest<mojom::WindowManagerWindowTreeFactory> request);
-
-  void set_window_tree_host_factory(
-      std::unique_ptr<ExternalWindowTreeHostFactory> factory) {
-    DCHECK(factory);
-    window_tree_host_factory_ = std::move(factory);
-  }
 
   // Sets focus to |window|. Returns true if |window| already has focus, or
   // focus was successfully changed. Returns |false| if |window| is not a valid
@@ -421,8 +414,6 @@ class WindowServer : public ServerWindowDelegate,
 
   std::unique_ptr<WindowManagerWindowTreeFactory>
       window_manager_window_tree_factory_;
-
-  std::unique_ptr<ExternalWindowTreeHostFactory> window_tree_host_factory_;
 
   viz::SurfaceId root_surface_id_;
 
