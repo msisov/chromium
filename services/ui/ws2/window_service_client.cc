@@ -931,6 +931,12 @@ void WindowServiceClient::GetWindowManagerClient(
   NOTIMPLEMENTED();
 }
 
+void WindowServiceClient::GetExternalWindowTreeHostFactory(
+    mojo::AssociatedInterfaceRequest<ui::mojom::ExternalWindowTreeHostFactory>
+        request) {
+  NOTIMPLEMENTED();
+}
+
 void WindowServiceClient::GetCursorLocationMemory(
     GetCursorLocationMemoryCallback callback) {
   auto shared_buffer_handle =

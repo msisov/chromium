@@ -50,7 +50,7 @@ MusDemoExternal::~MusDemoExternal() {}
 
 std::unique_ptr<aura::WindowTreeClient>
 MusDemoExternal::CreateWindowTreeClient() {
-  return aura::WindowTreeClient::CreateForExternalWindowMode(
+  return aura::WindowTreeClient::CreateForExternalWindowTreeFactory(
       context()->connector(), this);
 }
 
@@ -87,10 +87,10 @@ void MusDemoExternal::OpenNewWindow() {
 
 void MusDemoExternal::OnEmbed(
     std::unique_ptr<aura::WindowTreeHostMus> window_tree_host) {
-  // In external window mode, the window tree host instance has already been
-  // created earlier on. nullptr is passed here then by the callee.
   DCHECK(!window_tree_host);
 
+  // TODO: Clean up WindowTreeClientDelegate::OnEmbed API so that it passes
+  // no ownership of WindowTreeHostMus instance.
   InitWindowTreeData(nullptr /*window tree host mus*/);
   initialized_windows_count_++;
 

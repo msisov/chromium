@@ -290,6 +290,9 @@ class COMPONENT_EXPORT(WINDOW_SERVICE) WindowServiceClient
   void PerformWmAction(Id window_id, const std::string& action) override;
   void GetWindowManagerClient(
       ::ui::mojom::WindowManagerClientAssociatedRequest internal) override;
+  void GetExternalWindowTreeHostFactory(
+      mojo::AssociatedInterfaceRequest<ui::mojom::ExternalWindowTreeHostFactory>
+          request) override;
   void GetCursorLocationMemory(
       GetCursorLocationMemoryCallback callback) override;
   void PerformWindowMove(uint32_t change_id,
