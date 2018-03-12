@@ -18,7 +18,7 @@
 #include "services/service_manager/public/cpp/service_test.h"
 #include "services/ui/common/util.h"
 #include "services/ui/public/interfaces/constants.mojom.h"
-#include "services/ui/public/interfaces/external_window_mode_registrar.mojom.h"
+#include "services/ui/public/interfaces/external_window_tree_factory.mojom.h"
 #include "services/ui/public/interfaces/window_tree.mojom.h"
 #include "services/ui/public/interfaces/window_tree_host_factory.mojom.h"
 #include "services/ui/ws/ids.h"
@@ -737,17 +737,21 @@ class WindowTreeClientTest : public WindowServerServiceTestBase {
 
 #if defined(USE_OZONE) && defined(OS_LINUX) && !defined(OS_CHROMEOS)
     // External window mode.
-    ui::mojom::ExternalWindowModeRegistrarPtr registrar;
-    connector()->BindInterface(ui::mojom::kServiceName, &registrar);
+    ui::mojom::ExternalWindowTreeFactoryPtr tree_factory;
+    connector()->BindInterface(ui::mojom::kServiceName, &tree_factory);
 
     ui::mojom::WindowTreePtr tree;
-    ui::mojom::ExternalWindowTreeHostFactoryPtr tree_host_factory_ptr;
     mojom::WindowTreeClientPtr tree_client_ptr;
     wt_client1_ = std::make_unique<TestWindowTreeClient>();
     wt_client1_->Bind(MakeRequest(&tree_client_ptr));
 
-    registrar->Register(MakeRequest(&tree), MakeRequest(&tree_host_factory_ptr),
-                        std::move(tree_client_ptr));
+    tree_factory->Create(MakeRequest(&tree), std::move(tree_client_ptr));
+
+    ui::mojom::ExternalWindowTreeHostFactoryAssociatedPtr tree_host_factory;
+    ui::mojom::ExternalWindowTreeHostFactory* tree_host_factory_ptr = nullptr;
+
+    tree->GetExternalWindowTreeHostFactory(MakeRequest(&tree_host_factory));
+    tree_host_factory_ptr = tree_host_factory.get();
 
     wt_client1_->set_tree(std::move(tree));
 

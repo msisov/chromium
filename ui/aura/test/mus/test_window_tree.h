@@ -238,6 +238,9 @@ class TestWindowTree : public ui::mojom::WindowTree {
   void GetWindowManagerClient(
       mojo::AssociatedInterfaceRequest<ui::mojom::WindowManagerClient> internal)
       override;
+  void GetExternalWindowTreeHostFactory(
+      mojo::AssociatedInterfaceRequest<ui::mojom::ExternalWindowTreeHostFactory>
+          request) override;
   void GetCursorLocationMemory(
       GetCursorLocationMemoryCallback callback) override;
   void PerformDragDrop(
