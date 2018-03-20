@@ -56,15 +56,18 @@ bool WaylandNestedCompositorClient::Initialize() {
 }
 
 wl_surface* WaylandNestedCompositorClient::CreateOrGetSurface() {
-  if (!wl_surface_) {
-    wl_surface_.reset(wl_compositor_create_surface(compositor_.get()));
-    if (!wl_surface_)
-      CHECK(false) << "Failed to create wl_surface";
-  }
+  wl::Object<wl_surface> wl_surface;
+  wl_surface.reset(wl_compositor_create_surface(compositor_.get()));
+  if (!wl_surface)
+    CHECK(false) << "Failed to create wl_surface";
 
   Flush();
 
-  return wl_surface_.get();
+  struct wl_surface* surface = wl_surface.get();
+  // TODO(msisov, tonikitoo): check for a listener, which is capabale of
+  // listening
+  surfaces_.push_back(std::move(wl_surface));
+  return surface;
 }
 
 void WaylandNestedCompositorClient::Flush() {

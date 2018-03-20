@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <vector>
+
 #include "base/macros.h"
 #include "ui/gfx/native_widget_types.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
@@ -34,7 +36,7 @@ class WaylandNestedCompositorClient {
   wl::Object<wl_registry> registry_;
   wl::Object<wl_compositor> compositor_;
 
-  wl::Object<wl_surface> wl_surface_;
+  std::vector<wl::Object<wl_surface>> surfaces_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandNestedCompositorClient);
 };
