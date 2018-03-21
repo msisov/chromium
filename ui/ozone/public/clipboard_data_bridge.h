@@ -5,8 +5,8 @@
 #ifndef UI_OZONE_PUBLIC_CLIPBOARD_DATA_BRIDGE_H_
 #define UI_OZONE_PUBLIC_CLIPBOARD_DATA_BRIDGE_H_
 
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "base/macros.h"

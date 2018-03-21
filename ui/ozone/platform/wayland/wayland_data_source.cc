@@ -11,10 +11,8 @@ namespace ui {
 WaylandDataSource::WaylandDataSource(wl_data_source* data_source)
     : data_source_(data_source) {
   static const struct wl_data_source_listener kDataSourceListener = {
-      WaylandDataSource::OnTarget,
-      WaylandDataSource::OnSend,
-      WaylandDataSource::OnCancel
-  };
+      WaylandDataSource::OnTarget, WaylandDataSource::OnSend,
+      WaylandDataSource::OnCancel};
   wl_data_source_add_listener(data_source, &kDataSourceListener, this);
 }
 

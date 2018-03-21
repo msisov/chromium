@@ -165,8 +165,8 @@ void WaylandConnection::ResetPointerFlags() {
     pointer_->ResetFlags();
 }
 
-void WaylandConnection::SetupClipboardDataBridge(
-    ClipboardDataBridge* data, ClipboardDelegate** delegate) {
+void WaylandConnection::SetupClipboardDataBridge(ClipboardDataBridge* data,
+                                                 ClipboardDelegate** delegate) {
   DCHECK(data && !*delegate);
   clipboard_backing_store_ = data;
   *delegate = this;
@@ -222,7 +222,8 @@ void WaylandConnection::SetClipboardData(
   }
 }
 
-void WaylandConnection::GetClipboardData(const std::string& mime_type,
+void WaylandConnection::GetClipboardData(
+    const std::string& mime_type,
     base::Optional<std::vector<uint8_t>>* data) {
   DCHECK(IsSelectionOwner());
   auto it = clipboard_backing_store_->data_map().find(mime_type);
@@ -299,11 +300,13 @@ void WaylandConnection::Global(void* data,
     }
     wl_seat_add_listener(connection->seat_.get(), &seat_listener, connection);
 
-    // TODO(tonikitoo,msisov): The connection passed to WaylandInputDevice must have a
-    // valid data device manager. We should ideally be robust to the compositor
-    // advertising a wl_seat first. No known compositor does this, fortunately.
+    // TODO(tonikitoo,msisov): The connection passed to WaylandInputDevice must
+    // have a valid data device manager. We should ideally be robust to the
+    // compositor advertising a wl_seat first. No known compositor does this,
+    // fortunately.
     if (!connection->data_device_manager_) {
-      LOG(ERROR) << "No data device manager. Clipboard won't be fully functional";
+      LOG(ERROR)
+          << "No data device manager. Clipboard won't be fully functional";
       return;
     }
     wl_data_device* data_device = wl_data_device_manager_get_data_device(

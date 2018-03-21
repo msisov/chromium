@@ -76,13 +76,13 @@ class WaylandConnection : public PlatformEventSource,
 
   // Clipboard implementation.
   void SetupClipboardDataBridge(ClipboardDataBridge* data,
-      ClipboardDelegate** delegate);
+                                ClipboardDelegate** delegate);
   void DataSourceCancelled();
   void SetClipboardData(
       const base::Optional<ClipboardDataBridge::DataMap>& data,
       const std::string& mime_type);
   void GetClipboardData(const std::string& mime_type,
-      base::Optional<std::vector<uint8_t>>* data);
+                        base::Optional<std::vector<uint8_t>>* data);
 
   // ClipboardDelegate.
   void WriteToWMClipboard(const std::vector<std::string>& mime_types,
