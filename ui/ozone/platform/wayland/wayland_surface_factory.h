@@ -13,10 +13,12 @@
 namespace ui {
 
 class WaylandConnection;
+class WaylandNestedCompositorClient;
 
 class WaylandSurfaceFactory : public SurfaceFactoryOzone {
  public:
   explicit WaylandSurfaceFactory(WaylandConnection* connection);
+  explicit WaylandSurfaceFactory(WaylandNestedCompositorClient* client);
   ~WaylandSurfaceFactory() override;
 
   // SurfaceFactoryOzone:
@@ -36,6 +38,8 @@ class WaylandSurfaceFactory : public SurfaceFactoryOzone {
       const gfx::NativePixmapHandle& handle) override;
 
  private:
+  WaylandNestedCompositorClient* client_;
+
   WaylandConnection* connection_;
   std::unique_ptr<GLOzone> egl_implementation_;
   std::unique_ptr<GLOzone> osmesa_implementation_;

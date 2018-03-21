@@ -14,6 +14,9 @@
 #include "ui/ozone/common/stub_overlay_manager.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 #include "ui/ozone/platform/wayland/wayland_input_method_context.h"
+#include "ui/ozone/platform/wayland/wayland_nested_compositor.h"
+#include "ui/ozone/platform/wayland/wayland_nested_compositor_client.h"
+#include "ui/ozone/platform/wayland/wayland_nested_compositor_watcher.h"
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/clipboard_data_bridge.h"
@@ -111,23 +114,30 @@ class OzonePlatformWayland : public OzonePlatform {
     cursor_factory_.reset(new BitmapCursorFactoryOzone);
     overlay_manager_.reset(new StubOverlayManager);
     input_controller_ = CreateStubInputController();
-    surface_factory_.reset(new WaylandSurfaceFactory(connection_.get()));
+
+    if (!args.single_process) {
+      nested_compositor_.reset(new WaylandNestedCompositor(connection_.get()));
+      if (!nested_compositor_->Initialize())
+        CHECK(false) << "Wayland nested compositor failure.";
+
+      nested_compositor_watcher_.reset(
+          new WaylandNestedCompositorWatcher(nested_compositor_.get()));
+    } else {
+      surface_factory_.reset(new WaylandSurfaceFactory(connection_.get()));
+    }
+
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
   }
 
   void InitializeGPU(const InitParams& args) override {
-    // TODO(fwang): args.single_process parameter should be checked here; make
-    // sure callers pass in the proper value. Once it happens, the check whether
-    // surface factory was set in the same process by a previous InitializeUI
-    // call becomes unneeded.
-    if (!surface_factory_) {
-      // TODO(fwang): Separate processes can not share a Wayland connection
-      // and so the current implementations of GLOzoneEGLWayland and
-      // WaylandCanvasSurface may only work when UI and GPU live in the same
-      // process. GetSurfaceFactoryOzone() must be non-null so a dummy instance
-      // of WaylandSurfaceFactory is needed to make the GPU initialization
-      // gracefully fail.
-      surface_factory_.reset(new WaylandSurfaceFactory(nullptr));
+    if (!args.single_process) {
+      DCHECK(!surface_factory_);
+      nested_compositor_client_.reset(new WaylandNestedCompositorClient);
+      if (!nested_compositor_client_->Initialize())
+        CHECK(false) << "Wayland nested compositor client failure.";
+
+      surface_factory_.reset(
+          new WaylandSurfaceFactory(nested_compositor_client_.get()));
     }
   }
 
@@ -148,12 +158,21 @@ class OzonePlatformWayland : public OzonePlatform {
   }
 
  private:
+  // Belong to browser process.
   std::unique_ptr<WaylandConnection> connection_;
-  std::unique_ptr<WaylandSurfaceFactory> surface_factory_;
   std::unique_ptr<BitmapCursorFactoryOzone> cursor_factory_;
   std::unique_ptr<StubOverlayManager> overlay_manager_;
   std::unique_ptr<InputController> input_controller_;
+  std::unique_ptr<WaylandNestedCompositor> nested_compositor_;
+  std::unique_ptr<WaylandNestedCompositorWatcher> nested_compositor_watcher_;
   std::unique_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
+
+  // Can belong to either browser or gpu process depending on
+  // |args.single_process| value.
+  std::unique_ptr<WaylandSurfaceFactory> surface_factory_;
+
+  // Belong to gpu process if exists.
+  std::unique_ptr<WaylandNestedCompositorClient> nested_compositor_client_;
 
 #if BUILDFLAG(USE_XKBCOMMON)
   XkbEvdevCodes xkb_evdev_code_converter_;
