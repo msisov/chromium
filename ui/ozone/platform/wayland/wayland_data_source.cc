@@ -44,10 +44,10 @@ void WaylandDataSource::OnSend(void* data,
                                int32_t fd) {
   WaylandDataSource* self = static_cast<WaylandDataSource*>(data);
   base::Optional<std::vector<uint8_t>> mime_data;
-  if (strcmp(mime_type, "text/plain;charset=utf-8") == 0)
+  self->connection_->GetClipboardData(mime_type, &mime_data);
+  if (!mime_data.has_value() &&
+      strcmp(mime_type, "text/plain;charset=utf-8") == 0)
     self->connection_->GetClipboardData("text/plain", &mime_data);
-  else
-    self->connection_->GetClipboardData(mime_type, &mime_data);
 
   std::string str(mime_data->begin(), mime_data->end());
   if (write(fd, str.data(), str.length()) < 0)
