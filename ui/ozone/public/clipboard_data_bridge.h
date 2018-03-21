@@ -14,6 +14,12 @@
 
 namespace ui {
 
+using GetDataCallback =
+    base::OnceCallback<void(const base::Optional<std::vector<uint8_t>>&)>;
+using SetDataCallback = base::OnceCallback<void()>;
+using GetMimeTypesCallback =
+    base::OnceCallback<void(const std::vector<std::string>&)>;
+
 // ClipboardDataBridge stores the clipboard backing store, allowing
 // exchanging data between Ozone and its clients (eg Mus).
 class OZONE_BASE_EXPORT ClipboardDataBridge {
@@ -32,9 +38,11 @@ class OZONE_BASE_EXPORT ClipboardDataBridge {
 // content.
 class OZONE_BASE_EXPORT ClipboardDelegate {
  public:
-  virtual void WriteToWMClipboard(const std::vector<std::string>&) = 0;
-  virtual void ReadFromWMClipboard(const std::string& mime_type) = 0;
-  virtual std::vector<std::string> GetAvailableMimeTypes() = 0;
+  virtual void WriteToWMClipboard(const std::vector<std::string>&,
+                                  SetDataCallback callback) = 0;
+  virtual void ReadFromWMClipboard(const std::string& mime_type,
+                                   GetDataCallback callback) = 0;
+  virtual void GetAvailableMimeTypes(GetMimeTypesCallback callback) = 0;
   virtual bool IsSelectionOwner() = 0;
 };
 

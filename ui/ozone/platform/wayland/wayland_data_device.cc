@@ -80,7 +80,7 @@ void WaylandDataDevice::OnSelection(void* data,
     self->selection_offer_.reset();
 
     // Clear Clipboard cache.
-    self->connection_->SetClipboardData(base::nullopt);
+    self->connection_->SetClipboardData(base::nullopt, std::string());
     return;
   }
 

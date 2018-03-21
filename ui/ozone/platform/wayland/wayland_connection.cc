@@ -172,7 +172,9 @@ void WaylandConnection::SetupClipboardDataBridge(
   *delegate = this;
 }
 
-void WaylandConnection::WriteToWMClipboard(const std::vector<std::string>& mime_types) {
+void WaylandConnection::WriteToWMClipboard(
+    const std::vector<std::string>& mime_types,
+    SetDataCallback callback) {
   if (!data_source_) {
     wl_data_source* data_source =
         wl_data_device_manager_create_data_source(data_device_manager_.get());
@@ -185,9 +187,12 @@ void WaylandConnection::WriteToWMClipboard(const std::vector<std::string>& mime_
     // if clipboard mime types changes?
     data_source_->WriteToClipboard(mime_types);
   }
+  std::move(callback).Run();
 }
 
-void WaylandConnection::ReadFromWMClipboard(const std::string& mime_type) {
+void WaylandConnection::ReadFromWMClipboard(const std::string& mime_type,
+                                            GetDataCallback callback) {
+  read_clipboard_closure_ = std::move(callback);
   data_device_->RequestSelectionData(mime_type);
 }
 
@@ -195,19 +200,26 @@ bool WaylandConnection::IsSelectionOwner() {
   return !!data_source_;
 }
 
-std::vector<std::string> WaylandConnection::GetAvailableMimeTypes() {
-  return data_device_->GetAvailableMimeTypes();
+void WaylandConnection::GetAvailableMimeTypes(GetMimeTypesCallback callback) {
+  std::move(callback).Run(data_device_->GetAvailableMimeTypes());
 }
 
 void WaylandConnection::DataSourceCancelled() {
-  SetClipboardData(base::nullopt);
+  SetClipboardData(base::nullopt, std::string());
   data_source_.reset();
 }
 
 void WaylandConnection::SetClipboardData(
-    const base::Optional<ClipboardDataBridge::DataMap>& data) {
+    const base::Optional<ClipboardDataBridge::DataMap>& data,
+    const std::string& mime_type) {
   clipboard_backing_store_->data_map() =
       data.value_or(ClipboardDataBridge::DataMap());
+
+  if (!read_clipboard_closure_.is_null()) {
+    auto it = clipboard_backing_store_->data_map().find(mime_type);
+    DCHECK(it != clipboard_backing_store_->data_map().end());
+    std::move(read_clipboard_closure_).Run(it->second);
+  }
 }
 
 void WaylandConnection::GetClipboardData(const std::string& mime_type,

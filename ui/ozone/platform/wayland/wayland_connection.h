@@ -79,14 +79,17 @@ class WaylandConnection : public PlatformEventSource,
       ClipboardDelegate** delegate);
   void DataSourceCancelled();
   void SetClipboardData(
-      const base::Optional<ClipboardDataBridge::DataMap>& data);
+      const base::Optional<ClipboardDataBridge::DataMap>& data,
+      const std::string& mime_type);
   void GetClipboardData(const std::string& mime_type,
       base::Optional<std::vector<uint8_t>>* data);
 
   // ClipboardDelegate.
-  void WriteToWMClipboard(const std::vector<std::string>& mime_types) override;
-  void ReadFromWMClipboard(const std::string& mime_type) override;
-  std::vector<std::string> GetAvailableMimeTypes() override;
+  void WriteToWMClipboard(const std::vector<std::string>& mime_types,
+                          SetDataCallback callback) override;
+  void ReadFromWMClipboard(const std::string& mime_type,
+                           GetDataCallback callback) override;
+  void GetAvailableMimeTypes(GetMimeTypesCallback callback) override;
   bool IsSelectionOwner() override;
 
  private:
@@ -147,6 +150,9 @@ class WaylandConnection : public PlatformEventSource,
   // This is the clipboard data backing store, serving both
   // client (eg Chrome), and the system wide clipboard.
   ClipboardDataBridge* clipboard_backing_store_ = nullptr;
+
+  // Stores the callback to be invoked upon data reading from clipboard.
+  GetDataCallback read_clipboard_closure_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandConnection);
 };
