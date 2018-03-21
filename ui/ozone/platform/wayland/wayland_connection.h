@@ -86,8 +86,8 @@ class WaylandConnection : public PlatformEventSource,
   // ClipboardDelegate.
   void WriteToWMClipboard(const std::vector<std::string>& mime_types) override;
   void ReadFromWMClipboard(const std::string& mime_type) override;
-  bool ShouldGetClipboardDataFromWMClipboard() override;
   std::vector<std::string> GetAvailableMimeTypes() override;
+  bool IsSelectionOwner() override;
 
  private:
   void Flush();

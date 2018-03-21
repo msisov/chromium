@@ -32,7 +32,7 @@ class ClipboardImpl::ClipboardData {
 
     // If there is no mime types cached, it means we need to query the system
     // clipboard for data.
-    if (!types.size() && delegate_) {
+    if (delegate_ && !delegate_->IsSelectionOwner()) {
         for (const auto& mime_type : delegate_->GetAvailableMimeTypes())
           types.push_back(mime_type);
       return types;
@@ -56,7 +56,7 @@ class ClipboardImpl::ClipboardData {
   void GetData(const std::string& mime_type,
                base::Optional<std::vector<uint8_t>>* data) const {
     // Read from system clipboard first.
-    if (delegate_ && delegate_->ShouldGetClipboardDataFromWMClipboard())
+    if (delegate_ && !delegate_->IsSelectionOwner())
       delegate_->ReadFromWMClipboard(mime_type);
 
     auto it = data_types_.find(mime_type);

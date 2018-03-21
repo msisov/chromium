@@ -35,7 +35,7 @@ class OZONE_BASE_EXPORT ClipboardDelegate {
   virtual void WriteToWMClipboard(const std::vector<std::string>&) = 0;
   virtual void ReadFromWMClipboard(const std::string& mime_type) = 0;
   virtual std::vector<std::string> GetAvailableMimeTypes() = 0;
-  virtual bool ShouldGetClipboardDataFromWMClipboard() = 0;
+  virtual bool IsSelectionOwner() = 0;
 };
 
 }  // namespace ui
