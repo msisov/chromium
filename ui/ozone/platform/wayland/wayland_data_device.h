@@ -8,6 +8,7 @@
 #include <wayland-client.h>
 #include <string>
 
+#include "base/callback.h"
 #include "base/macros.h"
 #include "base/optional.h"
 #include "ui/ozone/platform/wayland/wayland_data_offer.h"
@@ -32,6 +33,8 @@ class WaylandDataDevice {
   std::vector<std::string> GetAvailableMimeTypes();
 
  private:
+  void ReadClipboardDataFromFD(int fd, const std::string& mime_type);
+
   // wl_data_device_listener callbacks
   static void OnDataOffer(void* data,
                           wl_data_device* data_device,
@@ -39,6 +42,8 @@ class WaylandDataDevice {
   static void OnSelection(void* data,
                           wl_data_device* data_device,
                           wl_data_offer* id);
+
+  static void SyncCallback(void* data, struct wl_callback* cb, uint32_t time);
 
   // The wl_data_device wrapped by this WaylandDataDevice.
   wl::Object<wl_data_device> data_device_;
@@ -56,6 +61,11 @@ class WaylandDataDevice {
   // Offer that holds the most-recent clipboard selection, or null if no
   // clipboard data is available.
   std::unique_ptr<WaylandDataOffer> selection_offer_;
+
+  // Make sure server has written data on the pipe, before block on read().
+  static const wl_callback_listener callback_listener_;
+  base::OnceClosure read_from_fd_closure_;
+  wl::Object<wl_callback> sync_callback_;
 
   // Local clipboard backing store, that can override client's after reading
   // from system clipboard.

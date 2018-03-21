@@ -4,9 +4,15 @@
 
 #include "ui/ozone/platform/wayland/wayland_data_device.h"
 
+#include "base/bind.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 
 namespace ui {
+
+// static
+const wl_callback_listener WaylandDataDevice::callback_listener_ = {
+    WaylandDataDevice::SyncCallback,
+};
 
 WaylandDataDevice::WaylandDataDevice(WaylandConnection* connection,
                                      wl_data_device* data_device)
@@ -34,8 +40,14 @@ void WaylandDataDevice::RequestSelectionData(const std::string& mime_type) {
 
   // Ensure there is not pending operation to be performed by the compositor,
   // other read(..) can block awaiting data to be sent to pipe.
+  read_from_fd_closure_ = base::BindOnce(
+      &WaylandDataDevice::ReadClipboardDataFromFD, base::Unretained(this), fd, mime_type);
+  sync_callback_.reset(wl_display_sync(connection_->display()));
+  wl_callback_add_listener(sync_callback_.get(), &callback_listener_, this);
   wl_display_flush(connection_->display());
+}
 
+void WaylandDataDevice::ReadClipboardDataFromFD(int fd, const std::string& mime_type) {
   std::string contents;
   char buffer[1 << 10];  // 1 kB in bytes.
   ssize_t length;
@@ -43,11 +55,10 @@ void WaylandDataDevice::RequestSelectionData(const std::string& mime_type) {
     contents.append(buffer, length);
   close(fd);
 
-  for (const auto& mime_type : selection_offer_->GetAvailableMimeTypes())
-    current_clipboard_.value()[mime_type] =
-        std::vector<uint8_t>(contents.begin(), contents.end());
+  current_clipboard_.value()[mime_type] =
+      std::vector<uint8_t>(contents.begin(), contents.end());
 
-  connection_->SetClipboardData(current_clipboard_);
+  connection_->SetClipboardData(current_clipboard_, mime_type);
 }
 
 std::vector<std::string> WaylandDataDevice::GetAvailableMimeTypes() {
@@ -88,6 +99,17 @@ void WaylandDataDevice::OnSelection(void* data,
   self->selection_offer_ = std::move(self->new_offer_);
 
   self->selection_offer_->EnsureTextMimeTypeIfNeeded();
+}
+
+void WaylandDataDevice::SyncCallback(void* data,
+                                     struct wl_callback* cb,
+                                     uint32_t time) {
+  WaylandDataDevice* data_device = static_cast<WaylandDataDevice*>(data);
+  DCHECK(data_device);
+
+  std::move(data_device->read_from_fd_closure_).Run();
+  DCHECK(data_device->read_from_fd_closure_.is_null());
+  data_device->sync_callback_.reset();
 }
 
 }  // namespace ui
