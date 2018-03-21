@@ -130,6 +130,7 @@ source_set("wayland_unittests") {
     "fake_server.cc",
     "fake_server.h",
     "wayland_connection_unittest.cc",
+    "wayland_data_device_unittest.cc",
     "wayland_input_method_context_unittest.cc",
     "wayland_keyboard_unittest.cc",
     "wayland_pointer_unittest.cc",
