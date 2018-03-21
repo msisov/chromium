@@ -212,9 +212,7 @@ void WaylandConnection::SetClipboardData(
 
 void WaylandConnection::GetClipboardData(const std::string& mime_type,
     base::Optional<std::vector<uint8_t>>* data) {
-  if (!IsSelectionOwner())
-    ReadFromWMClipboard(mime_type);
-
+  DCHECK(IsSelectionOwner());
   auto it = clipboard_backing_store_->data_map().find(mime_type);
   if (it != clipboard_backing_store_->data_map().end()) {
     data->emplace(it->second);
