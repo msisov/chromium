@@ -208,7 +208,6 @@ WaylandSurfaceFactory::~WaylandSurfaceFactory() {}
 
 std::unique_ptr<SurfaceOzoneCanvas>
 WaylandSurfaceFactory::CreateCanvasForWidget(gfx::AcceleratedWidget widget) {
-  CHECK(false);
   if (!connection_)
     return nullptr;
   WaylandWindow* window = connection_->GetWindow(widget);
