@@ -711,7 +711,10 @@ void BrowserMainLoop::PostMainMessageLoopStart() {
         BrowserThread::GetTaskRunnerForThread(BrowserThread::UI));
   }
 
-  if (!base::FeatureList::IsEnabled(::features::kMash)) {
+#if defined(OS_CHROMEOS)
+  if (!base::FeatureList::IsEnabled(::features::kMash))
+#endif
+  {
     discardable_shared_memory_manager_ =
         std::make_unique<discardable_memory::DiscardableSharedMemoryManager>();
     // TODO(boliu): kSingleProcess check is a temporary workaround for
