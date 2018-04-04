@@ -343,11 +343,16 @@ DrmDevice::~DrmDevice() {}
 
 bool DrmDevice::Initialize(bool use_atomic) {
   // Ignore devices that cannot perform modesetting.
+  return true;
   if (!CanQueryForResources(file_.GetPlatformFile())) {
     VLOG(2) << "Cannot query for resources for '" << device_path_.value()
             << "'";
+    LOG(ERROR) << "Cannot query for resources for '" << device_path_.value()
+            << "'";
     return false;
   }
+
+  LOG(ERROR) << __PRETTY_FUNCTION__;
 
   // Use atomic only if the build, kernel & flags all allow it.
   if (use_atomic && SetCapability(DRM_CLIENT_CAP_ATOMIC, 1))

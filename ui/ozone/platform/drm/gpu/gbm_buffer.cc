@@ -57,6 +57,7 @@ GbmBuffer::GbmBuffer(const scoped_refptr<GbmDevice>& gbm,
     uint32_t offsets[4] = {0};
     uint64_t modifiers[4] = {0};
 
+#if defined(OS_CHROMEOS)
     for (size_t i = 0; i < gbm_bo_get_num_planes(bo); ++i) {
       handles[i] = gbm_bo_get_plane_handle(bo, i).u32;
       strides[i] = gbm_bo_get_plane_stride(bo, i);
@@ -64,6 +65,15 @@ GbmBuffer::GbmBuffer(const scoped_refptr<GbmDevice>& gbm,
       if (modifier != DRM_FORMAT_MOD_INVALID)
         modifiers[i] = modifier;
     }
+#else
+    for (int i = 0; i < gbm_bo_get_plane_count(bo); ++i) {
+      handles[i] = gbm_bo_get_handle_for_plane(bo, i).u32;
+      strides[i] = gbm_bo_get_stride_for_plane(bo, i);
+      offsets[i] = gbm_bo_get_offset(bo, i);
+      if (modifier != DRM_FORMAT_MOD_INVALID)
+        modifiers[i] = modifier;
+    }
+#endif
 
     // AddFramebuffer2 only considers the modifiers if addfb_flags has
     // DRM_MODE_FB_MODIFIERS set. We only set that when we've created
@@ -81,9 +91,18 @@ GbmBuffer::GbmBuffer(const scoped_refptr<GbmDevice>& gbm,
       PLOG(ERROR) << "AddFramebuffer2 failed: ";
       LOG(ERROR) << base::StringPrintf(
           "planes: %zu, width: %u, height: %u, addfb_flags: %u",
-          gbm_bo_get_num_planes(bo), gbm_bo_get_width(bo),
+#if defined(OS_CHROMEOS)
+          gbm_bo_get_num_planes(bo),
+#else
+          gbm_bo_get_plane_count(bo),
+#endif
+          gbm_bo_get_width(bo),
           gbm_bo_get_height(bo), addfb_flags);
+#if defined(OS_CHROMEOS)
       for (size_t i = 0; i < gbm_bo_get_num_planes(bo); ++i) {
+#else
+      for (int i = 0; i < gbm_bo_get_plane_count(bo); ++i) {
+#endif
         LOG(ERROR) << "handles: " << handles[i] << ", stride: " << strides[i]
                    << ", offset: " << offsets[i]
                    << ", modifier: " << modifiers[i];
@@ -195,11 +214,20 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferForBO(
   std::vector<base::ScopedFD> fds;
   std::vector<gfx::NativePixmapPlane> planes;
 
-  const uint64_t modifier = gbm_bo_get_format_modifier(bo);
-  for (size_t i = 0; i < gbm_bo_get_num_planes(bo); ++i) {
+  const uint64_t modifier =
+#if defined(OS_CHROMEOS)
+    gbm_bo_get_format_modifier(bo);
+    for (size_t i = 0; i < gbm_bo_get_num_planes(bo); ++i) {
     // The fd returned by gbm_bo_get_fd is not ref-counted and need to be
     // kept open for the lifetime of the buffer.
     base::ScopedFD fd(gbm_bo_get_plane_fd(bo, i));
+#else
+    gbm_bo_get_format(bo);
+    for (int i = 0; i < gbm_bo_get_plane_count(bo); ++i) {
+    // The fd returned by gbm_bo_get_fd is not ref-counted and need to be
+    // kept open for the lifetime of the buffer.
+    base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo, i).u32);
+#endif
 
     // TODO(dcastagna): support multiple fds.
     // crbug.com/642410
@@ -212,9 +240,16 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferForBO(
       fds.emplace_back(std::move(fd));
     }
 
+#if defined(OS_CHROMEOS)
     planes.emplace_back(gbm_bo_get_plane_stride(bo, i),
                         gbm_bo_get_plane_offset(bo, i),
                         gbm_bo_get_plane_size(bo, i), modifier);
+#else
+    planes.emplace_back(gbm_bo_get_stride_for_plane(bo, i),
+                        gbm_bo_get_offset(bo, i),
+                        gbm_bo_get_height(bo) * gbm_bo_get_stride_for_plane(bo, i) /* find out if this is correct */,
+                        modifier);
+#endif
   }
   scoped_refptr<GbmBuffer> buffer(new GbmBuffer(gbm, bo, format, flags,
                                                 modifier, std::move(fds), size,
@@ -274,13 +309,21 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferFromFds(
   DCHECK_EQ(planes[0].offset, 0);
 
   // Try to use scanout if supported.
-  int gbm_flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
+  int gbm_flags = GBM_BO_USE_SCANOUT
+#if defined(OS_CHROMEOS)
+    | GBM_BO_USE_TEXTURING
+#endif
+    ;
   if (!gbm_device_is_format_supported(gbm->device(), format, gbm_flags))
     gbm_flags &= ~GBM_BO_USE_SCANOUT;
 
   gbm_bo* bo = nullptr;
   if (gbm_device_is_format_supported(gbm->device(), format, gbm_flags)) {
+#if defined(OS_CHROMEOS)
     struct gbm_import_fd_planar_data fd_data;
+#else
+    struct gbm_import_fd_modifier_data fd_data;
+#endif
     fd_data.width = size.width();
     fd_data.height = size.height();
     fd_data.format = format;
@@ -290,13 +333,22 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferFromFds(
       fd_data.fds[i] = fds[i < fds.size() ? i : 0].get();
       fd_data.strides[i] = planes[i].stride;
       fd_data.offsets[i] = planes[i].offset;
+#if defined(OS_CHROMEOS)
       fd_data.format_modifiers[i] = planes[i].modifier;
+#else
+      fd_data.modifier = planes[i].modifier;
+#endif
     }
 
     // The fd passed to gbm_bo_import is not ref-counted and need to be
     // kept open for the lifetime of the buffer.
+#if defined(OS_CHROMEOS)
     bo = gbm_bo_import(gbm->device(), GBM_BO_IMPORT_FD_PLANAR, &fd_data,
                        gbm_flags);
+#else
+    bo = gbm_bo_import(gbm->device(), GBM_BO_IMPORT_FD_MODIFIER, &fd_data,
+                       gbm_flags);
+#endif
     if (!bo) {
       LOG(ERROR) << "nullptr returned from gbm_bo_import";
       return nullptr;

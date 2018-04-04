@@ -126,24 +126,46 @@ void DrmThread::CreateBuffer(gfx::AcceleratedWidget widget,
   uint32_t flags = 0;
   switch (usage) {
     case gfx::BufferUsage::GPU_READ:
+#if defined(OS_CHROMEOS)
       flags = GBM_BO_USE_TEXTURING;
+#endif
       break;
     case gfx::BufferUsage::SCANOUT:
-      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
+#if defined (OS_CHROMEOS)
+      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT | BO_USE_TEXTURING;
+#else
+      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT;
+#endif
       break;
     case gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE:
+#if defined(OS_CHROMEOS)
       flags = GBM_BO_USE_LINEAR | GBM_BO_USE_CAMERA_WRITE | GBM_BO_USE_SCANOUT |
               GBM_BO_USE_TEXTURING;
+#else
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+#endif
       break;
     case gfx::BufferUsage::SCANOUT_CPU_READ_WRITE:
+#if defined(OS_CHROMEOS)
       flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
+#else
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+#endif
       break;
     case gfx::BufferUsage::SCANOUT_VDA_WRITE:
+#if defined(OS_CHROMEOS)
       flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
+#else
+      flags = GBM_BO_USE_SCANOUT;
+#endif
       break;
     case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE:
     case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT:
+#if defined(OS_CHROMEOS)
       flags = GBM_BO_USE_LINEAR | GBM_BO_USE_TEXTURING;
+#else
+      flags = GBM_BO_USE_LINEAR;
+#endif
       break;
   }
 
