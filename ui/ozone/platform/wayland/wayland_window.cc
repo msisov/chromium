@@ -378,6 +378,13 @@ PlatformImeController* WaylandWindow::GetPlatformImeController() {
 void WaylandWindow::PerformNativeWindowDragOrResize(uint32_t hittest) {
   connection_->ResetPointerFlags();
 
+  // Wayland doesn't reset the implicit grab on surface move/resize
+  // requests. Do so manually here.
+  if (has_pointer_focus_) {
+    connection_->pointer()->reset_window_with_pointer_focus();
+    set_has_implicit_grab(false);
+  }
+
   if (hittest == HTCAPTION)
     xdg_surface_->SurfaceMove(connection_);
   else
