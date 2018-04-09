@@ -60,7 +60,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   bool is_focused_popup() { return is_popup() && has_pointer_focus(); }
 
   // Tells if this is a popup.
-  bool is_popup() { return !!xdg_popup_.get(); }
+  bool is_popup() const { return !!xdg_popup_.get(); }
 
   // Set a child of this window. It is very important in case of nested
   // xdg_popups as long as we must destroy the very last first and only then

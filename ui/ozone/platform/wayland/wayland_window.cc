@@ -58,8 +58,6 @@ class XDGShellObjectFactory {
   DISALLOW_COPY_AND_ASSIGN(XDGShellObjectFactory);
 };
 
-static WaylandWindow* g_current_capture_ = nullptr;
-
 // TODO(msisov, tonikitoo): fix customization according to screen resolution
 // once we are able to get global coordinates of wayland windows.
 gfx::Rect TranslateBoundsToScreenCoordinates(const gfx::Rect& child_bounds,
@@ -157,6 +155,10 @@ void WaylandWindow::CreateXdgPopup() {
   }
 
   parent_window_->set_child_window(this);
+  // Release explicit capture set in mus for the main chromium window, so that
+  // events are forwarded correctly after popup is dead. 
+  if (!parent_window_->is_popup())
+    parent_window_->delegate()->OnLostCapture();
 }
 
 void WaylandWindow::CreateXdgSurface() {
@@ -268,26 +270,16 @@ void WaylandWindow::SetTitle(const base::string16& title) {
 
 void WaylandWindow::SetCapture() {
   // Wayland does implicit grabs, and doesn't allow for explicit grabs. The
-  // exception to that seems to be popups, which can do a grab during show. Need
-  // to evaluate under what circumstances we need this.
-  if (HasCapture())
-    return;
-
-  WaylandWindow* old_capture = g_current_capture_;
-  if (old_capture)
-    old_capture->delegate()->OnLostCapture();
-
-  g_current_capture_ = this;
+  // exception to that are popups, but we explicitly send events to a
+  // parent popup if such exists.
 }
 
 void WaylandWindow::ReleaseCapture() {
   // See comment in SetCapture() for details on wayland and grabs.
-  if (HasCapture())
-    g_current_capture_ = nullptr;
 }
 
 bool WaylandWindow::HasCapture() const {
-  return g_current_capture_ == this;
+  return is_popup() ? true : has_implicit_grab_;
 }
 
 void WaylandWindow::ToggleFullscreen() {
@@ -399,12 +391,12 @@ bool WaylandWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
 void WaylandWindow::StopMoveLoop() {}
 
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
-  if (HasCapture())
-    return true;
+  if (child_window_ && child_window_->is_popup())
+    return is_popup();
 
   // If another window has capture, return early before checking focus.
-  if (g_current_capture_)
-    return false;
+  if (HasCapture())
+    return true;
 
   if (event->IsMouseEvent())
     return has_pointer_focus_;
