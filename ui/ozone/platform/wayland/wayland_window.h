@@ -5,6 +5,9 @@
 #ifndef UI_OZONE_PLATFORM_WAYLAND_WAYLAND_WINDOW_H_
 #define UI_OZONE_PLATFORM_WAYLAND_WAYLAND_WINDOW_H_
 
+#include <wayland-client-protocol.h>
+#include <wayland-client-core.h>
+
 #include "base/memory/ref_counted.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/rect.h"
@@ -12,6 +15,10 @@
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
+
+struct gbm_bo;
+struct gbm_device;
+struct zwp_linux_buffer_params_v1;
 
 namespace ui {
 
@@ -24,6 +31,22 @@ class XDGSurfaceWrapper;
 namespace {
 class XDGShellObjectFactory;
 }  // namespace
+
+class WaylandDmaBuffer {
+ public:
+   WaylandDmaBuffer();
+   ~WaylandDmaBuffer();
+   wl_buffer* buffer() { return wl_buffer_.get(); }
+     
+   void InitializeBuffer(WaylandConnection* connection);
+ private:
+   void CreateZwpDmaBuf(WaylandConnection* connection);
+
+   struct gbm_device* gbm_device_ = nullptr;
+   struct gbm_bo* bo_ = nullptr;
+   struct zwp_linux_buffer_params_v1* params_ = nullptr;
+   wl::Object<wl_buffer> wl_buffer_;
+};
 
 class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
  public:

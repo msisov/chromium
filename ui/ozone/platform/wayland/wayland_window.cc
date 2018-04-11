@@ -5,6 +5,13 @@
 #include "ui/ozone/platform/wayland/wayland_window.h"
 
 #include <wayland-client.h>
+#include <linux-dmabuf-unstable-v1-client-protocol.h>
+
+#include <fcntl.h>
+#include <libdrm/drm_fourcc.h>
+#include <gbm.h>
+#include <xf86drm.h>
+#include "base/strings/stringprintf.h"
 
 #include "base/bind.h"
 #include "base/memory/ptr_util.h"
@@ -67,7 +74,86 @@ gfx::Rect TranslateBoundsToScreenCoordinates(const gfx::Rect& child_bounds,
   return gfx::Rect(gfx::Point(x, y), child_bounds.size());
 }
 
+const char kDriRenderNodeTemplate[] = "/dev/dri/renderD%u";
+
 }  // namespace
+
+// ----------------------------------------------------------------------------
+
+WaylandDmaBuffer::WaylandDmaBuffer() {}
+
+WaylandDmaBuffer::~WaylandDmaBuffer() {}
+
+void WaylandDmaBuffer::InitializeBuffer(WaylandConnection* connection) {
+  const uint32_t kDrmMaxMinor = 15;
+  const uint32_t kRenderNodeStart = 128;
+  const uint32_t kRenderNodeEnd = kRenderNodeStart + kDrmMaxMinor + 1;
+  
+  uint32_t fd = 0;
+  for (uint32_t i = kRenderNodeStart; i < kRenderNodeEnd; i++) {
+    std::string dri_render_node(
+        base::StringPrintf(kDriRenderNodeTemplate, i));
+    int render_fd = open(dri_render_node.c_str(), O_RDWR);
+    if (render_fd < 0) {
+      LOG(ERROR) << "No render fd";
+      continue;
+    }
+
+    LOG(ERROR) << "dri render " << dri_render_node;
+    
+    drmVersionPtr drm_version = drmGetVersion(render_fd);
+    if (!drm_version) {
+      LOG(ERROR) << "Can't get drm_version";
+      return;
+    }
+
+    LOG(ERROR) << "Name " << drm_version->name;
+
+    fd = render_fd;
+    break; 
+  }
+
+  gbm_device_ = gbm_create_device(fd);
+  if (!gbm_device_) {
+    LOG(ERROR) << "Can't get device";
+    return;
+  }
+  CHECK(gbm_device_);
+  LOG(ERROR) << "Got gbm device";
+
+  int32_t drm_format = DRM_FORMAT_XRGB8888;
+  int32_t bo_usage = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING /* | GBM_BO_USE_TEXTURING */;
+  bo_ = gbm_bo_create(gbm_device_, 1024, 1024, drm_format, bo_usage);
+  if (!bo_) {
+    LOG(ERROR) << "Can't create bo";
+    return;
+  }
+
+  CreateZwpDmaBuf(connection);
+}
+
+void WaylandDmaBuffer::CreateZwpDmaBuf(WaylandConnection* connection) {
+   params_ = zwp_linux_dmabuf_v1_create_params(connection->zwp_linux_dmabuf()); 
+   connection->ScheduleFlush(); 
+   CHECK(params_);
+   LOG(ERROR) << "GOT PARAMS";
+//   for (size_t i = 0; i < gbm_bo_get_plane_count(bo_); ++i) {
+   uint32_t i = 0;
+   base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo_, i).u32);
+   uint32_t fdd = gbm_bo_get_fd(bo_);
+   uint32_t stride = gbm_bo_get_stride_for_plane(bo_, i);
+   uint32_t offset = gbm_bo_get_stride_for_plane(bo_, i);
+   LOG(ERROR) << "CREATE PARAMS ADD";
+   zwp_linux_buffer_params_v1_add(params_, fdd, 0, 0, stride, 0, 0);
+
+   zwp_linux_buffer_params_v1_add(params_, fdd, 1, 1024*1024, stride, 0, 0);
+//   }
+
+   wl_buffer_.reset(zwp_linux_buffer_params_v1_create_immed(
+                 params_, 1024, 1024, DRM_FORMAT_XRGB8888, 0));
+}
+
+// ----------------------------------------------------------------------------
 
 WaylandWindow::WaylandWindow(PlatformWindowDelegate* delegate,
                              WaylandConnection* connection,
@@ -136,6 +222,10 @@ bool WaylandWindow::Initialize() {
   PlatformEventSource::GetInstance()->AddPlatformEventDispatcher(this);
   delegate_->OnAcceleratedWidgetAvailable(surface_.id(), 1.f);
 
+  std::unique_ptr<WaylandDmaBuffer> buffer(new WaylandDmaBuffer());
+  buffer->InitializeBuffer(connection_);
+  wl_surface_attach(surface(), buffer->buffer(), 0, 0);
+  wl_surface_commit(surface());
   return true;
 }
 

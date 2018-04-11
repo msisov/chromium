@@ -142,6 +142,7 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gfx::AcceleratedWidget widget) override;
 
+
   scoped_refptr<gl::GLSurface> CreateOffscreenGLSurface(
       const gfx::Size& size) override;
 

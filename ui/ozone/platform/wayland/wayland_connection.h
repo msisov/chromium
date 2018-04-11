@@ -19,6 +19,8 @@
 #include "ui/ozone/platform/wayland/wayland_touch.h"
 #include "ui/ozone/public/clipboard_delegate.h"
 
+struct zwp_linux_dmabuf_v1;
+
 namespace ui {
 
 class WaylandWindow;
@@ -47,6 +49,7 @@ class WaylandConnection : public PlatformEventSource,
     return text_input_manager_v1_.get();
   }
   wl_data_device* data_device() { return data_device_->data_device(); }
+  zwp_linux_dmabuf_v1* zwp_linux_dmabuf() { return zwp_linux_dmabuf_; }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
   WaylandWindow* GetLastWindow();
@@ -122,6 +125,11 @@ class WaylandConnection : public PlatformEventSource,
   // xdg_shell_listener
   static void Ping(void* data, xdg_shell* shell, uint32_t serial);
 
+  // zwp_linux_dmabuf_v1_listener 
+  static void Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
+    uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo);
+  static void Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format);
+
   std::map<gfx::AcceleratedWidget, WaylandWindow*> window_map_;
 
   wl::Object<wl_display> display_;
@@ -134,6 +142,8 @@ class WaylandConnection : public PlatformEventSource,
   wl::Object<xdg_shell> shell_;
   wl::Object<zxdg_shell_v6> shell_v6_;
   wl::Object<zwp_text_input_manager_v1> text_input_manager_v1_;
+  // TODO: use wl::Object
+  struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_ = nullptr;
 
   std::unique_ptr<WaylandDataDevice> data_device_;
   std::unique_ptr<WaylandDataSource> data_source_;

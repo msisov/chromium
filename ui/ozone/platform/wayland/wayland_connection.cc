@@ -6,6 +6,9 @@
 
 #include <xdg-shell-unstable-v5-client-protocol.h>
 #include <xdg-shell-unstable-v6-client-protocol.h>
+#include <linux-dmabuf-unstable-v1-client-protocol.h>
+
+#include <libdrm/drm_fourcc.h>
 
 #include "base/bind.h"
 #include "base/logging.h"
@@ -71,6 +74,8 @@ bool WaylandConnection::Initialize() {
     LOG(ERROR) << "No xdg_shell object";
     return false;
   }
+  if (!zwp_linux_dmabuf_)
+    CHECK(false);
 
   return true;
 }
@@ -266,7 +271,11 @@ void WaylandConnection::Global(void* data,
   static const zxdg_shell_v6_listener shell_v6_listener = {
       &WaylandConnection::PingV6,
   };
-
+  static const zwp_linux_dmabuf_v1_listener dmabuf_listener = {
+      &WaylandConnection::Format,
+      &WaylandConnection::Modifiers,
+  };
+  
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   if (!connection->compositor_ && strcmp(interface, "wl_compositor") == 0) {
     connection->compositor_ = wl::Bind<wl_compositor>(
@@ -352,6 +361,12 @@ void WaylandConnection::Global(void* data,
              strcmp(interface, "wl_data_device_manager") == 0) {
     connection->data_device_manager_ =
         wl::Bind<wl_data_device_manager>(registry, name, 1);
+  } else if (!connection->zwp_linux_dmabuf_ && 
+            (strcmp(interface, "zwp_linux_dmabuf_v1") == 0)) {
+    connection->zwp_linux_dmabuf_ = static_cast<zwp_linux_dmabuf_v1*>(
+        wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface, 2));
+
+    zwp_linux_dmabuf_v1_add_listener(connection->zwp_linux_dmabuf_, &dmabuf_listener, nullptr);
   }
 
   connection->ScheduleFlush();
@@ -434,6 +449,17 @@ void WaylandConnection::Ping(void* data, xdg_shell* shell, uint32_t serial) {
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   xdg_shell_pong(shell, serial);
   connection->ScheduleFlush();
+}
+
+// static
+void WaylandConnection::Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
+     uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo) {
+  NOTIMPLEMENTED();
+}
+
+// static
+void WaylandConnection::Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format) {
+  NOTIMPLEMENTED();
 }
 
 }  // namespace ui
