@@ -73,6 +73,7 @@ GbmBuffer::GbmBuffer(const scoped_refptr<GbmDevice>& gbm,
       if (modifier != DRM_FORMAT_MOD_INVALID)
         modifiers[i] = modifier;
     }
+    return;
 #endif
 
     // AddFramebuffer2 only considers the modifiers if addfb_flags has
@@ -146,6 +147,7 @@ size_t GbmBuffer::GetFdCount() const {
 
 int GbmBuffer::GetFd(size_t index) const {
   DCHECK_LT(index, fds_.size());
+  return gbm_bo_get_fd(bo_);
   return fds_[index].get();
 }
 
@@ -232,6 +234,7 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferForBO(
     // TODO(dcastagna): support multiple fds.
     // crbug.com/642410
     if (!i) {
+      LOG(ERROR) << "puuk";
       if (!fd.is_valid()) {
         PLOG(ERROR) << "Failed to export buffer to dma_buf";
         gbm_bo_destroy(bo);
@@ -254,8 +257,11 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferForBO(
   scoped_refptr<GbmBuffer> buffer(new GbmBuffer(gbm, bo, format, flags,
                                                 modifier, std::move(fds), size,
                                                 std::move(planes)));
-  if (flags & GBM_BO_USE_SCANOUT && !buffer->GetFramebufferId())
-    return nullptr;
+
+//  if (flags & GBM_BO_USE_SCANOUT && !buffer->GetFramebufferId()) {
+//    LOG(ERROR) << "!!! " << !buffer->GetFramebufferId();
+//    return nullptr;
+//  }
 
   return buffer;
 }
@@ -290,8 +296,10 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBuffer(
 
   gbm_bo* bo =
       gbm_bo_create(gbm->device(), size.width(), size.height(), format, flags);
-  if (!bo)
+  if (!bo) {
+    CHECK(false) << "no bo!";
     return nullptr;
+  }
 
   return CreateBufferForBO(gbm, bo, format, size, flags);
 }
@@ -376,6 +384,7 @@ gfx::NativePixmapHandle GbmPixmap::ExportHandle() {
     // Some formats (e.g: YVU_420) might have less than one fd per plane.
     if (i < buffer_->GetFdCount()) {
       base::ScopedFD scoped_fd(HANDLE_EINTR(dup(buffer_->GetFd(i))));
+      LOG(ERROR) << "I " << i;
       if (!scoped_fd.is_valid()) {
         PLOG(ERROR) << "dup";
         return gfx::NativePixmapHandle();
@@ -439,6 +448,10 @@ bool GbmPixmap::ScheduleOverlayPlane(gfx::AcceleratedWidget widget,
                                      const gfx::Rect& display_bounds,
                                      const gfx::RectF& crop_rect,
                                      bool enable_blend) {
+  // this can happen in case of wayland.
+  if (!surface_manager_)
+    return false;
+
   DCHECK(buffer_->GetFlags() & GBM_BO_USE_SCANOUT);
   surface_manager_->GetSurface(widget)->QueueOverlayPlane(
       OverlayPlane(buffer_, plane_z_order, plane_transform, display_bounds,

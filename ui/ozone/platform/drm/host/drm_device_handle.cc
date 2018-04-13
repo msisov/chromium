@@ -50,6 +50,15 @@ bool DrmDeviceHandle::Initialize(const base::FilePath& dev_path,
   CHECK(dev_path.DirName() == base::FilePath("/dev/dri"));
   base::AssertBlockingAllowed();
 
+#if !defined(OS_CHROMEOS)
+  int render_fd = HANDLE_EINTR(open(dev_path.value().c_str(), O_RDWR));
+  if (render_fd < 0)
+    LOG(FATAL) << "Failed to open " << dev_path;
+  file_.reset(render_fd);
+  LOG(ERROR) << "Got my fd " << IsValid() << " fd " << render_fd;
+  return true;
+#endif
+
   int num_auth_attempts = 0;
   bool logged_warning = false;
   const base::TimeTicks start_time = base::TimeTicks::Now();

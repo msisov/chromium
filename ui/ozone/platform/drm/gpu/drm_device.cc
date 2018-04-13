@@ -343,7 +343,10 @@ DrmDevice::~DrmDevice() {}
 
 bool DrmDevice::Initialize(bool use_atomic) {
   // Ignore devices that cannot perform modesetting.
+#if !defined(OS_CHROMEOS)
   return true;
+#endif
+
   if (!CanQueryForResources(file_.GetPlatformFile())) {
     VLOG(2) << "Cannot query for resources for '" << device_path_.value()
             << "'";

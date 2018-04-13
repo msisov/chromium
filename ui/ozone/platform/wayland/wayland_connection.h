@@ -7,6 +7,10 @@
 
 #include <map>
 
+#include "ui/gfx/buffer_types.h"
+
+
+#include "base/files/file_path.h"
 #include "base/message_loop/message_pump_libevent.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/native_widget_types.h"
@@ -20,8 +24,13 @@
 #include "ui/ozone/public/clipboard_delegate.h"
 
 struct zwp_linux_dmabuf_v1;
+struct zwp_linux_buffer_params_v1;
 
 namespace ui {
+
+// if defined...
+class GbmDevice;
+class GbmBuffer;
 
 class WaylandWindow;
 
@@ -80,6 +89,12 @@ class WaylandConnection : public PlatformEventSource,
   // not delivered.
   void ResetPointerFlags();
 
+  scoped_refptr<GbmBuffer> CreateGbmBuffer(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::BufferUsage usage);
+
   // Clipboard implementation.
   ClipboardDelegate* GetClipboardDelegate();
   void DataSourceCancelled();
@@ -98,6 +113,12 @@ class WaylandConnection : public PlatformEventSource,
   bool IsSelectionOwner() override;
 
  private:
+  bool CreateZwpDmaBuf(GbmBuffer* gbm_buffer, gfx::Size size);
+
+  base::FilePath GetDrmDeviceNodePath();
+
+  bool InitializeDrmDeviceNode();
+
   void Flush();
 
   // PlatformEventSource
@@ -144,6 +165,9 @@ class WaylandConnection : public PlatformEventSource,
   wl::Object<zwp_text_input_manager_v1> text_input_manager_v1_;
   // TODO: use wl::Object
   struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_ = nullptr;
+  // TODO: each window with new params.
+  struct zwp_linux_buffer_params_v1* params_ = nullptr;
+  wl::Object<wl_buffer> wl_buffer_;
 
   std::unique_ptr<WaylandDataDevice> data_device_;
   std::unique_ptr<WaylandDataSource> data_source_;
@@ -165,6 +189,8 @@ class WaylandConnection : public PlatformEventSource,
 
   // Stores the callback to be invoked upon data reading from clipboard.
   GetDataCallback read_clipboard_closure_;
+
+  scoped_refptr<GbmDevice> gbm_device_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandConnection);
 };

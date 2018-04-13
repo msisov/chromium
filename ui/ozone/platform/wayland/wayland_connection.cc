@@ -8,10 +8,24 @@
 #include <xdg-shell-unstable-v6-client-protocol.h>
 #include <linux-dmabuf-unstable-v1-client-protocol.h>
 
+#include <wayland-client-protocol.h>
+#include <wayland-client-core.h>
+
+#include "ui/ozone/platform/drm/host/drm_device_handle.h"
+#include "ui/ozone/platform/drm/gpu/gbm_device.h"
+#include "ui/ozone/platform/drm/common/drm_util.h"
+#include "ui/ozone/platform/drm/gpu/gbm_buffer.h"
+
+
+#include <fcntl.h>
 #include <libdrm/drm_fourcc.h>
+#include <gbm.h>
+#include <xf86drm.h>
 
 #include "base/bind.h"
 #include "base/logging.h"
+#include "base/strings/stringprintf.h"
+#include "base/files/file_path.h"
 #include "base/memory/ptr_util.h"
 #include "base/message_loop/message_loop.h"
 #include "base/strings/string_util.h"
@@ -28,6 +42,9 @@ const uint32_t kMaxSeatVersion = 4;
 const uint32_t kMaxShmVersion = 1;
 const uint32_t kMaxXdgShellVersion = 1;
 const uint32_t kMaxTextInputManagerVersion = 1;
+
+const char kDriRenderNodeTemplate[] = "/dev/dri/renderD%u";
+
 }  // namespace
 
 WaylandConnection::WaylandConnection() : controller_(FROM_HERE) {}
@@ -74,8 +91,14 @@ bool WaylandConnection::Initialize() {
     LOG(ERROR) << "No xdg_shell object";
     return false;
   }
-  if (!zwp_linux_dmabuf_)
-    CHECK(false);
+  if (zwp_linux_dmabuf_ && !InitializeDrmDeviceNode()) {
+    LOG(ERROR) << "Failed to initialize drm device node.";
+    return false;
+  } else {
+    LOG(ERROR) << "---------";
+    LOG(ERROR) << "Got drm device";
+    LOG(ERROR) << "---------";
+  }
 
   return true;
 }
@@ -171,6 +194,74 @@ void WaylandConnection::ResetPointerFlags() {
     pointer_->ResetFlags();
 }
 
+scoped_refptr<GbmBuffer> WaylandConnection::CreateGbmBuffer(
+      gfx::AcceleratedWidget widget,
+      gfx::Size size,
+      gfx::BufferFormat format,
+      gfx::BufferUsage usage) {
+ DCHECK(gbm_device_ && zwp_linux_dmabuf_);
+ uint32_t flags = 0;
+ switch (usage) {
+    case gfx::BufferUsage::SCANOUT:
+      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT;
+      break;
+    case gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE:
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+      break;
+    case gfx::BufferUsage::SCANOUT_CPU_READ_WRITE:
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+      break;
+    case gfx::BufferUsage::SCANOUT_VDA_WRITE:
+      flags = GBM_BO_USE_SCANOUT;
+      break;
+    case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE:
+    case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT:
+       flags = GBM_BO_USE_LINEAR;
+       break;
+    default:
+      LOG(ERROR) << "OMG";
+      NOTREACHED();
+      break;
+  }
+  LOG(ERROR) << "WHAT";
+  uint32_t fourcc_format = ui::GetFourCCFormatFromBufferFormat(format);
+  scoped_refptr<GbmBuffer> buffer =
+      GbmBuffer::CreateBuffer(gbm_device_, fourcc_format, size, flags);
+
+  CHECK(buffer->AreFdsValid());
+
+  if (!CreateZwpDmaBuf(buffer.get(), size)) {
+    LOG(ERROR) << "Failed to create zwp dmabuf";
+    return nullptr;
+  }
+
+  WaylandWindow* window = GetWindow(widget);
+  wl_surface_attach(window->surface(), wl_buffer_.get(), 0, 0);
+  wl_surface_commit(window->surface());
+
+  return buffer;
+}
+
+bool WaylandConnection::CreateZwpDmaBuf(GbmBuffer* gbm_buffer, gfx::Size size) {
+   params_ = zwp_linux_dmabuf_v1_create_params(zwp_linux_dmabuf_);
+   CHECK(params_);
+   gbm_bo* bo = gbm_buffer->bo();
+   for (int i = 0; i < gbm_bo_get_plane_count(bo); ++i) {
+     LOG(ERROR) << "i " << i;
+     base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo, i).u32);
+     uint32_t stride = gbm_bo_get_stride_for_plane(bo, i);
+     uint32_t offset = gbm_bo_get_offset(bo, i);
+     LOG(ERROR) << "CREATE PARAMS ADD";
+     zwp_linux_buffer_params_v1_add(params_, fd.get(), i, offset, stride, 0, 0);
+   }
+
+  CHECK(gbm_buffer->GetFormat() != DRM_FORMAT_NV12);
+
+  wl_buffer_.reset(zwp_linux_buffer_params_v1_create_immed(
+               params_, size.width(), size.height(), gbm_buffer->GetFormat(), 0));
+  return !!wl_buffer_;
+}
+
 ClipboardDelegate* WaylandConnection::GetClipboardDelegate() {
   return this;
 }
@@ -232,6 +323,60 @@ void WaylandConnection::SetClipboardData(const std::string& contents,
 
 void WaylandConnection::OnDispatcherListChanged() {
   StartProcessingEvents();
+}
+
+base::FilePath WaylandConnection::GetDrmDeviceNodePath() {
+  const uint32_t kDrmMaxMinor = 15;
+    const uint32_t kRenderNodeStart = 128;
+    const uint32_t kRenderNodeEnd = kRenderNodeStart + kDrmMaxMinor + 1;
+
+    for (uint32_t i = kRenderNodeStart; i < kRenderNodeEnd; i++) {
+      std::string dri_render_node(
+          base::StringPrintf(kDriRenderNodeTemplate, i));
+      int render_fd = open(dri_render_node.c_str(), O_RDWR);
+      if (render_fd < 0) {
+        LOG(ERROR) << "No render fd";
+        continue;
+      }
+       LOG(ERROR) << "dri render " << dri_render_node;
+
+      drmVersionPtr drm_version = drmGetVersion(render_fd);
+      if (!drm_version) {
+        LOG(ERROR) << "Can't get drm_version";
+        return base::FilePath();
+      }
+      close (render_fd);
+      return base::FilePath(dri_render_node);
+      break;
+    }
+    NOTREACHED();
+    return base::FilePath();
+}
+
+bool WaylandConnection::InitializeDrmDeviceNode() {
+  // TODO: if defined(USE_WAYLAND_DRM???)
+  base::FilePath drm_node_path = GetDrmDeviceNodePath();
+  if (drm_node_path.empty())
+    return false;
+
+  std::unique_ptr<DrmDeviceHandle> drm_device_node_handle(new DrmDeviceHandle());
+  bool result = drm_device_node_handle->Initialize(drm_node_path, base::FilePath());
+  if (!result)
+    return false;
+
+  base::File file(drm_device_node_handle->PassFD().release());
+  DCHECK(file.IsValid());
+
+  scoped_refptr<GbmDevice> gbm(
+          new GbmDevice(drm_node_path, std::move(file), true));
+  result = gbm->Initialize(false);
+  if (!result)
+    return false;
+
+  DCHECK(gbm);
+  gbm_device_ = gbm;
+
+  return true;
 }
 
 void WaylandConnection::Flush() {
@@ -455,13 +600,11 @@ void WaylandConnection::Ping(void* data, xdg_shell* shell, uint32_t serial) {
 void WaylandConnection::Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
      uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo) {
   NOTIMPLEMENTED();
-  LOG(ERROR) << format;
 }
 
 // static
 void WaylandConnection::Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format) {
   NOTIMPLEMENTED();
-  LOG(ERROR) << format;
 }
 
 }  // namespace ui

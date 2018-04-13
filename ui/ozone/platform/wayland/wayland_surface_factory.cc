@@ -4,6 +4,8 @@
 
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 
+#include "ui/ozone/platform/drm/gpu/gbm_buffer.h"
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <wayland-client.h>
@@ -251,58 +253,12 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
     gfx::BufferUsage usage) {
   //NOTIMPLEMENTED();
   LOG(ERROR) << "------------------------------------------------------------";
-  int drm_format = 0;
-  switch (format) {
-      case gfx::BufferFormat::R_8:
-        drm_format = DRM_FORMAT_R8;
-        break;
-      case gfx::BufferFormat::R_16:
-        drm_format = DRM_FORMAT_R16;
-        break;
-      case gfx::BufferFormat::RG_88:
-        drm_format = DRM_FORMAT_GR88;
-        break;
-      case gfx::BufferFormat::RGBA_8888:
-        drm_format = DRM_FORMAT_ABGR8888;
-        LOG(ERROR) << "THIS";
-        break;
-      case gfx::BufferFormat::RGBX_8888:
-        drm_format = DRM_FORMAT_XBGR8888;
-        break;
-      case gfx::BufferFormat::BGRA_8888:
-        drm_format = DRM_FORMAT_ARGB8888;
-        LOG(ERROR) << "THIS";
-        break;
-      case gfx::BufferFormat::BGRX_8888:
-        drm_format = DRM_FORMAT_XRGB8888;
-        break;
-      case gfx::BufferFormat::BGRX_1010102:
-        drm_format = DRM_FORMAT_XRGB2101010;
-        break;
-      case gfx::BufferFormat::BGR_565:
-        drm_format = DRM_FORMAT_RGB565;
-        break;
-      case gfx::BufferFormat::UYVY_422:
-        drm_format = DRM_FORMAT_UYVY;
-        break;
-      case gfx::BufferFormat::YVU_420:
-        drm_format = DRM_FORMAT_YVU420;
-        break;
-      case gfx::BufferFormat::YUV_420_BIPLANAR:
-        drm_format = DRM_FORMAT_NV12;
-        break;
-      default:
-        drm_format = 0;
-        break;
-    }
-
-  LOG(ERROR) << __PRETTY_FUNCTION__;
-  auto* window = connection_->GetWindow(widget);
-  DCHECK(window);
-  window->CreateBuffer(drm_format, size);
-  uint32_t fd = window->GetBufferFd();
-  LOG(ERROR) << "------------------------------------------------------------ drm_format " << drm_format;
-  return base::MakeRefCounted<WaylandPixmap>(std::move(fd), format, size);
+  scoped_refptr<GbmBuffer> buffer =
+      connection_->CreateGbmBuffer(widget, size, format, usage);
+  LOG(ERROR) << "create gbm";
+  CHECK(buffer.get());
+  LOG(ERROR) << "----------------------Got buffer--------------------------------------";
+  return base::MakeRefCounted<GbmPixmap>(nullptr, buffer);
   return nullptr;
 }
 

@@ -71,6 +71,8 @@ source_set("wayland") {
 
   deps = [
     ":wayland_nested_compositor",
+    "//ui/ozone/platform/drm:gbm",
+    "//ui/events/ozone:events_ozone_evdev",
     "//base",
     "//services/ui/public/interfaces/ime",
     "//skia",

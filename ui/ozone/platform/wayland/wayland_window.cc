@@ -7,6 +7,8 @@
 #include <wayland-client.h>
 #include <linux-dmabuf-unstable-v1-client-protocol.h>
 
+#include "ui/ozone/platform/drm/gpu/gbm_buffer.h"
+
 #include <fcntl.h>
 #include <libdrm/drm_fourcc.h>
 #include <gbm.h>

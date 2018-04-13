@@ -25,7 +25,8 @@ bool GbmDevice::Initialize(bool use_atomic) {
 
   device_ = gbm_create_device(get_fd());
   if (!device_) {
-    PLOG(ERROR) << "Unable to initialize GBM for " << device_path().value();
+    LOG(ERROR) << "Unable to initialize GBM for " << device_path().value();
+    CHECK(false);
     return false;
   }
 
