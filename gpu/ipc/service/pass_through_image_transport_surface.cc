@@ -49,6 +49,7 @@ PassThroughImageTransportSurface::~PassThroughImageTransportSurface() {
 
 bool PassThroughImageTransportSurface::Initialize(
     gl::GLSurfaceFormat format) {
+  LOG(ERROR) << " is_presentation_callback_enabled_ " << is_presentation_callback_enabled_ << " SupportsPresentationCallback " << gl::GLSurfaceAdapter::SupportsPresentationCallback();
   DCHECK(!is_presentation_callback_enabled_ ||
          gl::GLSurfaceAdapter::SupportsPresentationCallback());
   // The surface is assumed to have already been initialized.

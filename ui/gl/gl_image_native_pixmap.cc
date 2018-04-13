@@ -183,6 +183,8 @@ bool GLImageNativePixmap::Initialize(gfx::NativePixmap* pixmap,
     bool has_dma_buf_import_modifier = gl::GLSurfaceEGL::HasEGLExtension(
         "EGL_EXT_image_dma_buf_import_modifiers");
 
+   LOG(ERROR) << "has_dma_buf_import_modifier " << has_dma_buf_import_modifier;
+
     for (size_t attrs_plane = 0;
          attrs_plane <
          gfx::NumberOfPlanesForBufferFormat(pixmap->GetBufferFormat());

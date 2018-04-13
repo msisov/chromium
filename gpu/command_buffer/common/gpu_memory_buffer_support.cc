@@ -18,32 +18,46 @@ namespace {
 gfx::BufferFormat BufferFormatForInternalFormat(unsigned internalformat) {
   switch (internalformat) {
     case GL_RED_EXT:
+      LOG(ERROR) << "GL RED";
       return gfx::BufferFormat::R_8;
     case GL_R16_EXT:
+      LOG(ERROR) << "GL GL_R16_EXT";
       return gfx::BufferFormat::R_16;
     case GL_RG_EXT:
+      LOG(ERROR) << "GL GL_RG_EXT";
       return gfx::BufferFormat::RG_88;
     case GL_RGB:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::BGRX_8888;
     case GL_RGBA:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::RGBA_8888;
     case GL_BGRA_EXT:
+//      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::BGRA_8888;
     case GL_ATC_RGB_AMD:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::ATC;
     case GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::ATCIA;
     case GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::DXT1;
     case GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::DXT5;
     case GL_ETC1_RGB8_OES:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::ETC1;
     case GL_RGB_YCRCB_420_CHROMIUM:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::YVU_420;
     case GL_RGB_YCBCR_420V_CHROMIUM:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::YUV_420_BIPLANAR;
     case GL_RGB_YCBCR_422_CHROMIUM:
+      LOG(ERROR) << "GL THIS";
       return gfx::BufferFormat::UYVY_422;
     default:
       NOTREACHED();

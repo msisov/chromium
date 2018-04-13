@@ -5,11 +5,13 @@
 #include "ui/ozone/platform/wayland/client_native_pixmap_factory_wayland.h"
 
 #include "ui/ozone/common/stub_client_native_pixmap_factory.h"
+#include "ui/gfx/linux/client_native_pixmap_factory_dmabuf.h"
 
 namespace ui {
 
 gfx::ClientNativePixmapFactory* CreateClientNativePixmapFactoryWayland() {
-  return CreateStubClientNativePixmapFactory();
+  return gfx::CreateClientNativePixmapFactoryDmabuf();
+//  return CreateStubClientNativePixmapFactory();
 }
 
 }  // namespace ui

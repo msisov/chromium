@@ -105,6 +105,8 @@ GpuMemoryBufferFactoryNativePixmap::CreateImageForGpuMemoryBuffer(
                  ->GetSurfaceFactoryOzone()
                  ->CreateNativePixmapFromHandle(surface_handle, size, format,
                                                 handle.native_pixmap_handle);
+    LOG(ERROR) << "PIXMAP ? " << !!pixmap.get();
+    CHECK(false);
 #else
     DCHECK_EQ(surface_handle, gpu::kNullSurfaceHandle);
     pixmap = base::WrapRefCounted(

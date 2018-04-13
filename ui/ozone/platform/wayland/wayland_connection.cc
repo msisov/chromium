@@ -455,11 +455,13 @@ void WaylandConnection::Ping(void* data, xdg_shell* shell, uint32_t serial) {
 void WaylandConnection::Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
      uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo) {
   NOTIMPLEMENTED();
+  LOG(ERROR) << format;
 }
 
 // static
 void WaylandConnection::Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format) {
   NOTIMPLEMENTED();
+  LOG(ERROR) << format;
 }
 
 }  // namespace ui

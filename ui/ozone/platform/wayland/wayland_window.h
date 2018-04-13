@@ -38,9 +38,12 @@ class WaylandDmaBuffer {
    ~WaylandDmaBuffer();
    wl_buffer* buffer() { return wl_buffer_.get(); }
      
-   void InitializeBuffer(WaylandConnection* connection);
+   void InitializeBuffer(WaylandConnection* connection, int drm_format, const gfx::Size& size);
+
+   uint32_t get_buffer_fd();
+
  private:
-   void CreateZwpDmaBuf(WaylandConnection* connection);
+   void CreateZwpDmaBuf(WaylandConnection* connection, int drm_format, const gfx::Size& size);
 
    struct gbm_device* gbm_device_ = nullptr;
    struct gbm_bo* bo_ = nullptr;
@@ -57,7 +60,11 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
 
   static WaylandWindow* FromSurface(wl_surface* surface);
 
+  void CreateBuffer(int drm_format, const gfx::Size& size);
+
   bool Initialize();
+
+  uint32_t GetBufferFd() { return std::move(buffer_->get_buffer_fd()); }
 
   wl_surface* surface() const { return surface_.get(); }
   XDGSurfaceWrapper* xdg_surface() { return xdg_surface_.get(); }
@@ -171,6 +178,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
 
   // The current cursor bitmap (immutable).
   scoped_refptr<BitmapCursorOzone> bitmap_;
+
+  std::unique_ptr<WaylandDmaBuffer> buffer_;
 
   gfx::Rect bounds_;
   gfx::Rect pending_bounds_;

@@ -84,7 +84,8 @@ WaylandDmaBuffer::WaylandDmaBuffer() {}
 
 WaylandDmaBuffer::~WaylandDmaBuffer() {}
 
-void WaylandDmaBuffer::InitializeBuffer(WaylandConnection* connection) {
+void WaylandDmaBuffer::InitializeBuffer(WaylandConnection* connection,
+    int drm_format, const gfx::Size& size) {
   const uint32_t kDrmMaxMinor = 15;
   const uint32_t kRenderNodeStart = 128;
   const uint32_t kRenderNodeEnd = kRenderNodeStart + kDrmMaxMinor + 1;
@@ -121,37 +122,43 @@ void WaylandDmaBuffer::InitializeBuffer(WaylandConnection* connection) {
   CHECK(gbm_device_);
   LOG(ERROR) << "Got gbm device";
 
-  int32_t drm_format = DRM_FORMAT_XRGB8888;
+  int32_t format = drm_format;
   int32_t bo_usage = GBM_BO_USE_SCANOUT | GBM_BO_USE_RENDERING /* | GBM_BO_USE_TEXTURING */;
-  bo_ = gbm_bo_create(gbm_device_, 1024, 1024, drm_format, bo_usage);
+  bo_ = gbm_bo_create(gbm_device_, size.width(), size.height(), format, bo_usage);
   if (!bo_) {
     LOG(ERROR) << "Can't create bo";
     return;
   }
 
-  CreateZwpDmaBuf(connection);
+  CreateZwpDmaBuf(connection, drm_format, size);
 }
 
-void WaylandDmaBuffer::CreateZwpDmaBuf(WaylandConnection* connection) {
+void WaylandDmaBuffer::CreateZwpDmaBuf(WaylandConnection* connection,
+    int drm_format, const gfx::Size& size) {
    params_ = zwp_linux_dmabuf_v1_create_params(connection->zwp_linux_dmabuf()); 
-   connection->ScheduleFlush(); 
+//   connection->ScheduleFlush();
    CHECK(params_);
-   LOG(ERROR) << "GOT PARAMS";
-//   for (size_t i = 0; i < gbm_bo_get_plane_count(bo_); ++i) {
-   uint32_t i = 0;
-   base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo_, i).u32);
-   uint32_t fdd = gbm_bo_get_fd(bo_);
-   uint32_t stride = gbm_bo_get_stride_for_plane(bo_, i);
-   uint32_t offset = gbm_bo_get_stride_for_plane(bo_, i);
-   LOG(ERROR) << "CREATE PARAMS ADD";
-   zwp_linux_buffer_params_v1_add(params_, fdd, 0, 0, stride, 0, 0);
+   LOG(ERROR) << "GOT PARAMS " << gbm_bo_get_plane_count(bo_) ;
+   for (uint32_t i = 0; i < gbm_bo_get_plane_count(bo_); ++i) {
+     LOG(ERROR) << "i " << i;
+     base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo_, i).u32);
+     uint32_t fdd = gbm_bo_get_fd(bo_);
+     uint32_t stride = gbm_bo_get_stride_for_plane(bo_, i);
+     uint32_t offset = gbm_bo_get_stride_for_plane(bo_, i);
+     LOG(ERROR) << "CREATE PARAMS ADD";
+     zwp_linux_buffer_params_v1_add(params_, fd.get(), i, offset, stride, 0, 0);
+   }
 
-   zwp_linux_buffer_params_v1_add(params_, fdd, 1, 1024*1024, stride, 0, 0);
-//   }
+  CHECK(drm_format != DRM_FORMAT_NV12);
 
    wl_buffer_.reset(zwp_linux_buffer_params_v1_create_immed(
-                 params_, 1024, 1024, DRM_FORMAT_XRGB8888, 0));
+                 params_, size.width(), size.height(), drm_format, 0));
 }
+
+uint32_t WaylandDmaBuffer::get_buffer_fd() {
+  return std::move(gbm_bo_get_fd(bo_));
+//  return gbm_bo_get_handle_for_plane(bo_, 0).u32;
+} 
 
 // ----------------------------------------------------------------------------
 
@@ -222,11 +229,15 @@ bool WaylandWindow::Initialize() {
   PlatformEventSource::GetInstance()->AddPlatformEventDispatcher(this);
   delegate_->OnAcceleratedWidgetAvailable(surface_.id(), 1.f);
 
-  std::unique_ptr<WaylandDmaBuffer> buffer(new WaylandDmaBuffer());
-  buffer->InitializeBuffer(connection_);
-  wl_surface_attach(surface(), buffer->buffer(), 0, 0);
-  wl_surface_commit(surface());
   return true;
+}
+
+void WaylandWindow::CreateBuffer(int drm_format, const gfx::Size& size) {
+  std::unique_ptr<WaylandDmaBuffer> buffer(new WaylandDmaBuffer());
+  buffer->InitializeBuffer(connection_, drm_format, size);
+  buffer_ = std::move(buffer);
+//  wl_surface_attach(surface(), buffer_->buffer(), 0, 0);
+//  wl_surface_commit(surface());
 }
 
 void WaylandWindow::CreateXdgPopup() {
