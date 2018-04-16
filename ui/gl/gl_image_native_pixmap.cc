@@ -167,53 +167,67 @@ bool GLImageNativePixmap::Initialize(gfx::NativePixmap* pixmap,
       return false;
     }
 
+    EGLint khr_image_attrs[] = {EGL_DMA_BUF_PLANE0_FD_EXT,
+                                pixmap->GetDmaBufFd(0),
+                                EGL_WIDTH,
+                                size_.width(),
+                                EGL_HEIGHT,
+                                size_.height(),
+                                EGL_LINUX_DRM_FOURCC_EXT,
+                                FourCC(format),
+                                EGL_DMA_BUF_PLANE0_PITCH_EXT,
+                                pixmap->GetDmaBufPitch(0),
+                                EGL_DMA_BUF_PLANE0_OFFSET_EXT,
+                                0,
+                                EGL_NONE};
+
     // Note: If eglCreateImageKHR is successful for a EGL_LINUX_DMA_BUF_EXT
     // target, the EGL will take a reference to the dma_buf.
-    std::vector<EGLint> attrs;
-    attrs.push_back(EGL_WIDTH);
-    attrs.push_back(size_.width());
-    attrs.push_back(EGL_HEIGHT);
-    attrs.push_back(size_.height());
-    attrs.push_back(EGL_LINUX_DRM_FOURCC_EXT);
-    attrs.push_back(FourCC(format));
-
-    const EGLint kLinuxDrmModifiers[] = {EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
-                                         EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT,
-                                         EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT};
-    bool has_dma_buf_import_modifier = gl::GLSurfaceEGL::HasEGLExtension(
-        "EGL_EXT_image_dma_buf_import_modifiers");
-
-   LOG(ERROR) << "has_dma_buf_import_modifier " << has_dma_buf_import_modifier;
-
-    for (size_t attrs_plane = 0;
-         attrs_plane <
-         gfx::NumberOfPlanesForBufferFormat(pixmap->GetBufferFormat());
-         ++attrs_plane) {
-      attrs.push_back(EGL_DMA_BUF_PLANE0_FD_EXT + attrs_plane * 3);
-
-      size_t pixmap_plane = attrs_plane;
-
-      attrs.push_back(pixmap->GetDmaBufFd(
-          pixmap_plane < pixmap->GetDmaBufFdCount() ? pixmap_plane : 0));
-      attrs.push_back(EGL_DMA_BUF_PLANE0_OFFSET_EXT + attrs_plane * 3);
-      attrs.push_back(pixmap->GetDmaBufOffset(pixmap_plane));
-      attrs.push_back(EGL_DMA_BUF_PLANE0_PITCH_EXT + attrs_plane * 3);
-      attrs.push_back(pixmap->GetDmaBufPitch(pixmap_plane));
-      if (has_dma_buf_import_modifier &&
-          pixmap->GetDmaBufModifier(0) != gfx::NativePixmapPlane::kNoModifier) {
-        uint64_t modifier = pixmap->GetDmaBufModifier(pixmap_plane);
-        DCHECK(attrs_plane < arraysize(kLinuxDrmModifiers));
-        attrs.push_back(kLinuxDrmModifiers[attrs_plane]);
-        attrs.push_back(modifier & 0xffffffff);
-        attrs.push_back(kLinuxDrmModifiers[attrs_plane] + 1);
-        attrs.push_back(static_cast<uint32_t>(modifier >> 32));
-      }
-    }
-    attrs.push_back(EGL_NONE);
+//    std::vector<EGLint> attrs;
+//    attrs.push_back(EGL_WIDTH);
+//    attrs.push_back(size_.width());
+//    attrs.push_back(EGL_HEIGHT);
+//    attrs.push_back(size_.height());
+//    attrs.push_back(EGL_LINUX_DRM_FOURCC_EXT);
+//    attrs.push_back(FourCC(format));
+//
+//    const EGLint kLinuxDrmModifiers[] = {EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT,
+//                                         EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT,
+//                                         EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT};
+//    bool has_dma_buf_import_modifier = gl::GLSurfaceEGL::HasEGLExtension(
+//        "EGL_EXT_image_dma_buf_import_modifiers");
+//
+//   LOG(ERROR) << "has_dma_buf_import_modifier " << has_dma_buf_import_modifier;
+//
+//    for (size_t attrs_plane = 0;
+//         attrs_plane <
+//         gfx::NumberOfPlanesForBufferFormat(pixmap->GetBufferFormat());
+//         ++attrs_plane) {
+//      attrs.push_back(EGL_DMA_BUF_PLANE0_FD_EXT + attrs_plane * 3);
+//
+//      size_t pixmap_plane = attrs_plane;
+//
+//      attrs.push_back(pixmap->GetDmaBufFd(
+//          pixmap_plane < pixmap->GetDmaBufFdCount() ? pixmap_plane : 0));
+//      attrs.push_back(EGL_DMA_B	UF_PLANE0_OFFSET_EXT + attrs_plane * 3);
+//      attrs.push_back(pixmap->GetDmaBufOffset(pixmap_plane));
+//      attrs.push_back(EGL_DMA_BUF_PLANE0_PITCH_EXT + attrs_plane * 3);
+//      attrs.push_back(pixmap->GetDmaBufPitch(pixmap_plane));
+//      if (has_dma_buf_import_modifier &&
+//          pixmap->GetDmaBufModifier(0) != gfx::NativePixmapPlane::kNoModifier) {
+//        uint64_t modifier = pixmap->GetDmaBufModifier(pixmap_plane);
+//        DCHECK(attrs_plane < arraysize(kLinuxDrmModifiers));
+//        attrs.push_back(kLinuxDrmModifiers[attrs_plane]);
+//        attrs.push_back(modifier & 0xffffffff);
+//        attrs.push_back(kLinuxDrmModifiers[attrs_plane] + 1);
+//        attrs.push_back(static_cast<uint32_t>(modifier >> 32));
+//      }
+//    }
+//    attrs.push_back(EGL_NONE);
 
     if (!GLImageEGL::Initialize(EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT,
                                 static_cast<EGLClientBuffer>(nullptr),
-                                &attrs[0])) {
+                                khr_image_attrs)) {
       return false;
     }
   }

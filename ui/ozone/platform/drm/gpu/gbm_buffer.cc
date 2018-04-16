@@ -148,6 +148,7 @@ size_t GbmBuffer::GetFdCount() const {
 int GbmBuffer::GetFd(size_t index) const {
   DCHECK_LT(index, fds_.size());
   return gbm_bo_get_fd(bo_);
+//  return gbm_bo_get_handle()?
   return fds_[index].get();
 }
 
@@ -229,6 +230,7 @@ scoped_refptr<GbmBuffer> GbmBuffer::CreateBufferForBO(
     // The fd returned by gbm_bo_get_fd is not ref-counted and need to be
     // kept open for the lifetime of the buffer.
     base::ScopedFD fd(gbm_bo_get_handle_for_plane(bo, i).u32);
+//    base::ScopedFD fd(g)
 #endif
 
     // TODO(dcastagna): support multiple fds.

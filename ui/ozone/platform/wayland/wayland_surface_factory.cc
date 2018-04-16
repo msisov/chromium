@@ -5,6 +5,7 @@
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 
 #include "ui/ozone/platform/drm/gpu/gbm_buffer.h"
+#include "ui/ozone/platform/drm/gpu/gbm_surfaceless.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>

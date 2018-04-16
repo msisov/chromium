@@ -34,6 +34,7 @@ bool GLImageEGL::Initialize(EGLContext context,
                                  target, buffer, attrs);
   if (egl_image_ == EGL_NO_IMAGE_KHR) {
     LOG(ERROR) << "Error creating EGLImage: " << ui::GetLastEGLErrorString();
+    CHECK(false);
     return false;
   }
 
