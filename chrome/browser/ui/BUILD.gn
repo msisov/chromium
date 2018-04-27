@@ -2707,6 +2707,7 @@ split_static_library("ui") {
     if (use_ozone) {
       sources += [
         "views/frame/browser_desktop_window_tree_host_ozone.cc",
+        "views/frame/browser_desktop_window_tree_host_ozone.h",
         "views/frame/native_browser_frame_factory_ozone.cc",
       ]
     } else {

@@ -114,7 +114,7 @@ class OzonePlatformWayland : public OzonePlatform {
     overlay_manager_.reset(new StubOverlayManager);
     input_controller_ = CreateStubInputController();
 
-    if (!args.single_process) {
+    if (!args.single_process & 0) {
       nested_compositor_.reset(new WaylandNestedCompositor(connection_.get()));
       if (!nested_compositor_->Initialize())
         CHECK(false) << "Wayland nested compositor failure.";
@@ -129,7 +129,7 @@ class OzonePlatformWayland : public OzonePlatform {
   }
 
   void InitializeGPU(const InitParams& args) override {
-    if (!args.single_process) {
+    if (!args.single_process & 0) {
       DCHECK(!surface_factory_);
       nested_compositor_client_.reset(new WaylandNestedCompositorClient);
       if (!nested_compositor_client_->Initialize())

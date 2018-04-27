@@ -687,7 +687,10 @@ jumbo_component("views") {
           "widget/desktop_aura/desktop_window_tree_host_win.h",
         ]
       } else if (use_ozone) {
-        sources += [ "widget/desktop_aura/desktop_window_tree_host_ozone.cc" ]
+        public += [ "widget/desktop_aura/desktop_screen_ozone.h" ]
+        sources += [ "widget/desktop_aura/desktop_window_tree_host_ozone.cc",
+                     "widget/desktop_aura/desktop_screen_ozone.cc"
+        ]
       }
       if (is_linux) {
         sources += [

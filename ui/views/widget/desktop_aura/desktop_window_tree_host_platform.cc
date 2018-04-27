@@ -41,7 +41,8 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
   CreateAndSetDefaultPlatformWindow();
   // TODO(sky): this should be |params.force_software_compositing|, figure out
   // why it has to be true now.
-  const bool use_software_compositing = true;
+  // TODO(msisov): check why software is true here.
+  const bool use_software_compositing = false;
   CreateCompositor(viz::FrameSinkId(), use_software_compositing);
   aura::WindowTreeHost::OnAcceleratedWidgetAvailable();
   InitHost();
