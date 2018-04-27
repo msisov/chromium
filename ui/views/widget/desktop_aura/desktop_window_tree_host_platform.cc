@@ -53,6 +53,17 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
 
 void DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
+  // TODO: is it really needed?
+#if defined(USE_OZONE)
+  std::unique_ptr<ui::EventHandler> handler(new WindowEventFilter(this));
+  wm::CompoundEventFilter* compound_event_filter =
+      desktop_native_widget_aura_->root_window_event_filter();
+  if (non_client_window_event_filter_)
+    compound_event_filter->RemoveHandler(handler.get());
+  compound_event_filter->AddHandler(handler.get());
+  non_client_window_event_filter_ = std::move(handler);
+#endif
+    
   native_widget_delegate_->OnNativeWidgetCreated(true);
 }
 

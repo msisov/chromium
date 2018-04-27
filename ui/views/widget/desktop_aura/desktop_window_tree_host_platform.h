@@ -106,6 +106,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
 
   bool is_active_ = false;
 
+  std::unique_ptr<ui::EventHandler> non_client_window_event_filter_;
+
   base::WeakPtrFactory<DesktopWindowTreeHostPlatform> weak_factory_{this};
 
   DISALLOW_COPY_AND_ASSIGN(DesktopWindowTreeHostPlatform);

@@ -68,6 +68,8 @@ void WindowEventFilter::HandleEventInternal(ui::Event* event) {
   if (!target->delegate())
     return;
 
+  LOG(ERROR) << __PRETTY_FUNCTION__; 
+
   DCHECK(event->IsLocatedEvent());
 
   int previous_click_component = HTNOWHERE;
@@ -84,10 +86,11 @@ void WindowEventFilter::HandleEventInternal(ui::Event* event) {
   } else if (component == HTMAXBUTTON && event->IsMouseEvent()) {
     OnClickedMaximizeButton(event->AsMouseEvent());
   } else {
-    if (target->GetProperty(aura::client::kResizeBehaviorKey) &
-        ui::mojom::kResizeBehaviorCanResize) {
+//    if (target->GetProperty(aura::client::kResizeBehaviorKey) &
+//        ui::mojom::kResizeBehaviorCanResize)
+//    {
       MaybeDispatchHostWindowDragMovement(component, event);
-    }
+//    }
   }
 }
 
@@ -193,12 +196,14 @@ void WindowEventFilter::MaybeDispatchHostWindowDragMovement(int hittest,
        event->AsMouseEvent()->IsLeftMouseButton()) &&
       CanPerformDragOrResize(hittest)) {
     auto* target = static_cast<aura::Window*>(event->target());
-    if (target) {
-      aura::WindowTreeHostMus* wth = aura::WindowTreeHostMus::ForWindow(target);
-      DCHECK(wth);
-      wth->PerformNativeWindowDragOrResize(hittest);
+    if (target && target->GetHost() == window_tree_host_->AsWindowTreeHost()) {
+      NOTIMPLEMENTED();
+//      window_tree_host_->AsWindowTreeHost()->
+//      aura::WindowTreeHostMus* wth = aura::WindowTreeHostMus::ForWindow(target);
+//      DCHECK(wth);
+//      wth->PerformNativeWindowDragOrResize(hittest);
+      event->StopPropagation();
     }
-    event->StopPropagation();
   }
 }
 
