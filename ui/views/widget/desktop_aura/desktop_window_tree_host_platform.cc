@@ -41,7 +41,8 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
   CreateAndSetDefaultPlatformWindow();
   // TODO(sky): this should be |params.force_software_compositing|, figure out
   // why it has to be true now.
-  const bool use_software_compositing = true;
+  // TODO(msisov): check why software is true here.
+  const bool use_software_compositing = false;
   CreateCompositor(viz::FrameSinkId(), use_software_compositing);
   aura::WindowTreeHost::OnAcceleratedWidgetAvailable();
   InitHost();
@@ -52,6 +53,16 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
 
 void DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
+  std::unique_ptr<ui::EventHandler> handler(new WindowEventFilter(this));
+
+  wm::CompoundEventFilter* compound_event_filter =
+      desktop_native_widget_aura_->root_window_event_filter();
+  if (non_client_window_event_filter_)
+    compound_event_filter->RemoveHandler(handler.get());
+  compound_event_filter->AddHandler(handler.get());
+
+  non_client_window_event_filter_ = std::move(handler);
+
   native_widget_delegate_->OnNativeWidgetCreated(true);
 }
 
@@ -92,6 +103,10 @@ void DesktopWindowTreeHostPlatform::CloseNow() {
   SetPlatformWindow(nullptr);
   if (!weak_ref || got_on_closed_)
     return;
+
+  desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
+      non_client_window_event_filter_.get());
+  non_client_window_event_filter_.reset();
 
   got_on_closed_ = true;
   desktop_native_widget_aura_->OnHostClosed();
