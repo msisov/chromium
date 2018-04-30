@@ -3,14 +3,14 @@
 // found in the LICENSE file.
 
 #include "ui/views/widget/desktop_aura/desktop_window_tree_host.h"
+#include "ui/views/widget/desktop_aura/desktop_window_tree_host_platform.h"
 
 namespace views {
 
 DesktopWindowTreeHost* DesktopWindowTreeHost::Create(
     internal::NativeWidgetDelegate* native_widget_delegate,
     DesktopNativeWidgetAura* desktop_native_widget_aura) {
-  NOTREACHED() << "Ozone builds should use DesktopWindowTreeHostMus codepath.";
-  return nullptr;
+  return new DesktopWindowTreeHostPlatform(native_widget_delegate, desktop_native_widget_aura);
 }
 
 }  // namespace views

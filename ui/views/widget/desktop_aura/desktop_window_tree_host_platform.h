@@ -96,6 +96,9 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
  private:
   Widget* GetWidget();
 
+  // ui::PlatformWindowDelegate
+  void DispatchEvent(ui::Event* event) override;
+
   internal::NativeWidgetDelegate* const native_widget_delegate_;
   DesktopNativeWidgetAura* const desktop_native_widget_aura_;
 

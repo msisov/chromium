@@ -439,4 +439,19 @@ Widget* DesktopWindowTreeHostPlatform::GetWidget() {
   return native_widget_delegate_->AsWidget();
 }
 
+void DesktopWindowTreeHostPlatform::DispatchEvent(ui::Event* event) {
+  LOG(ERROR) << __PRETTY_FUNCTION__;
+  LOG(ERROR) << "this " << this;
+  aura::Window* content_window = desktop_native_widget_aura_->content_window();
+  if (content_window && content_window->delegate() && event->IsMouseEvent()) {
+    int flags = event->flags();
+    int hit_test_code =
+        content_window->delegate()->GetNonClientComponent(event->AsMouseEvent()->location());
+    if (hit_test_code != HTCLIENT && hit_test_code != HTNOWHERE)
+      flags |= ui::EF_IS_NON_CLIENT;
+    event->set_flags(flags);
+  }
+  WindowTreeHostPlatform::DispatchEvent(event);
+}
+
 }  // namespace views

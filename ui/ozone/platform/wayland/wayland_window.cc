@@ -145,6 +145,7 @@ void WaylandWindow::SetCapture() {
 void WaylandWindow::ReleaseCapture() {
   // See comment in SetCapture() for details on wayland and grabs.
   NOTIMPLEMENTED();
+  delegate_->OnLostCapture();
 }
 
 bool WaylandWindow::HasCapture() const {
