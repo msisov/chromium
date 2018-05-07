@@ -14,6 +14,10 @@ source_set("wayland") {
   sources = [
     "client_native_pixmap_factory_wayland.cc",
     "client_native_pixmap_factory_wayland.h",
+    "drm/drm_render_node_handle.cc",
+    "drm/drm_render_node_handle.h",
+    "drm/drm_render_node_path_finder.cc",
+    "drm/drm_render_node_path_finder.h",
     "gl_surface_wayland.cc",
     "gl_surface_wayland.h",
     "ozone_platform_wayland.cc",
