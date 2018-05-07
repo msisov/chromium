@@ -14,17 +14,14 @@ GbmDevice::GbmDevice(const base::FilePath& device_path,
                      bool is_primary_device)
     : DrmDevice(device_path, std::move(file), is_primary_device) {}
 
-GbmDevice::~GbmDevice() {
-  if (device_)
-    gbm_device_destroy(device_);
-}
+GbmDevice::~GbmDevice() = default;
 
 bool GbmDevice::Initialize() {
   if (!DrmDevice::Initialize())
     return false;
 
-  device_ = gbm_create_device(get_fd());
-  if (!device_) {
+  InitializeGbmDevice(get_fd());
+  if (!device()) {
     PLOG(ERROR) << "Unable to initialize GBM for " << device_path().value();
     return false;
   }
