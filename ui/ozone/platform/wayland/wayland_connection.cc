@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 
+#include <linux-dmabuf-unstable-v1-client-protocol.h>
 #include <xdg-shell-unstable-v5-client-protocol.h>
 #include <xdg-shell-unstable-v6-client-protocol.h>
 
@@ -27,7 +28,10 @@ const uint32_t kMaxShmVersion = 1;
 const uint32_t kMaxXdgShellVersion = 1;
 }  // namespace
 
-WaylandConnection::WaylandConnection() : controller_(FROM_HERE) {}
+WaylandConnection::WaylandConnection()
+    : controller_(FROM_HERE),
+      binding_(this),
+      ui_task_runner_(base::ThreadTaskRunnerHandle::Get()) {}
 
 WaylandConnection::~WaylandConnection() {
   DCHECK(window_map_.empty());
@@ -69,6 +73,12 @@ bool WaylandConnection::Initialize() {
   }
   if (!shell_v6_ && !shell_) {
     LOG(ERROR) << "No xdg_shell object";
+    return false;
+  }
+  if (!zwp_linux_dmabuf_) {
+    // TODO(msisov): This is not important in a single process mode, when
+    // dmabufs are not used.
+    LOG(ERROR) << "No zwp_linux_dmabuf object";
     return false;
   }
 
@@ -147,8 +157,102 @@ int WaylandConnection::GetKeyboardModifiers() {
   return modifiers;
 }
 
+void WaylandConnection::ScheduleBufferSwap(const gfx::AcceleratedWidget& widget,
+                                           uint32_t buffer_id) {
+  auto it = buffers_.find(buffer_id);
+  if (it == buffers_.end())
+    return;
+  struct wl_buffer* buffer = it->second.get();
+
+  WaylandWindow* window = GetWindow(widget);
+  wl_surface_damage(window->surface(), 0, 0, window->GetBounds().width(),
+                    window->GetBounds().height());
+  wl_surface_attach(window->surface(), buffer, 0, 0);
+  wl_surface_commit(window->surface());
+
+  // It is required that flush is done on ui message loop.
+  ui_task_runner_->PostTask(
+      FROM_HERE,
+      base::Bind(&WaylandConnection::ScheduleFlush, base::Unretained(this)));
+}
+
+void WaylandConnection::CreateZwpLinuxDmabuf(base::File file,
+                                             uint32_t width,
+                                             uint32_t height,
+                                             uint32_t stride,
+                                             uint32_t offset,
+                                             uint32_t format,
+                                             uint32_t modifier,
+                                             uint32_t buffer_id) {
+  base::ThreadTaskRunnerHandle::Get()->PostTask(
+      FROM_HERE,
+      base::Bind(&WaylandConnection::CreateZwpLinuxDmabufInternal,
+                 base::Unretained(this), base::Passed(std::move(file)), width,
+                 height, stride, offset, format, modifier, buffer_id));
+}
+
+void WaylandConnection::CreateZwpLinuxDmabufInternal(base::File file,
+                                                     uint32_t width,
+                                                     uint32_t height,
+                                                     uint32_t stride,
+                                                     uint32_t offset,
+                                                     uint32_t format,
+                                                     uint32_t modifier,
+                                                     uint32_t buffer_id) {
+  static const struct zwp_linux_buffer_params_v1_listener params_listener = {
+      WaylandConnection::CreateSucceeded, WaylandConnection::CreateFailed};
+
+  DCHECK(file.IsValid());
+  uint32_t fd = file.TakePlatformFile();
+
+  struct zwp_linux_buffer_params_v1* params =
+      zwp_linux_dmabuf_v1_create_params(zwp_linux_dmabuf_);
+  // Store |params| connected to |buffer_id| to track buffer creation and
+  // identify, which buffer a client wants to use.
+  params_to_id_map_.insert(
+      std::pair<struct zwp_linux_buffer_params_v1*, uint32_t>(params,
+                                                              buffer_id));
+  zwp_linux_buffer_params_v1_add(params, fd, 0 /* plane id */, offset, stride,
+                                 0 /* modifier hi */, 0 /* modifier lo */);
+  zwp_linux_buffer_params_v1_add_listener(params, &params_listener, this);
+  zwp_linux_buffer_params_v1_create(params, width, height, format, 0);
+
+  // It is required that flush is done on ui message loop.
+  ui_task_runner_->PostTask(
+      FROM_HERE,
+      base::Bind(&WaylandConnection::ScheduleFlush, base::Unretained(this)));
+}
+
 ClipboardDelegate* WaylandConnection::GetClipboardDelegate() {
   return this;
+}
+
+// static
+void WaylandConnection::CreateSucceeded(
+    void* data,
+    struct zwp_linux_buffer_params_v1* params,
+    struct wl_buffer* new_buffer) {
+  WaylandConnection* connection = static_cast<WaylandConnection*>(data);
+  DCHECK(connection);
+
+  // Find which buffer id |params| belong to and store wl_buffer
+  // with that id.
+  auto it = connection->params_to_id_map_.find(params);
+  CHECK(it != connection->params_to_id_map_.end());
+  uint32_t handle = it->second;
+  connection->params_to_id_map_.erase(params);
+  zwp_linux_buffer_params_v1_destroy(params);
+
+  connection->buffers_.insert(std::pair<uint32_t, wl::Object<wl_buffer>>(
+      handle, wl::Object<wl_buffer>(new_buffer)));
+}
+
+// static
+void WaylandConnection::CreateFailed(
+    void* data,
+    struct zwp_linux_buffer_params_v1* params) {
+  zwp_linux_buffer_params_v1_destroy(params);
+  LOG(FATAL) << "zwp_linux_buffer_params.create failed";
 }
 
 void WaylandConnection::OfferClipboardData(
@@ -251,6 +355,9 @@ void WaylandConnection::Global(void* data,
   static const zxdg_shell_v6_listener shell_v6_listener = {
       &WaylandConnection::PingV6,
   };
+  static const zwp_linux_dmabuf_v1_listener dmabuf_listener = {
+      &WaylandConnection::Format, &WaylandConnection::Modifiers,
+  };
 
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   if (!connection->compositor_ && strcmp(interface, "wl_compositor") == 0) {
@@ -335,6 +442,13 @@ void WaylandConnection::Global(void* data,
     connection->data_device_manager_.reset(
         new WaylandDataDeviceManager(data_device_manager.release()));
     connection->data_device_manager_->set_connection(connection);
+  } else if (!connection->zwp_linux_dmabuf_ &&
+             (strcmp(interface, "zwp_linux_dmabuf_v1") == 0)) {
+    connection->zwp_linux_dmabuf_ = static_cast<zwp_linux_dmabuf_v1*>(
+        wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface, 2));
+
+    zwp_linux_dmabuf_v1_add_listener(connection->zwp_linux_dmabuf_,
+                                     &dmabuf_listener, connection);
   }
 
   connection->ScheduleFlush();
@@ -417,6 +531,22 @@ void WaylandConnection::Ping(void* data, xdg_shell* shell, uint32_t serial) {
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   xdg_shell_pong(shell, serial);
   connection->ScheduleFlush();
+}
+
+// static
+void WaylandConnection::Modifiers(void* data,
+                                  struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
+                                  uint32_t format,
+                                  uint32_t modifier_hi,
+                                  uint32_t modifier_lo) {
+  NOTIMPLEMENTED();
+}
+
+// static
+void WaylandConnection::Format(void* data,
+                               struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
+                               uint32_t format) {
+  NOTIMPLEMENTED();
 }
 
 }  // namespace ui

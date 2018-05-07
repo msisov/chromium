@@ -7,12 +7,13 @@
 
 #include "base/files/file.h"
 #include "base/macros.h"
+#include "base/memory/ref_counted.h"
 
 struct gbm_device;
 
 namespace ui {
 
-class GbmDeviceBase {
+class GbmDeviceBase : public base::RefCountedThreadSafe<GbmDeviceBase> {
  public:
   GbmDeviceBase();
   virtual ~GbmDeviceBase();

@@ -1,0 +1,29 @@
+// Copyright 2018 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+module ui.ozone.mojom;
+
+import "ui/gfx/mojo/accelerated_widget.mojom";
+import "mojo/public/mojom/base/file.mojom";
+import "mojo/public/mojom/base/file_path.mojom";
+
+interface WaylandConnection {
+  // Schedules swapping of a buffer with |buffer_id| attached to a |widget|
+  // based WaylandWindow.
+  ScheduleBufferSwap(gfx.mojom.AcceleratedWidget widget, uint32 buffer_id);
+  
+  // Create a zwp dmabuf based wl_buffer, which is used to attach to a
+  // wl_surface. |file| is a shared fd to a gbm buffer created in gpu process,
+  // and buffer_id is used to synchronize buffers between gpu and browser
+  // processes.
+  CreateZwpLinuxDmabuf(mojo_base.mojom.File file, uint32 width, uint32 height,
+      uint32 stride, uint32 offset, uint32 format, uint32 modifier,
+      uint32 buffer_id);
+};
+
+interface WaylandConnectionClient {
+  // Sets a wayland connection mojo pointer on gpu side. This pointer is used
+  // to communicate with the above interface.
+  SetWaylandConnection(WaylandConnection wc_ptr);
+};

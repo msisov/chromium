@@ -21,6 +21,8 @@ source_set("common") {
     "gpu/ozone_gpu_message_params.cc",
     "gpu/ozone_gpu_message_params.h",
     "gpu/ozone_gpu_messages.h",
+    "overlay_plane.cc",
+    "overlay_plane.h",
     "stub_overlay_manager.cc",
     "stub_overlay_manager.h",
   ]

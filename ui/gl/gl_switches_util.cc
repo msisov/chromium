@@ -13,8 +13,8 @@ namespace gl {
 
 bool IsPresentationCallbackEnabled() {
 // TODO(peng): always enable once 776877 is fixed.
-#if defined(OS_CHROMEOS) || defined(OS_ANDROID) || defined(OS_LINUX) || \
-    defined(OS_WIN)
+#if defined(OS_CHROMEOS) || defined(OS_ANDROID) || \
+    (defined(OS_LINUX) && !defined(USE_OZONE)) || defined(OS_WIN)
   return true;
 #else
   return base::CommandLine::ForCurrentProcess()->HasSwitch(
