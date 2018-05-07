@@ -27,6 +27,10 @@ namespace gfx {
 class NativePixmap;
 }
 
+namespace gl {
+class SurfacelessEGL;
+}
+
 namespace ui {
 
 class SurfaceOzoneCanvas;
@@ -130,6 +134,16 @@ class OZONE_BASE_EXPORT SurfaceFactoryOzone {
   virtual void SetGetProtectedNativePixmapDelegate(
       const GetProtectedNativePixmapCallback&
           get_protected_native_pixmap_callback);
+
+  virtual gl::SurfacelessEGL* GetSurface(
+    gfx::AcceleratedWidget widget) const { NOTREACHED(); return nullptr; }
+  
+  virtual void RegisterSurface(gfx::AcceleratedWidget widget,
+                               gl::SurfacelessEGL* surface) {}
+
+  virtual void UnregisterSurface(gfx::AcceleratedWidget widget) {}
+
+  virtual void SchedulePageFlip(uint32_t handle) {}
 
  protected:
   SurfaceFactoryOzone();

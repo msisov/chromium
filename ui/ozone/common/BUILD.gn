@@ -23,6 +23,8 @@ source_set("common") {
     "gpu/ozone_gpu_messages.h",
     "stub_overlay_manager.cc",
     "stub_overlay_manager.h",
+    "overlay_plane.cc",
+    "overlay_plane.h",
   ]
 
   public_deps = [

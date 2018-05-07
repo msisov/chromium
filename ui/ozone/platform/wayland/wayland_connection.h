@@ -7,6 +7,9 @@
 
 #include <map>
 
+#include "ui/gfx/buffer_types.h"
+
+#include "base/files/file.h"
 #include "base/message_loop/message_pump_libevent.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/native_widget_types.h"
@@ -19,12 +22,19 @@
 #include "ui/ozone/platform/wayland/wayland_touch.h"
 #include "ui/ozone/public/clipboard_delegate.h"
 
+#include "ui/ozone/public/interfaces/wayland_connection.mojom.h"
+#include "mojo/public/cpp/bindings/binding.h"
+
+struct zwp_linux_dmabuf_v1;
+struct zwp_linux_buffer_params_v1;
+
 namespace ui {
 
 class WaylandWindow;
 
 class WaylandConnection : public PlatformEventSource,
                           public ClipboardDelegate,
+                          public ozone::mojom::WaylandConnection,
                           public base::MessagePumpLibevent::FdWatcher {
  public:
   WaylandConnection();
@@ -32,6 +42,13 @@ class WaylandConnection : public PlatformEventSource,
 
   bool Initialize();
   bool StartProcessingEvents();
+
+  void SayHello() override {
+    CHECK(false) << "HELLO";
+  }
+  void CreateZwpLinuxDmabuf(base::File file, uint32_t width, uint32_t height, uint32_t stride, uint32_t offset, uint32_t format, uint32_t modifier) override;
+  
+  mojo::Binding<ozone::mojom::WaylandConnection> binding_;
 
   // Schedules a flush of the Wayland connection.
   void ScheduleFlush();
@@ -47,6 +64,7 @@ class WaylandConnection : public PlatformEventSource,
   zwp_text_input_manager_v1* text_input_manager_v1() {
     return text_input_manager_v1_.get();
   }
+  zwp_linux_dmabuf_v1* zwp_linux_dmabuf() { return zwp_linux_dmabuf_; }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
   WaylandWindow* GetCurrentFocusedWindow();
@@ -94,7 +112,11 @@ class WaylandConnection : public PlatformEventSource,
       ClipboardDelegate::GetMimeTypesClosure callback) override;
   bool IsSelectionOwner() override;
 
+  void SchedulePageFlip(uint32_t handle) override;
+
  private:
+  void CreateZwpLinuxDmabufInternal(base::File file, uint32_t width, uint32_t height, uint32_t stride, uint32_t offset, uint32_t format, uint32_t modifier);
+
   void Flush();
 
   // PlatformEventSource
@@ -122,6 +144,14 @@ class WaylandConnection : public PlatformEventSource,
   // xdg_shell_listener
   static void Ping(void* data, xdg_shell* shell, uint32_t serial);
 
+  // zwp_linux_dmabuf_v1_listener 
+  static void Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
+    uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo);
+  static void Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format);
+
+  static void CreateSucceeded(void *data, struct zwp_linux_buffer_params_v1 *params, struct wl_buffer *new_buffer);
+  static void CreateFailed(void *data, struct zwp_linux_buffer_params_v1 *params);
+ 
   std::map<gfx::AcceleratedWidget, WaylandWindow*> window_map_;
 
   wl::Object<wl_display> display_;
@@ -134,6 +164,11 @@ class WaylandConnection : public PlatformEventSource,
   wl::Object<xdg_shell> shell_;
   wl::Object<zxdg_shell_v6> shell_v6_;
   wl::Object<zwp_text_input_manager_v1> text_input_manager_v1_;
+  // TODO: use wl::Object
+  struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf_ = nullptr;
+  // TODO: each window with new params.
+  std::map<uint32_t, wl::Object<wl_buffer>> buffers_;
+  std::map<struct zwp_linux_buffer_params_v1*, uint32_t> handle_to_params_map_;
 
   std::unique_ptr<WaylandDataDevice> data_device_;
   std::unique_ptr<WaylandDataSource> data_source_;

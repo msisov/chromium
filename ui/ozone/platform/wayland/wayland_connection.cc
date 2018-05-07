@@ -6,6 +6,10 @@
 
 #include <xdg-shell-unstable-v5-client-protocol.h>
 #include <xdg-shell-unstable-v6-client-protocol.h>
+#include <linux-dmabuf-unstable-v1-client-protocol.h>
+
+#include <wayland-client-protocol.h>
+#include <wayland-client-core.h>
 
 #include "base/bind.h"
 #include "base/logging.h"
@@ -28,7 +32,7 @@ const uint32_t kMaxXdgShellVersion = 1;
 const uint32_t kMaxTextInputManagerVersion = 1;
 }  // namespace
 
-WaylandConnection::WaylandConnection() : controller_(FROM_HERE) {}
+WaylandConnection::WaylandConnection() : controller_(FROM_HERE), binding_(this) {}
 
 WaylandConnection::~WaylandConnection() {
   DCHECK(window_map_.empty());
@@ -70,6 +74,10 @@ bool WaylandConnection::Initialize() {
   }
   if (!shell_v6_ && !shell_) {
     LOG(ERROR) << "No xdg_shell object";
+    return false;
+  }
+  if (!zwp_linux_dmabuf_) {
+    LOG(ERROR) << "Failed to initialize drm device node.";
     return false;
   }
 
@@ -157,8 +165,78 @@ int WaylandConnection::GetKeyboardModifiers() {
   return modifiers;
 }
 
+static int i = 1;
+
+void WaylandConnection::SchedulePageFlip(uint32_t handle) {
+  auto it = buffers_.find(handle);
+  if (it == buffers_.end())
+    return;
+  struct wl_buffer* buffer = it->second.get();
+  
+  WaylandWindow* window = window_map_.begin()->second;
+  wl_surface_damage(window->surface(), 0, 0, window->GetBounds().width(),
+                    window->GetBounds().height());
+  wl_surface_attach(window->surface(), buffer, 0, 0);
+  wl_surface_commit(window->surface());
+  Flush();
+}
+
+void WaylandConnection::CreateZwpLinuxDmabuf(base::File file, uint32_t width, uint32_t height, uint32_t stride, uint32_t offset, uint32_t format, uint32_t modifier) {
+  base::ThreadTaskRunnerHandle::Get()->PostTask
+    (FROM_HERE,
+     base::Bind(&WaylandConnection::CreateZwpLinuxDmabufInternal, base::Unretained(this), base::Passed(std::move(file)), width, height, stride, offset, format, modifier));
+}
+
+static int h = 1;
+void WaylandConnection::CreateZwpLinuxDmabufInternal(base::File file, uint32_t width, uint32_t height, uint32_t stride, uint32_t offset, uint32_t format, uint32_t modifier) {
+  static const struct zwp_linux_buffer_params_v1_listener params_listener = {
+	   WaylandConnection::CreateSucceeded,
+	   WaylandConnection::CreateFailed
+  };
+  CHECK(file.IsValid());
+  LOG(ERROR) << "Create zwp dmabuf " << format;
+  uint32_t fd = file.TakePlatformFile();
+
+  struct zwp_linux_buffer_params_v1 *params =
+      zwp_linux_dmabuf_v1_create_params(zwp_linux_dmabuf_);
+  handle_to_params_map_.insert(std::pair<struct zwp_linux_buffer_params_v1*, uint32_t>(params, h++));
+  zwp_linux_buffer_params_v1_add(params, fd, 0, offset, stride, 0, 0);
+  zwp_linux_buffer_params_v1_add_listener(params, &params_listener, this);
+  zwp_linux_buffer_params_v1_create(params, width, height, format, 0);
+  Flush();
+
+}
+
 ClipboardDelegate* WaylandConnection::GetClipboardDelegate() {
   return this;
+}
+
+// static
+void WaylandConnection::CreateSucceeded(void *data,
+		 struct zwp_linux_buffer_params_v1 *params,
+		 struct wl_buffer *new_buffer)
+{
+  LOG(ERROR) << __PRETTY_FUNCTION__;
+  WaylandConnection* connection = static_cast<WaylandConnection*>(data);
+  CHECK(connection);
+
+  auto it = connection->handle_to_params_map_.find(params);
+  CHECK(it != connection->handle_to_params_map_.end());
+  uint32_t handle = it->second;
+  connection->handle_to_params_map_.erase(params);
+  zwp_linux_buffer_params_v1_destroy(params);
+  
+  wl::Object<wl_buffer> buffer;
+  buffer.reset(new_buffer);
+  LOG(ERROR) << "Insert " << handle;
+  connection->buffers_.insert(std::pair<uint32_t, wl::Object<wl_buffer>>(handle, std::move(buffer)));
+}
+
+// static
+void WaylandConnection::CreateFailed(void *data, struct zwp_linux_buffer_params_v1 *params)
+{
+  zwp_linux_buffer_params_v1_destroy(params);
+  CHECK(false) << "zwp_linux_buffer_params.create failed";
 }
 
 void WaylandConnection::OfferClipboardData(
@@ -262,7 +340,11 @@ void WaylandConnection::Global(void* data,
   static const zxdg_shell_v6_listener shell_v6_listener = {
       &WaylandConnection::PingV6,
   };
-
+  static const zwp_linux_dmabuf_v1_listener dmabuf_listener = {
+      &WaylandConnection::Format,
+      &WaylandConnection::Modifiers,
+  };
+  
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   if (!connection->compositor_ && strcmp(interface, "wl_compositor") == 0) {
     connection->compositor_ = wl::Bind<wl_compositor>(
@@ -348,6 +430,12 @@ void WaylandConnection::Global(void* data,
              strcmp(interface, "wl_data_device_manager") == 0) {
     connection->data_device_manager_ =
         wl::Bind<wl_data_device_manager>(registry, name, 1);
+  } else if (!connection->zwp_linux_dmabuf_ && 
+            (strcmp(interface, "zwp_linux_dmabuf_v1") == 0)) {
+    connection->zwp_linux_dmabuf_ = static_cast<zwp_linux_dmabuf_v1*>(
+        wl_registry_bind(registry, name, &zwp_linux_dmabuf_v1_interface, 2));
+
+    zwp_linux_dmabuf_v1_add_listener(connection->zwp_linux_dmabuf_, &dmabuf_listener, connection);
   }
 
   connection->ScheduleFlush();
@@ -430,6 +518,17 @@ void WaylandConnection::Ping(void* data, xdg_shell* shell, uint32_t serial) {
   WaylandConnection* connection = static_cast<WaylandConnection*>(data);
   xdg_shell_pong(shell, serial);
   connection->ScheduleFlush();
+}
+
+// static
+void WaylandConnection::Modifiers(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf,
+     uint32_t format, uint32_t modifier_hi, uint32_t modifier_lo) {
+  NOTIMPLEMENTED();
+}
+
+// static
+void WaylandConnection::Format(void *data, struct zwp_linux_dmabuf_v1 *zwp_linux_dmabuf, uint32_t format) {
+  NOTIMPLEMENTED();
 }
 
 }  // namespace ui

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/ozone/platform/drm/gpu/overlay_plane.h"
+#include "ui/ozone/common/overlay_plane.h"
 
 #include <stddef.h>
 

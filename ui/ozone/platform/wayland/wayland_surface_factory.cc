@@ -4,9 +4,13 @@
 
 #include "ui/ozone/platform/wayland/wayland_surface_factory.h"
 
+#include "ui/ozone/platform/wayland/drm/gbm_buffer.h"
+#include "ui/ozone/platform/wayland/drm/gbm_surfaceless.h"
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <wayland-client.h>
+#include <libdrm/drm_fourcc.h>
 
 #include "base/memory/ptr_util.h"
 #include "base/memory/shared_memory.h"
@@ -16,12 +20,36 @@
 #include "ui/ozone/common/gl_ozone_egl.h"
 #include "ui/ozone/common/gl_ozone_osmesa.h"
 #include "ui/ozone/platform/wayland/gl_surface_wayland.h"
-#include "ui/ozone/platform/wayland/wayland_connection.h"
+#include "ui/ozone/platform/wayland/wayland_connection_proxy.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
 
 namespace ui {
+
+namespace {
+
+void OnRunPostedTaskAndSignal(base::OnceClosure callback,
+                              base::WaitableEvent* wait) {
+  std::move(callback).Run();
+  wait->Signal();
+}
+
+
+void PostSyncTask(
+    const scoped_refptr<base::SingleThreadTaskRunner>& task_runner,
+    base::OnceClosure callback) {
+  base::WaitableEvent wait(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  bool success = task_runner->PostTask(
+      FROM_HERE,
+      base::BindOnce(OnRunPostedTaskAndSignal, std::move(callback), &wait));
+  if (success) {
+    wait.Wait();
+  }
+}
+
+}
 
 static void DeleteSharedMemory(void* pixels, void* context) {
   delete static_cast<base::SharedMemory*>(context);
@@ -29,7 +57,7 @@ static void DeleteSharedMemory(void* pixels, void* context) {
 
 class WaylandCanvasSurface : public SurfaceOzoneCanvas {
  public:
-  WaylandCanvasSurface(WaylandConnection* connection, WaylandWindow* window_);
+  WaylandCanvasSurface(WaylandConnectionProxy* connection, WaylandWindow* window_);
   ~WaylandCanvasSurface() override;
 
   // SurfaceOzoneCanvas
@@ -39,7 +67,7 @@ class WaylandCanvasSurface : public SurfaceOzoneCanvas {
   std::unique_ptr<gfx::VSyncProvider> CreateVSyncProvider() override;
 
  private:
-  WaylandConnection* connection_;
+  WaylandConnectionProxy* connection_;
   WaylandWindow* window_;
 
   gfx::Size size_;
@@ -50,7 +78,7 @@ class WaylandCanvasSurface : public SurfaceOzoneCanvas {
   DISALLOW_COPY_AND_ASSIGN(WaylandCanvasSurface);
 };
 
-WaylandCanvasSurface::WaylandCanvasSurface(WaylandConnection* connection,
+WaylandCanvasSurface::WaylandCanvasSurface(WaylandConnectionProxy* connection,
                                            WaylandWindow* window)
     : connection_(connection),
       window_(window),
@@ -75,6 +103,7 @@ sk_sp<SkSurface> WaylandCanvasSurface::GetSurface() {
       wl_shm_pool_create_buffer(pool.get(), 0, size_.width(), size_.height(),
                                 size_.width() * 4, WL_SHM_FORMAT_ARGB8888));
   if (!buffer)
+
     return nullptr;
 
   sk_surface_ = SkSurface::MakeRasterDirectReleaseProc(
@@ -125,16 +154,27 @@ WaylandCanvasSurface::CreateVSyncProvider() {
   return nullptr;
 }
 
+
 namespace {
 
 class GLOzoneEGLWayland : public GLOzoneEGL {
  public:
-  explicit GLOzoneEGLWayland(WaylandConnection* connection)
-      : connection_(connection) {}
+  explicit GLOzoneEGLWayland(WaylandConnectionProxy* connection, WaylandSurfaceFactory* surface_factory)
+      : connection_(connection), surface_factory_(surface_factory) {}
+  explicit GLOzoneEGLWayland(WaylandSurfaceFactory* surface_factory)
+      : surface_factory_(surface_factory) {}
   ~GLOzoneEGLWayland() override {}
 
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
       gfx::AcceleratedWidget widget) override;
+
+  scoped_refptr<gl::GLSurface> CreateSurfacelessViewGLSurface(
+            gfx::AcceleratedWidget window) override {
+    if (!connection_->using_mojo())
+      return nullptr;
+    return gl::InitializeGLSurface(new GbmSurfaceless(
+        surface_factory_, window));
+  }
 
   scoped_refptr<gl::GLSurface> CreateOffscreenGLSurface(
       const gfx::Size& size) override;
@@ -144,7 +184,8 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
   bool LoadGLES2Bindings(gl::GLImplementation impl) override;
 
  private:
-  WaylandConnection* connection_;
+  WaylandConnectionProxy* connection_ = nullptr;
+  WaylandSurfaceFactory* surface_factory_ = nullptr;;
 
   DISALLOW_COPY_AND_ASSIGN(GLOzoneEGLWayland);
 };
@@ -173,7 +214,7 @@ scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateOffscreenGLSurface(
 }
 
 intptr_t GLOzoneEGLWayland::GetNativeDisplay() {
-  return reinterpret_cast<intptr_t>(connection_->display());
+  return connection_->Display();
 }
 
 bool GLOzoneEGLWayland::LoadGLES2Bindings(gl::GLImplementation impl) {
@@ -185,14 +226,40 @@ bool GLOzoneEGLWayland::LoadGLES2Bindings(gl::GLImplementation impl) {
 
 }  // namespace
 
-WaylandSurfaceFactory::WaylandSurfaceFactory(WaylandConnection* connection)
+WaylandSurfaceFactory::WaylandSurfaceFactory(WaylandConnectionProxy* connection)
     : connection_(connection),
       osmesa_implementation_(std::make_unique<GLOzoneOSMesa>()) {
   if (connection_)
-    egl_implementation_ = std::make_unique<GLOzoneEGLWayland>(connection_);
+    egl_implementation_ = std::make_unique<GLOzoneEGLWayland>(connection_, this);
 }
 
 WaylandSurfaceFactory::~WaylandSurfaceFactory() {}
+
+void WaylandSurfaceFactory::RegisterSurface(gfx::AcceleratedWidget widget,
+                                        gl::SurfacelessEGL* surface) {
+  //DCHECK(thread_checker_.CalledOnValidThread());
+  widget_to_surface_map_.insert(std::make_pair(widget, static_cast<GbmSurfaceless*>(surface)));
+}
+
+void WaylandSurfaceFactory::UnregisterSurface(gfx::AcceleratedWidget widget) {
+  //DCHECK(thread_checker_.CalledOnValidThread());
+  widget_to_surface_map_.erase(widget);
+}
+
+gl::SurfacelessEGL* WaylandSurfaceFactory::GetSurface(
+    gfx::AcceleratedWidget widget) const {
+  //DCHECK(thread_checker_.CalledOnValidThread());
+  auto it = widget_to_surface_map_.find(widget);
+  DCHECK(it != widget_to_surface_map_.end());
+  return static_cast<gl::SurfacelessEGL*>(it->second);
+}
+
+static int i = 0;
+void WaylandSurfaceFactory::SchedulePageFlip(uint32_t handle) {
+ //base::SequencedTaskRunnerHandle::Get()->PostTask(FROM_HERE, base::Bind(&WaylandConnectionProxy::SchedulePageFlip, base::Unretained(connection_)));
+ PostSyncTask(connection_->task_runner(), base::BindOnce(&WaylandConnectionProxy::SchedulePageFlip, base::Unretained(connection_), std::move(handle)));
+//  connection_->SchedulePageFlip(handle);
+}
 
 std::unique_ptr<SurfaceOzoneCanvas>
 WaylandSurfaceFactory::CreateCanvasForWidget(gfx::AcceleratedWidget widget) {
@@ -226,13 +293,36 @@ GLOzone* WaylandSurfaceFactory::GetGLOzone(
   }
 }
 
+static int id = 0;
 scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
     gfx::AcceleratedWidget widget,
     gfx::Size size,
     gfx::BufferFormat format,
     gfx::BufferUsage usage) {
-  NOTIMPLEMENTED();
-  return nullptr;
+  //NOTIMPLEMENTED();
+  LOG(ERROR) << __PRETTY_FUNCTION__;
+  scoped_refptr<GbmBuffer> buffer =
+    GbmBuffer::CreateBuffer(connection_->gbm_device(), size, format, usage);
+//  scoped_refptr<GbmBuffer> buffer =
+//    drm_thread_proxy_->CreateBuffer(widget, size, format, usage);
+//  scoped_refptr<GbmBuffer> buffer =
+//      connection_->CreateGbmBuffer(widget, size, format, usage);
+
+//  CHECK(buffer.get());
+  LOG(ERROR) << "----------------------Got buffer--------------------------------------";
+  // base::File file, uint32_t width, uint32_t height, uint32_t stride, uint32_t offset, uint32_t format, uint32_t modifier
+  base::ScopedFD fd(buffer->GetFd(0));
+  base::File file(fd.release());
+  uint32_t stride = buffer->GetStride(0);
+  uint32_t offset = buffer->GetOffset(0);
+  uint32_t current_format = buffer->GetFormat();
+  uint64_t modifier = 0;
+  uint32_t width = buffer->GetWidth();
+  uint32_t height = buffer->GetHeight();
+
+  LOG(ERROR) << "omg " << base::PlatformThread::CurrentId();
+  connection_->CreateZwpLinuxDmabuf(std::move(file), width, height, stride, offset, current_format, modifier);
+  return base::MakeRefCounted<GbmPixmap>(this, buffer);
 }
 
 scoped_refptr<gfx::NativePixmap>

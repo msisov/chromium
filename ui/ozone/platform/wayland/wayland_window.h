@@ -5,6 +5,9 @@
 #ifndef UI_OZONE_PLATFORM_WAYLAND_WAYLAND_WINDOW_H_
 #define UI_OZONE_PLATFORM_WAYLAND_WAYLAND_WINDOW_H_
 
+#include <wayland-client-protocol.h>
+#include <wayland-client-core.h>
+
 #include "base/memory/ref_counted.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/rect.h"
@@ -12,6 +15,10 @@
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
+
+struct gbm_bo;
+struct gbm_device;
+struct zwp_linux_buffer_params_v1;
 
 namespace ui {
 
@@ -35,6 +42,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   static WaylandWindow* FromSurface(wl_surface* surface);
 
   bool Initialize();
+
+  //uint32_t GetBufferFd() { return std::move(buffer_->get_buffer_fd()); }
 
   wl_surface* surface() const { return surface_.get(); }
   XDGSurfaceWrapper* xdg_surface() { return xdg_surface_.get(); }
