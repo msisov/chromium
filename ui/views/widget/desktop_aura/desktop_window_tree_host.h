@@ -169,6 +169,11 @@ class VIEWS_EXPORT DesktopWindowTreeHost {
 
   // Returns whether a VisibilityController should be created.
   virtual bool ShouldCreateVisibilityController() const = 0;
+
+  // TODO(msisov, jkim): make this pure virtual when upstreaming.
+  // Starts moving or resizing native window based on hittests.
+  virtual void StartWindowMoveOrResize(int hittest,
+                                       gfx::Point pointer_location) {}
 };
 
 }  // namespace views
