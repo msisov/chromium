@@ -140,11 +140,6 @@ void WaylandPointer::Button(void* data,
     pointer->flags_ &= ~changed_button;
   }
 
-  if (pointer->window_with_pointer_focus_) {
-    pointer->window_with_pointer_focus_->set_has_implicit_grab(
-        HasAnyButtonFlag(pointer->flags_));
-  }
-
   // MouseEvent's flags should contain the button that was released too.
   const int flags = pointer->GetFlagsWithKeyboardModifiers() | changed_button;
   MouseEvent event(type, gfx::Point(), gfx::Point(),
@@ -154,6 +149,15 @@ void WaylandPointer::Button(void* data,
   event.set_location_f(pointer->location_);
   event.set_root_location_f(pointer->location_);
   pointer->callback_.Run(&event);
+
+  // Reset/set pointer focus only after the event has been sent. Otherwise, we
+  // may end up in a situation, when a target checks for a pointer grab on the
+  // MouseRelease event type, and fails to release capture due to early pointer
+  // focus reset.
+  if (pointer->window_with_pointer_focus_) {
+    pointer->window_with_pointer_focus_->set_has_implicit_grab(
+        HasAnyButtonFlag(pointer->flags_));
+  }
 }
 
 // static
