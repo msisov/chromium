@@ -54,6 +54,16 @@ void DesktopWindowTreeHostPlatform::Init(const Widget::InitParams& params) {
 void DesktopWindowTreeHostPlatform::OnNativeWidgetCreated(
     const Widget::InitParams& params) {
   native_widget_delegate_->OnNativeWidgetCreated(true);
+
+  // Setup a non_client_window_event_filter, which handles resize/move, double
+  // click and other events.
+  std::unique_ptr<ui::EventHandler> handler(new WindowEventFilter(this));
+  wm::CompoundEventFilter* compound_event_filter =
+      desktop_native_widget_aura_->root_window_event_filter();
+  if (non_client_window_event_filter_)
+    compound_event_filter->RemoveHandler(handler.get());
+  compound_event_filter->AddHandler(handler.get());
+  non_client_window_event_filter_ = std::move(handler);
 }
 
 void DesktopWindowTreeHostPlatform::OnWidgetInitDone() {}
@@ -93,6 +103,12 @@ void DesktopWindowTreeHostPlatform::CloseNow() {
   SetPlatformWindow(nullptr);
   if (!weak_ref || got_on_closed_)
     return;
+
+  // Remove the event listeners we've installed. We need to remove these
+  // because otherwise we get assert during ~WindowEventDispatcher().
+  desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
+      non_client_window_event_filter_.get());
+  non_client_window_event_filter_.reset();
 
   got_on_closed_ = true;
   desktop_native_widget_aura_->OnHostClosed();
@@ -398,6 +414,35 @@ bool DesktopWindowTreeHostPlatform::ShouldUseDesktopNativeCursorManager()
 
 bool DesktopWindowTreeHostPlatform::ShouldCreateVisibilityController() const {
   return true;
+}
+
+void DesktopWindowTreeHostPlatform::StartWindowMoveOrResize(
+    int hittest,
+    gfx::Point pointer_location) {
+  platform_window()->StartWindowMoveOrResize(hittest, pointer_location);
+}
+
+void DesktopWindowTreeHostPlatform::DispatchEvent(ui::Event* event) {
+  // We need to make sure it is appropriately marked as non-client if it's in
+  // the non client area, or otherwise, we can get into a state where the a
+  // window is set as the |mouse_pressed_handler_| in window_event_dispatcher.cc
+  // despite the mouse button being released. X11 also does the same.
+  //
+  // See comment in DesktopWindowTreeHostX11::DispatchMouseEvent for details.
+  aura::Window* content_window = desktop_native_widget_aura_->content_window();
+  if (content_window && content_window->delegate()) {
+    if (event->IsMouseEvent()) {
+      ui::MouseEvent* mouse_event = event->AsMouseEvent();
+      int flags = mouse_event->flags();
+      int hit_test_code = content_window->delegate()->GetNonClientComponent(
+          mouse_event->location());
+      if (hit_test_code != HTCLIENT && hit_test_code != HTNOWHERE)
+        flags |= ui::EF_IS_NON_CLIENT;
+      mouse_event->set_flags(flags);
+    }
+  }
+
+  WindowTreeHostPlatform::DispatchEvent(event);
 }
 
 void DesktopWindowTreeHostPlatform::OnClosed() {

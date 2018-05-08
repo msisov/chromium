@@ -50,6 +50,8 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
   PlatformImeController* GetPlatformImeController() override;
+  void StartWindowMoveOrResize(int hittest,
+                               gfx::Point pointer_location) override;
 
  protected:
   // Creates new underlying XWindow. Does not map XWindow.
