@@ -201,6 +201,7 @@ void WaylandWindow::Minimize() {
   // here. We can track if the window was unminimized once wayland sends the
   // window is activated, and the previous state was minimized.
   state_ = PlatformWindowState::PLATFORM_WINDOW_STATE_MINIMIZED;
+  delegate_->OnWindowStateChanged(state_);
 }
 
 void WaylandWindow::Restore() {

@@ -51,6 +51,9 @@ class PlatformWindow {
   virtual void Maximize() = 0;
   virtual void Minimize() = 0;
   virtual void Restore() = 0;
+  virtual bool IsFullscreen() const = 0;
+  virtual bool IsMaximized() const = 0;
+  virtual bool IsMinimized() const = 0;
 
   virtual void SetCursor(PlatformCursor cursor) = 0;
 

@@ -69,6 +69,18 @@ void StubWindow::Minimize() {
 void StubWindow::Restore() {
 }
 
+bool StubWindow::IsFullscreen() const {
+  return false;
+}
+
+bool StubWindow::IsMaximized() const {
+  return false;
+}
+
+bool StubWindow::IsMinimized() const {
+  return false;
+}
+
 void StubWindow::SetCursor(PlatformCursor cursor) {
 }
 

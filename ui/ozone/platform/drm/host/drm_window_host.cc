@@ -113,6 +113,18 @@ void DrmWindowHost::Minimize() {
 void DrmWindowHost::Restore() {
 }
 
+bool DrmWindowHost::IsFullscreen() const {
+  return false;
+}
+
+bool DrmWindowHost::IsMaximized() const {
+  return false;
+}
+
+bool DrmWindowHost::IsMinimized() const {
+  return false;
+}
+
 void DrmWindowHost::SetCursor(PlatformCursor cursor) {
   cursor_->SetCursor(widget_, cursor);
 }
