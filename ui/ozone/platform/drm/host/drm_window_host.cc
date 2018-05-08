@@ -133,6 +133,9 @@ PlatformImeController* DrmWindowHost::GetPlatformImeController() {
   return nullptr;
 }
 
+void DrmWindowHost::StartWindowMoveOrResize(int hittest,
+                                            gfx::Point pointer_location) {}
+
 bool DrmWindowHost::CanDispatchEvent(const PlatformEvent& event) {
   DCHECK(event);
 

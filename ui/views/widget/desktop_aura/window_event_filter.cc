@@ -21,6 +21,28 @@
 
 namespace views {
 
+namespace {
+
+bool CanPerformDragOrResize(int hittest) {
+  switch (hittest) {
+    case HTBOTTOM:
+    case HTBOTTOMLEFT:
+    case HTBOTTOMRIGHT:
+    case HTCAPTION:
+    case HTLEFT:
+    case HTRIGHT:
+    case HTTOP:
+    case HTTOPLEFT:
+    case HTTOPRIGHT:
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+}  // namespace
+
 WindowEventFilter::WindowEventFilter(DesktopWindowTreeHost* window_tree_host)
     : window_tree_host_(window_tree_host), click_component_(HTNOWHERE) {}
 
@@ -149,6 +171,14 @@ void WindowEventFilter::LowerWindow() {}
 
 void WindowEventFilter::MaybeDispatchHostWindowDragMovement(
     int hittest,
-    ui::MouseEvent* event) {}
+    ui::MouseEvent* event) {
+  auto* target = static_cast<aura::Window*>(event->target());
+  if (!event->IsLeftMouseButton() ||
+      target->GetHost() != window_tree_host_->AsWindowTreeHost() ||
+      !CanPerformDragOrResize(hittest))
+    return;
+  window_tree_host_->StartWindowMoveOrResize(hittest, event->location());
+  event->StopPropagation();
+}
 
 }  // namespace views
