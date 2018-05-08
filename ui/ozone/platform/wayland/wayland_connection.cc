@@ -168,6 +168,11 @@ bool WaylandConnection::IsSelectionOwner() {
   return !!data_source_;
 }
 
+void WaylandConnection::ResetPointerFlags() {
+  if (pointer_)
+    pointer_->ResetFlags();
+}
+
 void WaylandConnection::GetAvailableMimeTypes(
     ClipboardDelegate::GetMimeTypesClosure callback) {
   std::move(callback).Run(data_device_->GetAvailableMimeTypes());

@@ -82,6 +82,13 @@ class WaylandConnection : public PlatformEventSource,
       ClipboardDelegate::GetMimeTypesClosure callback) override;
   bool IsSelectionOwner() override;
 
+  // Resets flags and keyboard modifiers.
+  //
+  // This method is specially handy for cases when the WaylandPointer state is
+  // modified by a POINTER_DOWN event, but the respective POINTER_UP event is
+  // not delivered.
+  void ResetPointerFlags();
+
  private:
   void Flush();
   void DispatchUiEvent(Event* event);
