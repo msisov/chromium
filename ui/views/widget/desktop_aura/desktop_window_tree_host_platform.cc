@@ -259,15 +259,11 @@ void DesktopWindowTreeHostPlatform::Restore() {
 }
 
 bool DesktopWindowTreeHostPlatform::IsMaximized() const {
-  // TODO: needs PlatformWindow support.
-  NOTIMPLEMENTED_LOG_ONCE();
-  return false;
+  return platform_window()->IsMaximized();
 }
 
 bool DesktopWindowTreeHostPlatform::IsMinimized() const {
-  // TODO: needs PlatformWindow support.
-  NOTIMPLEMENTED_LOG_ONCE();
-  return false;
+  return platform_window()->IsMinimized();
 }
 
 bool DesktopWindowTreeHostPlatform::HasCapture() const {
@@ -342,14 +338,12 @@ bool DesktopWindowTreeHostPlatform::ShouldWindowContentsBeTransparent() const {
 void DesktopWindowTreeHostPlatform::FrameTypeChanged() {}
 
 void DesktopWindowTreeHostPlatform::SetFullscreen(bool fullscreen) {
-  // TODO: needs PlatformWindow support.
-  NOTIMPLEMENTED_LOG_ONCE();
+  if (IsFullscreen() != fullscreen)
+    platform_window()->ToggleFullscreen();
 }
 
 bool DesktopWindowTreeHostPlatform::IsFullscreen() const {
-  // TODO: needs PlatformWindow support.
-  NOTIMPLEMENTED_LOG_ONCE();
-  return false;
+  return platform_window()->IsFullscreen();
 }
 
 void DesktopWindowTreeHostPlatform::SetOpacity(float opacity) {
@@ -411,6 +405,23 @@ void DesktopWindowTreeHostPlatform::OnClosed() {
   desktop_native_widget_aura_->OnHostClosed();
 }
 
+void DesktopWindowTreeHostPlatform::OnWindowStateChanged(
+    ui::PlatformWindowState new_state) {
+  // Propagate minimization/restore to compositor to avoid drawing 'blank'
+  // frames that could be treated as previews, which show content even if a
+  // window is minimized.
+  bool visible =
+      new_state != ui::PlatformWindowState::PLATFORM_WINDOW_STATE_MINIMIZED;
+  if (visible != compositor()->IsVisible()) {
+    compositor()->SetVisible(visible);
+    native_widget_delegate_->OnNativeWidgetVisibilityChanged(visible);
+  }
+
+  // It might require relayouting when state property has been changed.
+  if (visible)
+    Relayout();
+}
+
 void DesktopWindowTreeHostPlatform::OnCloseRequest() {
   GetWidget()->Close();
 }
@@ -419,6 +430,17 @@ void DesktopWindowTreeHostPlatform::OnActivationChanged(bool active) {
   is_active_ = active;
   aura::WindowTreeHostPlatform::OnActivationChanged(active);
   desktop_native_widget_aura_->HandleActivationChanged(active);
+}
+
+void DesktopWindowTreeHostPlatform::Relayout() {
+  Widget* widget = native_widget_delegate_->AsWidget();
+  NonClientView* non_client_view = widget->non_client_view();
+  // non_client_view may be NULL, especially during creation.
+  if (non_client_view) {
+    non_client_view->client_view()->InvalidateLayout();
+    non_client_view->InvalidateLayout();
+  }
+  widget->GetRootView()->Layout();
 }
 
 Widget* DesktopWindowTreeHostPlatform::GetWidget() {

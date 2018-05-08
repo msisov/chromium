@@ -41,6 +41,9 @@ class STUB_WINDOW_EXPORT StubWindow : public PlatformWindow {
   void Maximize() override;
   void Minimize() override;
   void Restore() override;
+  bool IsFullscreen() const override;
+  bool IsMaximized() const override;
+  bool IsMinimized() const override;
   void SetCursor(PlatformCursor cursor) override;
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
