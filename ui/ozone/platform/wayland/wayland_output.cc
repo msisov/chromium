@@ -12,9 +12,7 @@
 namespace ui {
 
 WaylandOutput::WaylandOutput(const int64_t display_id, wl_output* output)
-    : display_id_(display_id),
-      output_(output),
-      observer_(nullptr) {
+    : display_id_(display_id), output_(output), observer_(nullptr) {
   static const wl_output_listener output_listener = {
       &WaylandOutput::OutputHandleGeometry, &WaylandOutput::OutputHandleMode,
   };
