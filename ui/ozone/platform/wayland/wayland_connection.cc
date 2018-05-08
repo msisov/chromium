@@ -314,6 +314,11 @@ bool WaylandConnection::IsSelectionOwner() {
   return !!data_source_;
 }
 
+void WaylandConnection::ResetPointerFlags() {
+  if (pointer_)
+    pointer_->ResetFlags();
+}
+
 ozone::mojom::WaylandConnectionPtr WaylandConnection::BindInterface() {
   // This mustn't be called twice either be called when dmabuf interface is
   // not available.

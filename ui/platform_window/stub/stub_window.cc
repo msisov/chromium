@@ -86,4 +86,7 @@ PlatformImeController* StubWindow::GetPlatformImeController() {
   return nullptr;
 }
 
+void StubWindow::StartWindowMoveOrResize(int hittest,
+                                         gfx::Point pointer_location) {}
+
 }  // namespace ui
