@@ -68,6 +68,18 @@ void HeadlessWindow::Minimize() {}
 
 void HeadlessWindow::Restore() {}
 
+bool HeadlessWindow::IsFullscreen() const {
+  return false;
+}
+
+bool HeadlessWindow::IsMaximized() const {
+  return false;
+}
+
+bool HeadlessWindow::IsMinimized() const {
+  return false;
+}
+
 void HeadlessWindow::SetCursor(PlatformCursor cursor) {}
 
 void HeadlessWindow::MoveCursorTo(const gfx::Point& location) {}

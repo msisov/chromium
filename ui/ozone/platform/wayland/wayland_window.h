@@ -73,6 +73,9 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void Maximize() override;
   void Minimize() override;
   void Restore() override;
+  bool IsMinimized() const override;
+  bool IsMaximized() const override;
+  bool IsFullscreen() const override;
   void SetCursor(PlatformCursor cursor) override;
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
@@ -91,10 +94,6 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void OnCloseRequest();
 
  private:
-  bool IsMinimized() const;
-  bool IsMaximized() const;
-  bool IsFullscreen() const;
-
   void SetPendingBounds(int32_t width, int32_t height);
 
   // Creates a surface window, which is visible as a main window.
