@@ -90,4 +90,7 @@ PlatformImeController* HeadlessWindow::GetPlatformImeController() {
   return nullptr;
 }
 
+void HeadlessWindow::StartWindowMoveOrResize(int hittest,
+                                             gfx::Point pointer_location) {}
+
 }  // namespace ui
