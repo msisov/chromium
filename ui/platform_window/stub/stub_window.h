@@ -50,6 +50,8 @@ class STUB_WINDOW_EXPORT StubWindow : public PlatformWindow {
   PlatformImeController* GetPlatformImeController() override;
   void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
   gfx::Rect GetRestoredBoundsInPixels() const override;
+  void StartWindowMoveOrResize(int hittest,
+                               gfx::Point pointer_location) override;
 
   PlatformWindowDelegate* delegate_;
   gfx::Rect bounds_;

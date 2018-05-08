@@ -349,6 +349,11 @@ void WaylandConnection::SetTerminateGpuCallback(
   terminate_gpu_cb_ = std::move(terminate_callback);
 }
 
+void WaylandConnection::ResetPointerFlags() {
+  if (pointer_)
+    pointer_->ResetFlags();
+}
+
 void WaylandConnection::GetAvailableMimeTypes(
     ClipboardDelegate::GetMimeTypesClosure callback) {
   std::move(callback).Run(data_device_->GetAvailableMimeTypes());

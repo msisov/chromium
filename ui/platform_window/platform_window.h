@@ -70,6 +70,11 @@ class PlatformWindow {
   // Sets and gets the restored bounds of the platform-window.
   virtual void SetRestoredBoundsInPixels(const gfx::Rect& bounds) = 0;
   virtual gfx::Rect GetRestoredBoundsInPixels() const = 0;
+
+  // The window manager starts interactive drag or resize of a window based on
+  // the |hittest|.
+  virtual void StartWindowMoveOrResize(int hittest,
+                                       gfx::Point pointer_location) = 0;
 };
 
 }  // namespace ui

@@ -80,4 +80,8 @@ gfx::Rect StubWindow::GetRestoredBoundsInPixels() const {
   return gfx::Rect();
 }
 
+void StubWindow::StartWindowMoveOrResize(int hittest,
+                                         gfx::Point pointer_location) {}
+
+
 }  // namespace ui

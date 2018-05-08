@@ -88,6 +88,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   PlatformImeController* GetPlatformImeController() override;
   void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
   gfx::Rect GetRestoredBoundsInPixels() const override;
+  void StartWindowMoveOrResize(int hittest,
+                               gfx::Point pointer_location) override;
 
   // PlatformEventDispatcher
   bool CanDispatchEvent(const PlatformEvent& event) override;

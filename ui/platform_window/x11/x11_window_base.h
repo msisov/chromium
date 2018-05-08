@@ -50,6 +50,8 @@ class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
   PlatformImeController* GetPlatformImeController() override;
   void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
   gfx::Rect GetRestoredBoundsInPixels() const override;
+  void StartWindowMoveOrResize(int hittest,
+                               gfx::Point pointer_location) override;
 
  protected:
   // Creates new underlying XWindow. Does not map XWindow.
