@@ -13,6 +13,7 @@ bool IsFullScreenMode() {
     return false;
   }
 
-  NOTREACHED() << "For Ozone builds, only mash launch is supported for now.";
+  // TODO(msisov, jkim): figure out why it is needed. We didn't
+  // implement it with mus/mash integration before.
   return false;
 }
