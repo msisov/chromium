@@ -62,6 +62,8 @@ class WaylandPointer {
                    uint32_t axis,
                    wl_fixed_t value);
 
+  void MaybeSetOrResetImplicitGrab();
+
   WaylandConnection* connection_ = nullptr;
   std::unique_ptr<WaylandCursor> cursor_;
   wl::Object<wl_pointer> obj_;
