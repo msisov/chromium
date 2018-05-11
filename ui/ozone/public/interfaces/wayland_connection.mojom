@@ -20,6 +20,9 @@ interface WaylandConnection {
   CreateZwpLinuxDmabuf(mojo_base.mojom.File file, uint32 width, uint32 height,
       uint32 stride, uint32 offset, uint32 format, uint32 modifier,
       uint32 buffer_id);
+
+  // Destroyes a zwp dmabuf based wl_buffer based on |buffer_id|.
+  DestroyZwpLinuxDmabuf(uint32 buffer_id);
 };
 
 interface WaylandConnectionClient {

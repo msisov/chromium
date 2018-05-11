@@ -136,6 +136,7 @@ GbmBuffer::GbmBuffer(WaylandConnectionProxy* connection,
 }
 
 GbmBuffer::~GbmBuffer() {
+  connection_->DestroyZwpLinuxDmabuf(GetHandle());
   if (bo())
     gbm_bo_destroy(bo());
 }

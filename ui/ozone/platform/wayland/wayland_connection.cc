@@ -223,6 +223,17 @@ void WaylandConnection::CreateZwpLinuxDmabufInternal(base::File file,
       base::Bind(&WaylandConnection::ScheduleFlush, base::Unretained(this)));
 }
 
+void WaylandConnection::DestroyZwpLinuxDmabuf(uint32_t buffer_id) {
+  auto it = buffers_.find(buffer_id);
+  CHECK(it != buffers_.end());
+  buffers_.erase(it);
+
+  // It is required that flush is done on ui message loop.
+  ui_task_runner_->PostTask(
+      FROM_HERE,
+      base::Bind(&WaylandConnection::ScheduleFlush, base::Unretained(this)));
+}
+
 ClipboardDelegate* WaylandConnection::GetClipboardDelegate() {
   return this;
 }

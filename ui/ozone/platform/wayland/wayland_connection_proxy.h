@@ -48,6 +48,7 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
                             uint32_t current_format,
                             uint32_t modifier,
                             uint32_t buffer_id);
+  void DestroyZwpLinuxDmabuf(uint32_t buffer_id);
   void ScheduleBufferSwap(gfx::AcceleratedWidget widget, uint32_t buffer_id);
 
   scoped_refptr<GbmDeviceBase> gbm_device() { return gbm_device_; }
@@ -66,6 +67,7 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
       ozone::mojom::WaylandConnectionClientRequest request);
 
  private:
+  void DestroyZwpLinuxDmabufInternal(uint32_t buffer_id);
   void ScheduleBufferSwapInternal(gfx::AcceleratedWidget widget,
                                   uint32_t buffer_id);
 

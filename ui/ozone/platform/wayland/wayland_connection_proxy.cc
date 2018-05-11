@@ -31,6 +31,19 @@ void WaylandConnectionProxy::CreateZwpLinuxDmabuf(base::File file,
                                 current_format, modifier, buffer_id);
 }
 
+void WaylandConnectionProxy::DestroyZwpLinuxDmabuf(uint32_t buffer_id) {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::Bind(&WaylandConnectionProxy::DestroyZwpLinuxDmabufInternal,
+                 base::Unretained(this), buffer_id));
+}
+
+void WaylandConnectionProxy::DestroyZwpLinuxDmabufInternal(uint32_t buffer_id) {
+  CHECK(task_runner_->BelongsToCurrentThread());
+  DCHECK(wc_ptr_);
+  wc_ptr_->DestroyZwpLinuxDmabuf(buffer_id);
+}
+
 void WaylandConnectionProxy::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
                                                 uint32_t buffer_id) {
   // Mojo calls must be done on a right sequence.

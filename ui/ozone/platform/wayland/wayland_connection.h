@@ -52,6 +52,7 @@ class WaylandConnection : public PlatformEventSource,
                             uint32_t format,
                             uint32_t modifier,
                             uint32_t buffer_id) override;
+  void DestroyZwpLinuxDmabuf(uint32_t buffer_id) override;
   void ScheduleBufferSwap(const gfx::AcceleratedWidget& widget,
                           uint32_t buffer_id) override;
 
