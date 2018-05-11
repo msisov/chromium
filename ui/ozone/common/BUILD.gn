@@ -10,6 +10,8 @@ source_set("common") {
   sources = [
     "egl_util.cc",
     "egl_util.h",
+    "gbm_device_base.cc",
+    "gbm_device_base.h",
     "gl_ozone_egl.cc",
     "gl_ozone_egl.h",
     "gl_ozone_osmesa.cc",
@@ -28,6 +30,7 @@ source_set("common") {
   ]
 
   deps = [
+    "//third_party/minigbm",
     "//ui/gfx/ipc/color",
     "//ui/gl",
     "//ui/gl:gl_features",
