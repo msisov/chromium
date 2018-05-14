@@ -12,8 +12,11 @@
 namespace gl {
 
 bool IsPresentationCallbackEnabled() {
+// TODO(msisov): enable presentation callback for ozone builds.
+#if defined(USE_OZONE)
+  return false;
 // TODO(peng): always enable once 776877 is fixed.
-#if defined(OS_CHROMEOS) || defined(OS_ANDROID) || defined(OS_LINUX) || \
+#elif defined(OS_CHROMEOS) || defined(OS_ANDROID) || defined(OS_LINUX) || \
     defined(OS_WIN)
   return true;
 #else
