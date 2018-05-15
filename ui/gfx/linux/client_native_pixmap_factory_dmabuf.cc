@@ -12,7 +12,7 @@
 #include "build/build_config.h"
 #include "ui/gfx/native_pixmap_handle.h"
 
-#if defined(OS_CHROMEOS)
+#if defined(OS_CHROMEOS) || defined(USE_OZONE)
 // This can be enabled on all linux but it is not a requirement to support
 // glCreateImageChromium+Dmabuf since it uses gfx::BufferUsage::SCANOUT and
 // the pixmap does not need to be mappable on the client side.
@@ -127,13 +127,14 @@ class ClientNativePixmapFactoryDmabuf : public ClientNativePixmapFactory {
       const gfx::Size& size,
       gfx::BufferUsage usage) override {
     DCHECK(!handle.fds.empty());
+    LOG(ERROR) << "ImportFromHandle";
     switch (usage) {
       case gfx::BufferUsage::SCANOUT_CPU_READ_WRITE:
       case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE:
       case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT:
       case gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE:
       case gfx::BufferUsage::CAMERA_AND_CPU_READ_WRITE:
-#if defined(OS_CHROMEOS)
+#if defined(OS_CHROMEOS) || defined(USE_OZONE)
         return ClientNativePixmapDmaBuf::ImportFromDmabuf(handle, size);
 #else
         NOTREACHED();

@@ -11,28 +11,40 @@ namespace ui {
 int GetFourCCFormatFromBufferFormat(gfx::BufferFormat format) {
   switch (format) {
     case gfx::BufferFormat::R_8:
+      LOG(ERROR) << "R_8";
       return DRM_FORMAT_R8;
     case gfx::BufferFormat::R_16:
+      LOG(ERROR) << "R_16";
       return DRM_FORMAT_R16;
     case gfx::BufferFormat::RG_88:
+      LOG(ERROR) << "RG_88";
       return DRM_FORMAT_GR88;
     case gfx::BufferFormat::RGBA_8888:
+      LOG(ERROR) << "RGBA_8888";
       return DRM_FORMAT_ABGR8888;
     case gfx::BufferFormat::RGBX_8888:
+      LOG(ERROR) << "RGBX_8888";
       return DRM_FORMAT_XBGR8888;
     case gfx::BufferFormat::BGRA_8888:
+      LOG(ERROR) << "BGRA_8888";
       return DRM_FORMAT_ARGB8888;
     case gfx::BufferFormat::BGRX_8888:
+      LOG(ERROR) << "BGRX_8888";
       return DRM_FORMAT_XRGB8888;
     case gfx::BufferFormat::BGRX_1010102:
+      LOG(ERROR) << "BGRX_1010102";
       return DRM_FORMAT_XRGB2101010;
     case gfx::BufferFormat::BGR_565:
+      LOG(ERROR) << "BGR_565";
       return DRM_FORMAT_RGB565;
     case gfx::BufferFormat::UYVY_422:
+      LOG(ERROR) << "UYVY_422";
       return DRM_FORMAT_UYVY;
     case gfx::BufferFormat::YVU_420:
+      LOG(ERROR) << "YVU_420";
       return DRM_FORMAT_YVU420;
     case gfx::BufferFormat::YUV_420_BIPLANAR:
+      LOG(ERROR) << "YUV_420_BIPLANAR";
       return DRM_FORMAT_NV12;
     default:
       NOTREACHED();

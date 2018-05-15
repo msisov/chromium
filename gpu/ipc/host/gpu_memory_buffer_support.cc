@@ -40,6 +40,11 @@ GpuMemoryBufferConfigurationSet GetNativeGpuMemoryBufferConfigurations(
     defined(OS_ANDROID)
   if (AreNativeGpuMemoryBuffersEnabled()) {
     const gfx::BufferFormat kNativeFormats[] = {
+#if defined(USE_OZONE)
+        gfx::BufferFormat::BGRX_8888,
+        gfx::BufferFormat::BGR_565,
+        gfx::BufferFormat::BGRA_8888};
+#else
         gfx::BufferFormat::R_8,
         gfx::BufferFormat::RG_88,
         gfx::BufferFormat::R_16,
@@ -53,7 +58,14 @@ GpuMemoryBufferConfigurationSet GetNativeGpuMemoryBufferConfigurations(
         gfx::BufferFormat::UYVY_422,
         gfx::BufferFormat::YVU_420,
         gfx::BufferFormat::YUV_420_BIPLANAR};
+#endif
     const gfx::BufferUsage kNativeUsages[] = {
+#if defined(USE_OZONE)
+        gfx::BufferUsage::GPU_READ,
+        gfx::BufferUsage::SCANOUT,
+        gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE,
+        gfx::BufferUsage::SCANOUT_CPU_READ_WRITE};    
+#else
         gfx::BufferUsage::GPU_READ,
         gfx::BufferUsage::SCANOUT,
         gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE,
@@ -61,6 +73,7 @@ GpuMemoryBufferConfigurationSet GetNativeGpuMemoryBufferConfigurations(
         gfx::BufferUsage::SCANOUT_CPU_READ_WRITE,
         gfx::BufferUsage::GPU_READ_CPU_READ_WRITE,
         gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT};
+#endif
     for (auto format : kNativeFormats) {
       for (auto usage : kNativeUsages) {
         if (support->IsNativeGpuMemoryBufferConfigurationSupported(format,

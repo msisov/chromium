@@ -212,6 +212,8 @@ void WaylandConnection::CreateZwpLinuxDmabufInternal(base::File file,
                                                      uint32_t buffer_id) {
   static const struct zwp_linux_buffer_params_v1_listener params_listener = {
       WaylandConnection::CreateSucceeded, WaylandConnection::CreateFailed};
+  
+  LOG(ERROR) << "Create Dmabuf " << format;
 
   DCHECK(file.IsValid());
   uint32_t fd = file.TakePlatformFile();
@@ -581,6 +583,7 @@ void WaylandConnection::Format(void* data,
                                struct zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
                                uint32_t format) {
   NOTIMPLEMENTED();
+  LOG(ERROR) << "Format " << format;
 }
 
 }  // namespace ui
