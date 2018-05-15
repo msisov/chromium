@@ -30,6 +30,8 @@ source_set("x11") {
     "x11_window_manager_ozone.h",
     "x11_window_ozone.cc",
     "x11_window_ozone.h",
+    "x11_native_display_delegate.h",
+    "x11_native_display_delegate.cc",
   ]
 
   deps = [
