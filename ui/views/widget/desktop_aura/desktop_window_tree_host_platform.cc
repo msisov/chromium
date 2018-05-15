@@ -123,6 +123,8 @@ void DesktopWindowTreeHostPlatform::CloseNow() {
   if (!weak_ref || got_on_closed_)
     return;
 
+  native_widget_delegate_->OnNativeWidgetDestroying();
+
   // Remove the event listeners we've installed. We need to remove these
   // because otherwise we get assert during ~WindowEventDispatcher().
   desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
