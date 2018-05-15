@@ -347,9 +347,7 @@ void Shell::PlatformInitialize(const gfx::Size& default_window_size) {
 #else
 #if defined(USE_AURA)
   wm_state_ = new wm::WMState;
-#endif
-#if !defined(USE_OZONE)
-  display::Screen::SetScreenInstance(views::CreateDesktopScreen());
+  views::InstallDesktopScreenIfNecessary();
 #endif
 #endif
   views_delegate_ = new views::DesktopTestViewsDelegate();
