@@ -88,6 +88,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   void Maximize() override;
   void Minimize() override;
   void Restore() override;
+  PlatformWindowState GetPlatformWindowState() const override;
   void SetCursor(PlatformCursor cursor) override;
   void MoveCursorTo(const gfx::Point& location) override;
   void ConfineCursorToBounds(const gfx::Rect& bounds) override;
@@ -161,6 +162,7 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   ui::PlatformWindowState state_;
 
   bool is_active_ = false;
+  bool is_minimizing_ = false;
 
   bool is_tooltip_ = false;
 

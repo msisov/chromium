@@ -93,11 +93,14 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
   // WindowTreeHostPlatform:
   void DispatchEvent(ui::Event* event) override;
   void OnClosed() override;
+  void OnWindowStateChanged(ui::PlatformWindowState new_state) override;
   void OnCloseRequest() override;
   void OnAcceleratedWidgetDestroying() override;
   void OnActivationChanged(bool active) override;
 
  private:
+  void Relayout();
+
   Widget* GetWidget();
 
   internal::NativeWidgetDelegate* const native_widget_delegate_;
