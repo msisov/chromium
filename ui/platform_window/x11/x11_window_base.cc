@@ -89,7 +89,7 @@ X11WindowBase::X11WindowBase(PlatformWindowDelegate* delegate,
     : delegate_(delegate),
       xdisplay_(gfx::GetXDisplay()),
       xroot_window_(DefaultRootWindow(xdisplay_)),
-      bounds_(bounds),
+      bounds_(bounds.IsEmpty() ? gfx::Rect(800,600) : bounds),
       state_(ui::PlatformWindowState::PLATFORM_WINDOW_STATE_UNKNOWN) {
   DCHECK(delegate_);
   Create();
