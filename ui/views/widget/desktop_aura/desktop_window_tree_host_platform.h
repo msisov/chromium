@@ -101,6 +101,8 @@ class VIEWS_EXPORT DesktopWindowTreeHostPlatform
  private:
   void Relayout();
 
+  void RemoveNonClientEventFilter();
+
   Widget* GetWidget();
 
   internal::NativeWidgetDelegate* const native_widget_delegate_;

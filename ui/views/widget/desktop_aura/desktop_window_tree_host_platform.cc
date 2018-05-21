@@ -119,17 +119,15 @@ void DesktopWindowTreeHostPlatform::Close() {
 
 void DesktopWindowTreeHostPlatform::CloseNow() {
   auto weak_ref = weak_factory_.GetWeakPtr();
+
   // Deleting the PlatformWindow may not result in OnClosed() being called, if
   // not behave as though it was.
   SetPlatformWindow(nullptr);
   if (!weak_ref || got_on_closed_)
     return;
 
-  // Remove the event listeners we've installed. We need to remove these
-  // because otherwise we get assert during ~WindowEventDispatcher().
-  desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
-      non_client_window_event_filter_.get());
-  non_client_window_event_filter_.reset();
+  if (non_client_window_event_filter_)
+    RemoveNonClientEventFilter();
 
   got_on_closed_ = true;
   desktop_native_widget_aura_->OnHostClosed();
@@ -469,6 +467,8 @@ void DesktopWindowTreeHostPlatform::DispatchEvent(ui::Event* event) {
 }
 
 void DesktopWindowTreeHostPlatform::OnClosed() {
+  RemoveNonClientEventFilter();
+
   got_on_closed_ = true;
   desktop_native_widget_aura_->OnHostClosed();
 }
@@ -513,6 +513,14 @@ void DesktopWindowTreeHostPlatform::Relayout() {
     non_client_view->InvalidateLayout();
   }
   widget->GetRootView()->Layout();
+}
+
+void DesktopWindowTreeHostPlatform::RemoveNonClientEventFilter() {
+  // Remove the event listeners we've installed. We need to remove these
+  // because otherwise we get assert during ~WindowEventDispatcher().
+  desktop_native_widget_aura_->root_window_event_filter()->RemoveHandler(
+      non_client_window_event_filter_.get());
+  non_client_window_event_filter_.reset();
 }
 
 Widget* DesktopWindowTreeHostPlatform::GetWidget() {
