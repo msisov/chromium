@@ -64,6 +64,8 @@ gfx::BufferFormat GetBufferFormatFromFourCCFormat(int format) {
       return gfx::BufferFormat::YUV_420_BIPLANAR;
     case DRM_FORMAT_YVU420:
       return gfx::BufferFormat::YVU_420;
+    case DRM_FORMAT_ARGB2101010:
+      return gfx::BufferFormat::ARGB_2101010;
     default:
       NOTREACHED();
       return gfx::BufferFormat::BGRA_8888;

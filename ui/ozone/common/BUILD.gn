@@ -41,9 +41,9 @@ source_set("common") {
   visibility = [ "//ui/ozone/platform/*" ]
 }
 
-if (ozone_platform_gbm) {
+if (ozone_platform_gbm || ozone_platform_wayland) {
   source_set("linux") {
-    assert(ozone_platform_gbm)
+    assert(ozone_platform_gbm || ozone_platform_wayland)
 
     sources = [
       "linux/drm_util_linux.cc",
@@ -66,6 +66,9 @@ if (ozone_platform_gbm) {
       "//ui/gfx/geometry:geometry",
     ]
 
-    visibility = [ "//ui/ozone/platform/drm/*" ]
+    visibility = [
+      "//ui/ozone/platform/drm/*", 
+      "//ui/ozone/platform/wayland/*",
+    ]
   }
 }

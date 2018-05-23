@@ -32,6 +32,7 @@ enum class BufferFormat {
   YVU_420,
   YUV_420_BIPLANAR,
   UYVY_422,
+  ARGB_2101010,
 
   LAST = UYVY_422
 };

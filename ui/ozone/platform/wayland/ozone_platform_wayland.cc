@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/wayland/ozone_platform_wayland.h"
 
+#include "base/memory/ptr_util.h"
 #include "ui/base/cursor/ozone/bitmap_cursor_factory_ozone.h"
 #include "ui/base/ui_features.h"
 #include "ui/display/manager/fake_display_delegate.h"
@@ -24,6 +25,12 @@
 #else
 #include "ui/events/ozone/layout/stub/stub_keyboard_layout_engine.h"
 #endif
+
+#include "ui/ozone/common/linux/gbm_device_linux.h"
+#include "ui/ozone/platform/wayland/drm/drm_render_node_handle.h"
+#include "ui/ozone/platform/wayland/drm/drm_render_node_path_finder.h"
+#include "ui/ozone/platform/wayland/wayland_connection_connector.h"
+#include "ui/ozone/platform/wayland/wayland_connection_proxy.h"
 
 namespace ui {
 
@@ -52,7 +59,7 @@ class OzonePlatformWayland : public OzonePlatform {
   }
 
   GpuPlatformSupportHost* GetGpuPlatformSupportHost() override {
-    return gpu_platform_support_host_.get();
+    return connector_ ? connector_.get() : gpu_platform_support_host_.get();
   }
 
   std::unique_ptr<SystemInputInjector> CreateSystemInputInjector() override {
@@ -87,27 +94,59 @@ class OzonePlatformWayland : public OzonePlatform {
     if (!connection_->Initialize())
       LOG(FATAL) << "Failed to initialize Wayland platform";
 
+    if (!args.single_process) {
+      CHECK(args.using_mojo);
+      connector_.reset(new WaylandConnectionConnector(connection_.get()));
+    }
+
     cursor_factory_.reset(new BitmapCursorFactoryOzone);
     overlay_manager_.reset(new StubOverlayManager);
     input_controller_ = CreateStubInputController();
-    surface_factory_.reset(new WaylandSurfaceFactory(connection_.get()));
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
   }
 
   void InitializeGPU(const InitParams& args) override {
-    // TODO(fwang): args.single_process parameter should be checked here; make
-    // sure callers pass in the proper value. Once it happens, the check whether
-    // surface factory was set in the same process by a previous InitializeUI
-    // call becomes unneeded.
-    if (!surface_factory_) {
-      // TODO(fwang): Separate processes can not share a Wayland connection
-      // and so the current implementations of GLOzoneEGLWayland and
-      // WaylandCanvasSurface may only work when UI and GPU live in the same
-      // process. GetSurfaceFactoryOzone() must be non-null so a dummy instance
-      // of WaylandSurfaceFactory is needed to make the GPU initialization
-      // gracefully fail.
-      surface_factory_.reset(new WaylandSurfaceFactory(nullptr));
+    proxy_.reset(new WaylandConnectionProxy(connection_.get()));
+
+    if (!args.single_process) {
+      DrmRenderNodePathFinder path_finder;
+      const base::FilePath drm_node_path = path_finder.GetDrmRenderNodePath();
+      if (drm_node_path.empty())
+        LOG(FATAL) << "Failed to find drm render node path.";
+
+      DrmRenderNodeHandle handle;
+      if (!handle.Initialize(drm_node_path))
+        LOG(FATAL) << "Failed to initialize drm render node handle.";
+
+      std::unique_ptr<GbmDeviceLinux> gbm_device_(new GbmDeviceLinux());
+      gbm_device_->InitializeGbmDevice(handle.PassFD().release());
+      if (!gbm_device_->device())
+        LOG(FATAL) << "Failed to initialize gbm device.";
+
+      proxy_->set_gbm_device(std::move(gbm_device_));
     }
+
+    surface_factory_.reset(new WaylandSurfaceFactory(proxy_.get()));
+  }
+
+  void AddInterfaces(
+      service_manager::BinderRegistryWithArgs<
+          const service_manager::BindSourceInfo&>* registry) override {
+    registry->AddInterface<ozone::mojom::WaylandConnectionClient>(
+        base::BindRepeating(
+            &OzonePlatformWayland::CreateWaylandConnectionClientBinding,
+            base::Unretained(this)));
+  }
+
+  std::vector<gfx::BufferFormat> GetSupportedBufferFormats() override {
+    CHECK(connection_.get());
+    return connection_->GetSupportedBufferFormats();
+  }
+
+  void CreateWaylandConnectionClientBinding(
+      ozone::mojom::WaylandConnectionClientRequest request,
+      const service_manager::BindSourceInfo& source_info) {
+    proxy_->AddBindingWaylandConnectionClient(std::move(request));
   }
 
  private:
@@ -121,6 +160,9 @@ class OzonePlatformWayland : public OzonePlatform {
 #if BUILDFLAG(USE_XKBCOMMON)
   XkbEvdevCodes xkb_evdev_code_converter_;
 #endif
+
+  std::unique_ptr<WaylandConnectionProxy> proxy_;
+  std::unique_ptr<WaylandConnectionConnector> connector_;
 
   DISALLOW_COPY_AND_ASSIGN(OzonePlatformWayland);
 };

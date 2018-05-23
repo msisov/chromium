@@ -61,6 +61,7 @@ size_t GbmBufferLinux::GetFdCount() const {
 
 int GbmBufferLinux::GetFd(size_t index) const {
   DCHECK_LT(index, fds_.size());
+  return gbm_bo_get_fd(bo_);
   return fds_[index].get();
 }
 
