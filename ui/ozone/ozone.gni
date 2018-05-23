@@ -69,6 +69,13 @@ declare_args() {
   }
 }
 
+if (ozone_platform_wayland) {
+  if (is_desktop_linux) {
+    use_system_minigbm = true
+    use_system_libdrm = true
+  }
+}
+
 assert(use_ozone || !(ozone_platform_cast || ozone_platform_gbm ||
                           ozone_platform_headless || ozone_platform_x11 ||
                           ozone_platform_wayland || ozone_platform_windows),

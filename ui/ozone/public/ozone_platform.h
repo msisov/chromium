@@ -12,6 +12,7 @@
 #include "services/service_manager/public/cpp/bind_source_info.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "ui/events/system_input_injector.h"
+#include "ui/gfx/buffer_types.h"
 #include "ui/ozone/ozone_export.h"
 
 namespace display {
@@ -156,6 +157,10 @@ class OZONE_EXPORT OzonePlatform {
   // platform implementations to ignore sandboxing and any associated launch
   // ordering issues.
   virtual void AfterSandboxEntry();
+
+  // Ozone platform implementations may also want to share supported buffer
+  // formats when shared native buffer memory framework is used.
+  virtual std::vector<gfx::BufferFormat> GetSupportedBufferFormats();
 
  private:
   virtual void InitializeUI(const InitParams& params) = 0;

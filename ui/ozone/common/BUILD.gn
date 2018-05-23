@@ -39,12 +39,12 @@ source_set("common") {
   ]
 
   visibility = [ "//ui/ozone/platform/*" ]
-  if (ozone_platform_gbm) {
-    visibility += [ "//ui/ozone/common:linux" ]
+  if (ozone_platform_gbm || ozone_platform_wayland) {
+    visibility += [ "//ui/ozone/common:linux", ]
   }
 }
 
-if (ozone_platform_gbm) {
+if (ozone_platform_gbm || ozone_platform_wayland) {
   source_set("linux") {
     sources = [
       "linux/drm_util_linux.cc",
@@ -71,6 +71,9 @@ if (ozone_platform_gbm) {
       "//ui/ozone:ozone_base",
     ]
 
-    visibility = [ "//ui/ozone/platform/drm/*" ]
+    visibility = [
+      "//ui/ozone/platform/drm/*",
+      "//ui/ozone/platform/wayland/*",
+    ]
   }
 }
