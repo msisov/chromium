@@ -18,6 +18,7 @@
 #include "ui/ozone/public/gpu_platform_support_host.h"
 #include "ui/ozone/public/input_controller.h"
 #include "ui/ozone/public/ozone_platform.h"
+#include "ui/platform_window/platform_window_init_properties.h"
 
 #if BUILDFLAG(USE_XKBCOMMON)
 #include "ui/events/ozone/layout/xkb/xkb_evdev_codes.h"
@@ -74,6 +75,12 @@ class OzonePlatformWayland : public OzonePlatform {
     if (!window->Initialize())
       return nullptr;
     return std::move(window);
+  }
+
+  std::unique_ptr<PlatformWindow> CreatePlatformWindowWithProperties(
+      PlatformWindowDelegate* delegate,
+      const PlatformWindowInitProperties& properties) override {
+    return CreatePlatformWindow(delegate, properties.bounds);
   }
 
   std::unique_ptr<display::NativeDisplayDelegate> CreateNativeDisplayDelegate()

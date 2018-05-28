@@ -10,6 +10,7 @@
 #include "ui/events/devices/device_data_manager.h"
 #include "ui/ozone/platform_object.h"
 #include "ui/ozone/platform_selection.h"
+#include "ui/platform_window/platform_window.h"
 
 namespace ui {
 

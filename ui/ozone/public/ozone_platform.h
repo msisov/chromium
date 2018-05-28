@@ -42,6 +42,8 @@ class PlatformWindowDelegate;
 class SurfaceFactoryOzone;
 class SystemInputInjector;
 
+struct PlatformWindowInitProperties;
+
 // Base class for Ozone platform implementations.
 //
 // Ozone platforms must override this class and implement the virtual
@@ -128,6 +130,9 @@ class OZONE_EXPORT OzonePlatform {
   virtual std::unique_ptr<PlatformWindow> CreatePlatformWindow(
       PlatformWindowDelegate* delegate,
       const gfx::Rect& bounds) = 0;
+  virtual std::unique_ptr<PlatformWindow> CreatePlatformWindowWithProperties(
+      PlatformWindowDelegate* delegate,
+      const PlatformWindowInitProperties& properties) = 0;
   virtual std::unique_ptr<display::NativeDisplayDelegate>
   CreateNativeDisplayDelegate() = 0;
 

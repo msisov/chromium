@@ -17,6 +17,7 @@
 #include "ui/events/event.h"
 #include "ui/events/keyboard_hook.h"
 #include "ui/events/keycodes/dom/dom_code.h"
+#include "ui/platform_window/platform_window_init_properties.h"
 
 #if defined(OS_ANDROID)
 #include "ui/platform_window/android/platform_window_android.h"
@@ -60,6 +61,7 @@ WindowTreeHostPlatform::WindowTreeHostPlatform(
 
 void WindowTreeHostPlatform::CreateAndSetDefaultPlatformWindow() {
 #if defined(USE_OZONE)
+  DCHECK(!platform_window_);
   platform_window_ =
       ui::OzonePlatform::GetInstance()->CreatePlatformWindow(this, bounds_);
 #elif defined(OS_WIN)
@@ -70,6 +72,17 @@ void WindowTreeHostPlatform::CreateAndSetDefaultPlatformWindow() {
   platform_window_.reset(new ui::X11Window(this, bounds_));
 #else
   NOTIMPLEMENTED();
+#endif
+}
+
+void WindowTreeHostPlatform::CreateAndSetPlatformWindowWithProperties(
+    const ui::PlatformWindowInitProperties& properties) {
+#if defined(USE_OZONE)
+  platform_window_ =
+      ui::OzonePlatform::GetInstance()->CreatePlatformWindowWithProperties(
+          this, properties);
+#else
+  CreateAndSetDefaultPlatformWindow();
 #endif
 }
 
