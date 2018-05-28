@@ -21,9 +21,11 @@ class XDGSurfaceWrapper {
  public:
   virtual ~XDGSurfaceWrapper() {}
 
-  // Initializes the surface.
+  // Initializes the surface. If |with_toplevel| is true, the surface is
+  // assigned a top level role, which results in a normal native window.
   virtual bool Initialize(WaylandConnection* connection,
-                          wl_surface* surface) = 0;
+                          wl_surface* surface,
+                          bool with_toplevel) = 0;
 
   // Sets a native window to maximized state.
   virtual void SetMaximized() = 0;

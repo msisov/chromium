@@ -70,17 +70,18 @@ class OzonePlatformWayland : public OzonePlatform {
   std::unique_ptr<PlatformWindow> CreatePlatformWindow(
       PlatformWindowDelegate* delegate,
       const gfx::Rect& bounds) override {
-    auto window =
-        std::make_unique<WaylandWindow>(delegate, connection_.get(), bounds);
-    if (!window->Initialize())
-      return nullptr;
-    return std::move(window);
+    PlatformWindowInitProperties properties;
+    properties.bounds = bounds;
+    return CreatePlatformWindowWithProperties(delegate, properties);
   }
 
   std::unique_ptr<PlatformWindow> CreatePlatformWindowWithProperties(
       PlatformWindowDelegate* delegate,
       const PlatformWindowInitProperties& properties) override {
-    return CreatePlatformWindow(delegate, properties.bounds);
+    auto window = std::make_unique<WaylandWindow>(delegate, connection_.get());
+    if (!window->Initialize(properties))
+      return nullptr;
+    return std::move(window);
   }
 
   std::unique_ptr<display::NativeDisplayDelegate> CreateNativeDisplayDelegate()

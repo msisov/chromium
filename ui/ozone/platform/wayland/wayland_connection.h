@@ -69,6 +69,7 @@ class WaylandConnection : public PlatformEventSource,
   zwp_linux_dmabuf_v1* zwp_linux_dmabuf() { return zwp_linux_dmabuf_.get(); }
 
   WaylandWindow* GetWindow(gfx::AcceleratedWidget widget);
+  WaylandWindow* GetCurrentFocusedWindow();
   void AddWindow(gfx::AcceleratedWidget widget, WaylandWindow* window);
   void RemoveWindow(gfx::AcceleratedWidget widget);
 
