@@ -267,8 +267,7 @@ gfx::Rect DesktopWindowTreeHostPlatform::GetClientAreaBoundsInScreen() const {
 }
 
 gfx::Rect DesktopWindowTreeHostPlatform::GetRestoredBounds() const {
-  NOTIMPLEMENTED_LOG_ONCE();
-  return gfx::Rect(0, 0, 640, 840);
+  return GetBoundsInPixels();
 }
 
 std::string DesktopWindowTreeHostPlatform::GetWorkspace() const {
