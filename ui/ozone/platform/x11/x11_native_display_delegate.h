@@ -5,14 +5,19 @@
 #ifndef UI_OZONE_PLATFORM_X11_X11_NATIVE_DISPLAY_DELEGATE_H_
 #define UI_OZONE_PLATFORM_X11_X11_NATIVE_DISPLAY_DELEGATE_H_
 
-#include "base/macros.h"
 #include "base/observer_list.h"
 #include "ui/display/types/native_display_delegate.h"
-#include "ui/display/types/display_snapshot.h"
+#include "ui/ozone/platform/x11/x11_display_manager_ozone.h"
+
+namespace display {
+class DisplayMode;
+class DisplaySnapshot;
+}  // namespace display
 
 namespace ui {
 
-class X11NativeDisplayDelegate : public display::NativeDisplayDelegate {
+class X11NativeDisplayDelegate : public display::NativeDisplayDelegate,
+                                 public X11DisplayManagerOzone::Observer {
  public:
   X11NativeDisplayDelegate();
   ~X11NativeDisplayDelegate() override;
@@ -42,10 +47,14 @@ class X11NativeDisplayDelegate : public display::NativeDisplayDelegate {
   void RemoveObserver(display::NativeDisplayObserver* observer) override;
   display::FakeDisplayController* GetFakeDisplayController() override;
 
+  // X11DisplayManagerOzone::Observer overrides:
+  void OnOutputReadyForUse() override;
+
  private:
-  std::unique_ptr<display::DisplaySnapshot> current_snapshot_;
-  std::unique_ptr<display::DisplayMode> current_mode_;
- 
+  bool displays_ready_ = false;
+
+  std::unique_ptr<X11DisplayManagerOzone> display_manager_;
+
   base::ObserverList<display::NativeDisplayObserver> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(X11NativeDisplayDelegate);
