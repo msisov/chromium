@@ -39,37 +39,6 @@
 
 namespace {
 
-// static
-gfx::ICCProfile GetICCProfileForMonitor(int monitor) {
-  gfx::ICCProfile icc_profile;
-  if (base::CommandLine::ForCurrentProcess()->HasSwitch(switches::kHeadless))
-    return icc_profile;
-  std::string atom_name;
-  if (monitor == 0) {
-    atom_name = "_ICC_PROFILE";
-  } else {
-    atom_name = base::StringPrintf("_ICC_PROFILE_%d", monitor);
-  }
-  Atom property = gfx::GetAtom(atom_name.c_str());
-  if (property != x11::None) {
-    Atom prop_type = x11::None;
-    int prop_format = 0;
-    unsigned long nitems = 0;
-    unsigned long nbytes = 0;
-    char* property_data = NULL;
-    if (XGetWindowProperty(
-            gfx::GetXDisplay(), DefaultRootWindow(gfx::GetXDisplay()), property,
-            0, 0x1FFFFFFF /* MAXINT32 / 4 */, x11::False, AnyPropertyType,
-            &prop_type, &prop_format, &nitems, &nbytes,
-            reinterpret_cast<unsigned char**>(&property_data)) ==
-        x11::Success) {
-      icc_profile = gfx::ICCProfile::FromData(property_data, nitems);
-      XFree(property_data);
-    }
-  }
-  return icc_profile;
-}
-
 double GetDeviceScaleFactor() {
   float device_scale_factor = 1.0f;
   if (views::LinuxUI::instance()) {
@@ -451,7 +420,7 @@ std::vector<display::Display> DesktopScreenX11::BuildDisplaysFromXRandRInfo() {
         monitor_order_primary_display_index = displays.size();
 
       if (!display::Display::HasForceColorProfile()) {
-        gfx::ICCProfile icc_profile = GetICCProfileForMonitor(
+        gfx::ICCProfile icc_profile = ui::GetICCProfileForMonitor(
             monitor_iter == output_to_monitor.end() ? 0 : monitor_iter->second);
         icc_profile.HistogramDisplay(display.id());
         display.set_color_space(icc_profile.GetColorSpace());
