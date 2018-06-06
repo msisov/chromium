@@ -46,7 +46,7 @@ class GbmBuffer : public GbmBufferLinux {
   uint32_t GetOpaqueFramebufferId() const override;
   uint32_t GetFramebufferPixelFormat() const override;
   uint32_t GetOpaqueFramebufferPixelFormat() const override;
-  const DrmDevice* GetDrmDevice() const override;
+  const GbmDeviceLinux* GetGbmDeviceLinux() const override;
   bool RequiresGlFinish() const override;
 
  private:
