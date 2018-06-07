@@ -93,10 +93,8 @@ class OzonePlatformWayland : public OzonePlatform {
     if (!connection_->Initialize())
       LOG(FATAL) << "Failed to initialize Wayland platform";
 
-    if (!args.single_process) {
-      CHECK(args.using_mojo);
+    if (!args.single_process)
       connector_.reset(new WaylandConnectionConnector(connection_.get()));
-    }
 
     cursor_factory_.reset(new BitmapCursorFactoryOzone);
     overlay_manager_.reset(new StubOverlayManager);

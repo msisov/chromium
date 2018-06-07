@@ -119,7 +119,6 @@ class WaylandConnection : public PlatformEventSource,
 
   std::vector<gfx::BufferFormat> GetSupportedBufferFormats();
 
-
  private:
   void CreateZwpLinuxDmabufInternal(base::File file,
                                     uint32_t width,

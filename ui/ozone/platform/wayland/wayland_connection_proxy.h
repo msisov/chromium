@@ -33,7 +33,7 @@ class WaylandWindow;
 class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
  public:
   WaylandConnectionProxy(WaylandConnection* connection);
-  ~WaylandConnectionProxy();
+  ~WaylandConnectionProxy() override;
 
   // WaylandConnectionProxy overrides:
   void SetWaylandConnection(ozone::mojom::WaylandConnectionPtr wc_ptr) override;
