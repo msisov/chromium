@@ -39,12 +39,13 @@ source_set("common") {
   ]
 
   visibility = [ "//ui/ozone/platform/*" ]
+  if (ozone_platform_gbm) {
+    visibility += [ "//ui/ozone/common:linux" ]
+  }
 }
 
 if (ozone_platform_gbm) {
   source_set("linux") {
-    assert(ozone_platform_gbm)
-
     sources = [
       "linux/drm_util_linux.cc",
       "linux/drm_util_linux.h",
@@ -52,12 +53,15 @@ if (ozone_platform_gbm) {
       "linux/gbm_buffer_linux.h",
       "linux/gbm_device_linux.cc",
       "linux/gbm_device_linux.h",
+      "linux/gbm_surfaceless_linux.cc",
+      "linux/gbm_surfaceless_linux.h",
       "linux/overlay_plane.cc",
       "linux/overlay_plane.h",
       "linux/scanout_buffer.h",
     ]
 
     deps = [
+      ":common",
       "//base:base",
       "//third_party/libdrm",
       "//third_party/minigbm",
