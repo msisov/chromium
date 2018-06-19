@@ -1,4 +1,6 @@
 include_rules = [
   "+ui/base/ui_features.h",  # UI features doesn't bring in all of ui/base.
+  "+mojo/public/cpp/bindings/binding.h",
+  "+mojo/public/cpp/bindings/binding_set.h",
 ]
 

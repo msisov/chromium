@@ -127,4 +127,8 @@ void OzonePlatform::AddInterfaces(
 
 void OzonePlatform::AfterSandboxEntry() {}
 
+std::vector<gfx::BufferFormat> OzonePlatform::GetSupportedBufferFormats() {
+  return std::vector<gfx::BufferFormat>();
+}
+
 }  // namespace ui
