@@ -166,7 +166,12 @@ void WaylandWindow::CreateXdgSurface() {
 }
 
 void WaylandWindow::CreateTooltipSubSurface() {
-  DCHECK(parent_window_);
+  // Tooltips do not have real parents in the aura, but rather have bounds where
+  // compositor must place them. In Wayland, it's not possible to place surfaces
+  // to desired place on a screen, but rather place a surface on top of another
+  // surface using local coordinates. Thus, get the current focused window to
+  // show the tooltip.
+  parent_window_ = connection_->GetCurrentFocusedWindow();
 
   // Tooltip creation is an async operation. By the time Mus actually start to
   // create the tooltip, it is possible that user has already moved the
@@ -218,6 +223,7 @@ void WaylandWindow::Show() {
 
 void WaylandWindow::Hide() {
   if (is_tooltip_) {
+    parent_window_ = nullptr;
     wl_surface_attach(surface_.get(), NULL, 0, 0);
     wl_surface_commit(surface_.get());
     // Tooltip subsurface must be reset only after the buffer is detached.
