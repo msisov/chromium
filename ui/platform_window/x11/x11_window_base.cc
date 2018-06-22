@@ -421,6 +421,17 @@ bool X11WindowBase::RunMoveLoop(const gfx::Vector2d& drag_offset) {
 
 void X11WindowBase::StopMoveLoop() {}
 
+void X11WindowBase::SetRestoredBoundsInPixels(const gfx::Rect& bounds) {
+  // https://crbug.com/848131
+  NOTIMPLEMENTED();
+}
+
+gfx::Rect X11WindowBase::GetRestoredBoundsInPixels() const {
+  // https://crbug.com/848131
+  NOTIMPLEMENTED();
+  return gfx::Rect();
+}
+
 void X11WindowBase::UnConfineCursor() {
   if (!has_pointer_barriers_)
     return;

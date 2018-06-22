@@ -90,6 +90,8 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
                                gfx::Point pointer_location) override;
   bool RunMoveLoop(const gfx::Vector2d& drag_offset) override;
   void StopMoveLoop() override;
+  void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
+  gfx::Rect GetRestoredBoundsInPixels() const override;
 
   // PlatformEventDispatcher
   bool CanDispatchEvent(const PlatformEvent& event) override;
@@ -108,7 +110,12 @@ class WaylandWindow : public PlatformWindow, public PlatformEventDispatcher {
   bool IsMaximized() const;
   bool IsFullscreen() const;
 
-  void SetPendingBounds(int32_t width, int32_t height);
+  // Saves the most recent bounds. When it gets invalid |width| and |height|,
+  // the bounds is set with |restored_bounds_|. |did_state_update| is set when
+  // the window state is changed and used to reset |restored_bounds_|.
+  // WaylandConnection calls ApplyPendingBounds when it has finished processing
+  // events.
+  void SetPendingBounds(int32_t width, int32_t height, bool did_state_update);
 
   // Creates a popup window, which is visible as a menu window.
   void CreateXdgPopup();

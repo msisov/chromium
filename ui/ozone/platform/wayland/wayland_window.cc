@@ -72,7 +72,7 @@ WaylandWindow::WaylandWindow(PlatformWindowDelegate* delegate,
     : delegate_(delegate),
       connection_(connection),
       xdg_shell_objects_factory_(new XDGShellObjectFactory()),
-      state_(PlatformWindowState::PLATFORM_WINDOW_STATE_UNKNOWN) {}
+      state_(PlatformWindowState::PLATFORM_WINDOW_STATE_NORMAL) {}
 
 WaylandWindow::~WaylandWindow() {
   PlatformEventSource::GetInstance()->RemovePlatformEventDispatcher(this);
@@ -289,8 +289,7 @@ void WaylandWindow::ToggleFullscreen() {
     // "normal" state before the window was maximized. We don't override them
     // unless they are empty, because |bounds_| can contain bounds of a
     // maximized window instead.
-    if (restored_bounds_.IsEmpty())
-      restored_bounds_ = bounds_;
+    SetRestoredBoundsInPixels(bounds_);
     xdg_surface_->SetFullscreen();
   } else {
     // Check the comment above. If it's not handled synchronously, media files
@@ -309,13 +308,8 @@ void WaylandWindow::Maximize() {
     ToggleFullscreen();
 
   // Keeps track of the previous bounds, which are used to restore a window
-  // after unmaximize call. We don't override |restored_bounds_| if they have
-  // already had value, which means the previous state has been a fullscreen
-  // state. That is, the bounds can be stored during a change from a normal
-  // state to a maximize state, and then preserved to be the same, when changing
-  // from maximized to fullscreen and back to a maximized state.
-  if (restored_bounds_.IsEmpty())
-    restored_bounds_ = bounds_;
+  // after unmaximize call.
+  SetRestoredBoundsInPixels(bounds_);
 
   xdg_surface_->SetMaximized();
   connection_->ScheduleFlush();
@@ -395,6 +389,22 @@ bool WaylandWindow::RunMoveLoop(const gfx::Vector2d& drag_offset) {
 }
 
 void WaylandWindow::StopMoveLoop() {}
+
+void WaylandWindow::SetRestoredBoundsInPixels(const gfx::Rect& bounds) {
+  // We don't override |restored_bounds_| if they have already had value,
+  // which means the previous state has been a maximized or fullscreen state.
+  // That is, the bounds can be stored during a change from a normal
+  // state to a fullscreen or a maximize state, and then preserved to be the
+  // same, when changing from maximized to fullscreen and back to a maximized
+  // state.
+  if (!restored_bounds_.IsEmpty())
+    return;
+  restored_bounds_ = bounds;
+}
+
+gfx::Rect WaylandWindow::GetRestoredBoundsInPixels() const {
+  return restored_bounds_;
+}
 
 bool WaylandWindow::CanDispatchEvent(const PlatformEvent& event) {
   // This window is a nested popup window, all the events must be forwarded
@@ -480,13 +490,14 @@ void WaylandWindow::HandleSurfaceConfigure(int32_t width,
   const bool did_active_change = is_active_ != is_activated;
   is_active_ = is_activated;
 
+  const bool did_state_update = old_state != state_;
   // Rather than call SetBounds here for every configure event, just save the
   // most recent bounds, and have WaylandConnection call ApplyPendingBounds
   // when it has finished processing events. We may get many configure events
   // in a row during an interactive resize, and only the last one matters.
-  SetPendingBounds(width, height);
+  SetPendingBounds(width, height, did_state_update);
 
-  if (old_state != state_)
+  if (did_state_update)
     delegate_->OnWindowStateChanged(state_);
 
   if (did_active_change)
@@ -512,7 +523,9 @@ bool WaylandWindow::IsFullscreen() const {
   return state_ == PlatformWindowState::PLATFORM_WINDOW_STATE_FULLSCREEN;
 }
 
-void WaylandWindow::SetPendingBounds(int32_t width, int32_t height) {
+void WaylandWindow::SetPendingBounds(int32_t width,
+                                     int32_t height,
+                                     bool did_state_update) {
   // Width or height set to 0 means that we should decide on width and height by
   // ourselves, but we don't want to set them to anything else. Use restored
   // bounds size or the current bounds.
@@ -529,7 +542,7 @@ void WaylandWindow::SetPendingBounds(int32_t width, int32_t height) {
     pending_bounds_ = gfx::Rect(0, 0, width, height);
   }
 
-  if (!IsFullscreen() && !IsMaximized())
+  if (!IsFullscreen() && !IsMaximized() && did_state_update)
     restored_bounds_ = gfx::Rect();
 }
 

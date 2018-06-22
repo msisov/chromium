@@ -81,6 +81,8 @@ class DrmWindowHost : public PlatformWindow,
                                gfx::Point pointer_location) override;
   bool RunMoveLoop(const gfx::Vector2d& drag_offset) override;
   void StopMoveLoop() override;
+  void SetRestoredBoundsInPixels(const gfx::Rect& bounds) override;
+  gfx::Rect GetRestoredBoundsInPixels() const override;
 
   // PlatformEventDispatcher:
   bool CanDispatchEvent(const PlatformEvent& event) override;

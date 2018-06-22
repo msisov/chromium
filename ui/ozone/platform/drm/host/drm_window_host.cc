@@ -146,6 +146,16 @@ bool DrmWindowHost::RunMoveLoop(const gfx::Vector2d& drag_offset) {
 
 void DrmWindowHost::StopMoveLoop() {}
 
+
+void DrmWindowHost::SetRestoredBoundsInPixels(const gfx::Rect& bounds) {
+  NOTREACHED();
+}
+
+gfx::Rect DrmWindowHost::GetRestoredBoundsInPixels() const {
+  NOTREACHED();
+  return gfx::Rect();
+}
+
 bool DrmWindowHost::CanDispatchEvent(const PlatformEvent& event) {
   DCHECK(event);
 
