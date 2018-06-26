@@ -31,10 +31,13 @@ class WaylandInputMethodContext : public ui::mojom::LinuxInputMethodContext,
   void Reset() override;
   void Focus() override;
   void Blur() override;
+  void SetSurroundingText(const base::string16& text,
+                          const gfx::Range& selection_range) override;
 
   // ui::ZWPTextInputWrapperClient
   void OnPreeditString(const std::string& text, int preedit_cursor) override;
   void OnCommitString(const std::string& text) override;
+  void OnDeleteSurroundingText(int32_t index, uint32_t length) override;
   void OnKeysym(uint32_t key, uint32_t state, uint32_t modifiers) override;
 
  private:

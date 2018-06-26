@@ -37,6 +37,9 @@ class ZWPTextInputWrapperV1 : public ZWPTextInputWrapper {
 
   void SetCursorRect(const gfx::Rect& rect) override;
 
+  void SetSurroundingText(const base::string16& text,
+                          const gfx::Range& selection_range) override;
+
  private:
   void ResetInputEventState();
 

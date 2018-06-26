@@ -32,6 +32,12 @@ void LinuxInputMethodContextDelegateImpl::OnCommit(const base::string16& text) {
   delegate_->OnCommit(text);
 }
 
+void LinuxInputMethodContextDelegateImpl::OnDeleteSurroundingText(
+    int32_t index,
+    uint32_t length) {
+  delegate_->OnDeleteSurroundingText(index, length);
+}
+
 void LinuxInputMethodContextDelegateImpl::OnPreeditChanged(
     const ui::CompositionText& composition_text) {
   delegate_->OnPreeditChanged(composition_text);

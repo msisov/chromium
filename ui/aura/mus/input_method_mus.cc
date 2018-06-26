@@ -105,8 +105,10 @@ void InputMethodMus::OnCaretBoundsChanged(const ui::TextInputClient* client) {
   if (!IsTextInputClientFocused(client))
     return;
 
-  if (input_method_)
+  if (input_method_) {
     input_method_->OnCaretBoundsChanged(client->GetCaretBounds());
+    SetSurroundingText(client);
+  }
 }
 
 void InputMethodMus::CancelComposition(const ui::TextInputClient* client) {
@@ -126,6 +128,19 @@ bool InputMethodMus::IsCandidatePopupOpen() const {
   // TODO(moshayedi): crbug.com/637416. Implement this properly when we have a
   // mean for displaying candidate list popup.
   return false;
+}
+
+void InputMethodMus::SetSurroundingText(const ui::TextInputClient* client) {
+  gfx::Range text_range, selection_range;
+  base::string16 text;
+  if (!client->GetTextRange(&text_range) ||
+      !client->GetTextFromRange(text_range, &text) ||
+      !client->GetSelectionRange(&selection_range)) {
+    return;
+  }
+
+  if (input_method_)
+    input_method_->SetSurroundingText(text, selection_range);
 }
 
 ui::EventDispatchDetails InputMethodMus::SendKeyEventToInputMethod(

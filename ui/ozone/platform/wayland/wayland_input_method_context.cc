@@ -27,7 +27,7 @@ namespace {
 
 constexpr int kXkbKeycodeOffset = 8;
 
-} // namespace
+}  // namespace
 
 WaylandInputMethodContext::WaylandInputMethodContext(
     WaylandConnection* connection)
@@ -83,6 +83,13 @@ void WaylandInputMethodContext::Blur() {
   }
 }
 
+void WaylandInputMethodContext::SetSurroundingText(
+    const base::string16& text,
+    const gfx::Range& selection_range) {
+  if (text_input_)
+    text_input_->SetSurroundingText(text, selection_range);
+}
+
 void WaylandInputMethodContext::SetCursorLocation(const gfx::Rect& rect) {
   if (text_input_)
     text_input_->SetCursorRect(rect);
@@ -108,6 +115,11 @@ void WaylandInputMethodContext::OnPreeditString(const std::string& text,
 
 void WaylandInputMethodContext::OnCommitString(const std::string& text) {
   delegate_->OnCommit(base::UTF8ToUTF16(text));
+}
+
+void WaylandInputMethodContext::OnDeleteSurroundingText(int32_t index,
+                                                        uint32_t length) {
+  delegate_->OnDeleteSurroundingText(index, length);
 }
 
 void WaylandInputMethodContext::OnKeysym(uint32_t key,

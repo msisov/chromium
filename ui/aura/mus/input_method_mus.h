@@ -53,6 +53,8 @@ class AURA_EXPORT InputMethodMus : public ui::InputMethodBase {
   friend class InputMethodMusTestApi;
   friend TextInputClientImpl;
 
+  void SetSurroundingText(const ui::TextInputClient* client);
+
   // Called from DispatchKeyEvent() to call to the InputMethod.
   ui::EventDispatchDetails SendKeyEventToInputMethod(
       const ui::KeyEvent& event,

@@ -36,6 +36,8 @@ class AURA_EXPORT LinuxInputMethodContextMus
   void Reset() override;
   void Focus() override;
   void Blur() override;
+  void SetSurroundingText(const base::string16& text,
+                          const gfx::Range& selection_range) override;
 
  private:
   friend class LinuxInputMethodContextMusTestApi;

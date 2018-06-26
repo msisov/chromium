@@ -101,8 +101,7 @@ ui::EventDispatchDetails InputMethodAuraLinux::DispatchKeyEvent(
         base::BindOnce(&InputMethodAuraLinux::ProcessKeyEventByEngineDone,
                        weak_ptr_factory_.GetWeakPtr(),
                        base::Owned(new ui::KeyEvent(*event)),
-                       Passed(&ack_callback), filtered,
-                       composition_changed_,
+                       Passed(&ack_callback), filtered, composition_changed_,
                        base::Owned(new ui::CompositionText(composition_)),
                        base::Owned(new base::string16(result_text_)));
     GetEngine()->ProcessKeyEvent(*event, std::move(callback));
@@ -385,6 +384,17 @@ void InputMethodAuraLinux::OnCommit(const base::string16& text) {
   }
 }
 
+void InputMethodAuraLinux::OnDeleteSurroundingText(int32_t index,
+                                                   uint32_t length) {
+  if (!composition_.text.empty())
+    return;
+
+  if (GetTextInputClient()) {
+    uint32_t before = index >= 0 ? 0U : static_cast<uint32_t>(-1 * index);
+    GetTextInputClient()->ExtendSelectionAndDelete(before, length - before);
+  }
+}
+
 void InputMethodAuraLinux::OnPreeditChanged(
     const CompositionText& composition_text) {
   if (IgnoringNonKeyInput() || IsTextInputTypeNone())
@@ -426,6 +436,13 @@ void InputMethodAuraLinux::OnPreeditEnd() {
     }
     composition_ = CompositionText();
   }
+}
+
+void InputMethodAuraLinux::SetSurroundingText(
+    const base::string16& text,
+    const gfx::Range& selection_range) {
+  if (context_)
+    context_->SetSurroundingText(text, selection_range);
 }
 
 // Overridden from InputMethodBase.
