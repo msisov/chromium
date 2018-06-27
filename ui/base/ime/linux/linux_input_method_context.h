@@ -42,6 +42,9 @@ class UI_BASE_IME_EXPORT LinuxInputMethodContext {
 
   // Blurs the context.
   virtual void Blur() = 0;
+
+  virtual void SetSurroundingText(const base::string16& text,
+                                  const gfx::Range& selection_range) = 0;
 };
 
 // An interface of callback functions called from LinuxInputMethodContext.
@@ -51,6 +54,9 @@ class UI_BASE_IME_EXPORT LinuxInputMethodContextDelegate {
 
   // Commits the |text| to the text input client.
   virtual void OnCommit(const base::string16& text) = 0;
+
+  // Deletes the surrounding text at |index| for given |length|.
+  virtual void OnDeleteSurroundingText(int32_t index, uint32_t length) = 0;
 
   // Sets the composition text to the text input client.
   virtual void OnPreeditChanged(const CompositionText& composition_text) = 0;

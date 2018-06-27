@@ -5,6 +5,9 @@
 #include "ui/ozone/platform/wayland/zwp_text_input_wrapper_v1.h"
 
 #include "base/memory/ptr_util.h"
+#include "base/strings/string16.h"
+#include "base/strings/utf_string_conversions.h"
+#include "ui/gfx/range/range.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 
@@ -74,6 +77,15 @@ void ZWPTextInputWrapperV1::SetCursorRect(const gfx::Rect& rect) {
                                          rect.width(), rect.height());
 }
 
+void ZWPTextInputWrapperV1::SetSurroundingText(
+    const base::string16& text,
+    const gfx::Range& selection_range) {
+  const std::string text_utf8 = base::UTF16ToUTF8(text);
+  zwp_text_input_v1_set_surrounding_text(obj_.get(), text_utf8.c_str(),
+                                         selection_range.start(),
+                                         selection_range.end());
+}
+
 void ZWPTextInputWrapperV1::ResetInputEventState() {
   preedit_cursor_ = -1;
 }
@@ -117,7 +129,6 @@ void ZWPTextInputWrapperV1::OnPreeditString(
 
 void ZWPTextInputWrapperV1::OnPreeditStyling(
     void* data,
-
     struct zwp_text_input_v1* text_input,
     uint32_t index,
     uint32_t length,
@@ -155,7 +166,8 @@ void ZWPTextInputWrapperV1::OnDeleteSurroundingText(
     struct zwp_text_input_v1* text_input,
     int32_t index,
     uint32_t length) {
-  NOTIMPLEMENTED_LOG_ONCE();
+  ZWPTextInputWrapperV1* wti = static_cast<ZWPTextInputWrapperV1*>(data);
+  wti->client_->OnDeleteSurroundingText(index, length);
 }
 
 void ZWPTextInputWrapperV1::OnKeysym(void* data,

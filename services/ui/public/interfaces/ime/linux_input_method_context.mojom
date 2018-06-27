@@ -7,6 +7,7 @@ module ui.mojom;
 import "mojo/public/mojom/base/string16.mojom";
 import "ui/events/mojo/event.mojom";
 import "ui/gfx/geometry/mojo/geometry.mojom";
+import "ui/gfx/range/mojo/range.mojom";
 import "services/ui/public/interfaces/ime/ime.mojom";
 
 // An interface of input method context for input method frameworks on
@@ -32,12 +33,20 @@ interface LinuxInputMethodContext {
 
   // Blurs the context.
   Blur();
+
+  // Sets surrounding text.
+  SetSurroundingText(mojo_base.mojom.String16 text,
+                     gfx.mojom.Range selection_range);
 };
 
 // An interface of callback functions called from LinuxInputMethodContext.
 interface LinuxInputMethodContextDelegate {
   // Commits the |text| to the text input client.
   OnCommit(mojo_base.mojom.String16 text);
+
+  // Deletes the current compositing surround text at |index| for given
+  // |length|.
+  OnDeleteSurroundingText(int32 index, uint32 length);
 
   // Sets the composition text to the text input client.
   OnPreeditChanged(ui.mojom.CompositionText composition_text);

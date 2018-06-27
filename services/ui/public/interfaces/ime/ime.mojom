@@ -155,6 +155,10 @@ interface InputMethod {
   ProcessKeyEvent(ui.mojom.Event key_event) => (bool handled);
 
   CancelComposition();
+
+  // Sets surrounding text.
+  SetSurroundingText(mojo_base.mojom.String16 text,
+                     gfx.mojom.Range selection_range);
 };
 
 // IME drivers send updates to clients using the TextInputClient interface.
@@ -185,6 +189,8 @@ interface TextInputClient {
 
   // Dispatch a key event skipping IME. Returns true if event was consumed.
   DispatchKeyEventPostIME(ui.mojom.Event event) => (bool stopped_propagation);
+
+  ExtendSelectionAndDelete(uint64 before, uint64 after);
 
   // TODO(moshayedi): Add functions corresponding to ui::TextInputClient for:
   // - Input context information

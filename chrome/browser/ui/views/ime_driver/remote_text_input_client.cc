@@ -142,8 +142,7 @@ bool RemoteTextInputClient::ChangeTextDirectionAndLayoutAlignment(
 
 void RemoteTextInputClient::ExtendSelectionAndDelete(size_t before,
                                                      size_t after) {
-  // TODO(moshayedi): crbug.com/631527.
-  NOTIMPLEMENTED_LOG_ONCE();
+  remote_client_->ExtendSelectionAndDelete(before, after);
 }
 
 void RemoteTextInputClient::EnsureCaretNotInRect(const gfx::Rect& rect) {

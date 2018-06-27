@@ -58,4 +58,9 @@ void TextInputClientImpl::DispatchKeyEventPostIME(
   }
 }
 
+void TextInputClientImpl::ExtendSelectionAndDelete(size_t before,
+                                                   size_t after) {
+  text_input_client_->ExtendSelectionAndDelete(before, after);
+}
+
 }  // namespace aura

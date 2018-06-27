@@ -46,3 +46,9 @@ void InputMethodBridgeLinux::ProcessKeyEvent(std::unique_ptr<ui::Event> event,
 void InputMethodBridgeLinux::CancelComposition() {
   input_method_linux_->CancelComposition(client_.get());
 }
+
+void InputMethodBridgeLinux::SetSurroundingText(
+    const base::string16& text,
+    const gfx::Range& selection_range) {
+  input_method_linux_->SetSurroundingText(text, selection_range);
+}

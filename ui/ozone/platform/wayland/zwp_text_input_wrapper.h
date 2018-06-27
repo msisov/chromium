@@ -7,9 +7,12 @@
 
 #include "ui/ozone/platform/wayland/wayland_object.h"
 
+#include "base/strings/string16.h"
+
 namespace gfx {
 class Rect;
-}
+class Range;
+}  // namespace gfx
 
 namespace ui {
 
@@ -23,6 +26,7 @@ class ZWPTextInputWrapperClient {
   virtual void OnPreeditString(const std::string& text,
                                int32_t preedit_cursor) = 0;
   virtual void OnCommitString(const std::string& text) = 0;
+  virtual void OnDeleteSurroundingText(int32_t index, uint32_t length) = 0;
   virtual void OnKeysym(uint32_t key, uint32_t state, uint32_t modifiers) = 0;
 };
 
@@ -43,6 +47,9 @@ class ZWPTextInputWrapper {
   virtual void HideInputPanel() = 0;
 
   virtual void SetCursorRect(const gfx::Rect& rect) = 0;
+
+  virtual void SetSurroundingText(const base::string16& text,
+                                  const gfx::Range& selection_range) = 0;
 };
 
 }  // namespace ui

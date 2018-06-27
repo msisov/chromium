@@ -72,6 +72,12 @@ void LinuxInputMethodContextMus::Blur() {
   context_->Blur();
 }
 
+void LinuxInputMethodContextMus::SetSurroundingText(
+    const base::string16& text,
+    const gfx::Range& selection_range) {
+  context_->SetSurroundingText(text, selection_range);
+}
+
 void LinuxInputMethodContextMus::AckPendingCallbacksUnhandled() {
   for (auto& callback_ptr : pending_callbacks_) {
     if (callback_ptr)
