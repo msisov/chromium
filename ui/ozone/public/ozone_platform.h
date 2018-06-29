@@ -12,6 +12,7 @@
 #include "services/service_manager/public/cpp/bind_source_info.h"
 #include "services/service_manager/public/cpp/binder_registry.h"
 #include "ui/events/system_input_injector.h"
+#include "ui/gfx/buffer_types.h"
 #include "ui/ozone/ozone_export.h"
 
 namespace display {
@@ -87,6 +88,9 @@ class OZONE_EXPORT OzonePlatform {
     // |view_owner_request| field in PlatformWindowInitProperties when creating
     // a window.
     bool needs_view_owner_request;
+
+    // Wayland only: carries buffer formats supported by a Wayland server.
+    std::vector<gfx::BufferFormat> supported_buffer_formats;
   };
 
   // Ensures the OzonePlatform instance without doing any initialization.

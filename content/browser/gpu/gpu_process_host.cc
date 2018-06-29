@@ -715,6 +715,11 @@ GpuProcessHost::GpuProcessHost(int host_id, GpuProcessKind kind)
     in_process_ = true;
   }
 
+#if !defined(OS_CHROMEOS) && defined(OS_LINUX)
+  base::CommandLine::ForCurrentProcess()->AppendSwitch(
+      switches::kEnableDrmMojo);
+#endif
+
   // If the 'single GPU process' policy ever changes, we still want to maintain
   // it for 'gpu thread' mode and only create one instance of host and thread.
   DCHECK(!in_process_ || g_gpu_process_hosts[kind] == nullptr);
