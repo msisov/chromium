@@ -9,18 +9,19 @@
 
 #include "base/files/scoped_file.h"
 #include "base/macros.h"
-#include "ui/gfx/geometry/size.h"
+#include "ui/ozone/common/linux/bo_wrapper.h"
 
 struct gbm_bo;
 
 namespace gfx {
+class Size;
 struct NativePixmapPlane;
 }
 
 namespace ui {
 
 // Generic gbm_bo wrapper for ozone backends.
-class GbmBoWrapper {
+class GbmBoWrapper : public BoWrapper {
  public:
   GbmBoWrapper(gbm_bo* bo,
                uint32_t format,
@@ -29,35 +30,16 @@ class GbmBoWrapper {
                std::vector<base::ScopedFD> fds,
                const gfx::Size& size,
                std::vector<gfx::NativePixmapPlane> planes);
-  ~GbmBoWrapper();
+  ~GbmBoWrapper() override;
 
-  uint32_t format() const { return format_; }
-  uint64_t format_modifier() const { return format_modifier_; }
-  uint32_t flags() const { return flags_; }
-  size_t fd_count() const { return fds_.size(); }
   gbm_bo* bo() const { return bo_; }
-  // TODO(reveman): This should not be needed once crbug.com/597932 is fixed,
-  // as the size would be queried directly from the underlying bo.
-  gfx::Size size() const { return size_; }
-  bool AreFdsValid() const;
-  int GetFd(size_t plane) const;
-  int GetStride(size_t plane) const;
-  int GetOffset(size_t plane) const;
-  size_t GetPlaneSize(size_t plane) const;
-  uint32_t GetBoHandle() const;
+
+  // BoWrapper overrides:
+  uint32_t GetBoHandle() const override;
 
  private:
+  // Owned gbm buffer object.
   gbm_bo* bo_ = nullptr;
-
-  uint64_t format_modifier_ = 0;
-  uint32_t format_ = 0;
-  uint32_t flags_ = 0;
-
-  std::vector<base::ScopedFD> fds_;
-
-  gfx::Size size_;
-
-  std::vector<gfx::NativePixmapPlane> planes_;
 
   DISALLOW_COPY_AND_ASSIGN(GbmBoWrapper);
 };

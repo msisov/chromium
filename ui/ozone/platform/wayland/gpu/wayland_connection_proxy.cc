@@ -4,6 +4,7 @@
 
 #include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 
+#include "base/process/process.h"
 #include "third_party/khronos/EGL/egl.h"
 #include "ui/ozone/common/linux/drm_util_linux.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
@@ -20,6 +21,21 @@ bool ValidateParameters(const base::File& file,
                         uint32_t current_format,
                         uint32_t planes_count,
                         uint32_t buffer_id) {
+  if (!file.IsValid())
+    return false;
+  if (size.IsEmpty())
+    return false;
+  if (planes_count <= 0)
+    return false;
+  if (planes_count != strides.size())
+    return false;
+  if (planes_count != offsets.size())
+    return false;
+  if (planes_count != modifiers.size())
+    return false;
+  if (buffer_id <= 0)
+    CHECK(false);
+
   return file.IsValid() && !size.IsEmpty() && planes_count > 0 &&
          planes_count == strides.size() && planes_count == offsets.size() &&
          planes_count == modifiers.size() && buffer_id > 0 &&
@@ -44,6 +60,22 @@ void WaylandConnectionProxy::SetWaylandConnection(
 }
 
 void WaylandConnectionProxy::CreateZwpLinuxDmabuf(
+    base::File file,
+    gfx::Size size,
+    const std::vector<uint32_t>& strides,
+    const std::vector<uint32_t>& offsets,
+    const std::vector<uint64_t>& modifiers,
+    uint32_t current_format,
+    uint32_t planes_count,
+    uint32_t buffer_id) {
+  DCHECK(ui_runner_);
+  ui_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&WaylandConnectionProxy::CreateZwpLinuxDmabufInternal,
+                     base::Unretained(this), base::Passed(&file), size, strides, offsets, modifiers, current_format, planes_count, buffer_id));
+}
+
+void WaylandConnectionProxy::CreateZwpLinuxDmabufInternal(
     base::File file,
     gfx::Size size,
     const std::vector<uint32_t>& strides,

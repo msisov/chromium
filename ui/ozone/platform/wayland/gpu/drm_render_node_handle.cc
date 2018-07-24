@@ -5,6 +5,9 @@
 #include "ui/ozone/platform/wayland/gpu/drm_render_node_handle.h"
 
 #include <fcntl.h>
+#include <libdrm/drm.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
 #include <xf86drm.h>
 
 namespace ui {
@@ -24,7 +27,15 @@ bool DrmRenderNodeHandle::Initialize(const base::FilePath& path) {
     return false;
   }
 
+  LOG(ERROR) << "NAME " << drm_version->name;
+
   drm_fd_ = std::move(drm_fd);
+  drm_gem_open args;
+  memset(&args, 0, sizeof(args));
+  args.size = 16;
+  int r = ioctl(drm_fd_.get(), DRM_IOCTL_GEM_OPEN, &args);
+  if (r < 0)
+    perror("");
   return true;
 }
 

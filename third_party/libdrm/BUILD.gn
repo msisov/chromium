@@ -11,6 +11,8 @@ declare_args() {
   # use the system version, but when building on dev workstations we
   # bundle it because Ubuntu doesn't ship a usable version.
   use_system_libdrm = false
+
+  use_intel_libdrm = false
 }
 
 if (!use_system_libdrm) {
@@ -91,6 +93,9 @@ if (!use_system_libdrm) {
 if (use_system_libdrm) {
   pkg_config("libdrm_config") {
     packages = [ "libdrm" ]
+    if (use_system_libdrm) {
+      packages += [ "libdrm_intel" ]
+    }
   }
   group("libdrm") {
     public_configs = [ ":libdrm_config" ]

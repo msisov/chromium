@@ -103,6 +103,7 @@ source_set("wayland") {
     "//ui/ozone:ozone_base",
     "//ui/ozone/common",
     "//ui/ozone/common/linux",
+    "//ui/ozone/common/linux:gbm",
     "//ui/ozone/public/interfaces/wayland:wayland_interfaces",
     "//ui/platform_window",
   ]

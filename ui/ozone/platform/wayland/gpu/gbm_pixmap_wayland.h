@@ -52,6 +52,8 @@ class GbmPixmapWayland : public gfx::NativePixmap {
  private:
   bool CreateBo(uint32_t format, const gfx::Size& size, uint32_t flags);
 
+  bool CreateBoIntel(uint32_t format, const gfx::Size& size, uint32_t flags);
+
   // Asks Wayland to create a dmabuf based wl_buffer.
   void CreateZwpLinuxDmabuf();
 

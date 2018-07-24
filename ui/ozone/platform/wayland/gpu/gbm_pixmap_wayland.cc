@@ -4,6 +4,10 @@
 
 #include "ui/ozone/platform/wayland/gpu/gbm_pixmap_wayland.h"
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <drm_fourcc.h>
 #include <gbm.h>
 #include <xf86drmMode.h>
@@ -40,34 +44,63 @@ bool GbmPixmapWayland::InitializeBuffer(gfx::Size size,
   TRACE_EVENT1("Wayland", "GbmPixmapWayland::InitializeBuffer", "size",
                size.ToString());
   uint32_t flags = 0;
-  switch (usage) {
+ // switch (usage) {
+ //   case gfx::BufferUsage::GPU_READ:
+ //     flags = GBM_BO_USE_LINEAR;
+ //     break;
+ //   case gfx::BufferUsage::SCANOUT:
+ //     flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT;
+ //     break;
+ //   case gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE:
+ //     flags = GBM_BO_USE_LINEAR | GBM_BO_USE_WRITE | GBM_BO_USE_SCANOUT;
+ //     break;
+ //   case gfx::BufferUsage::SCANOUT_CPU_READ_WRITE:
+ //     flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+ //     break;
+ //   case gfx::BufferUsage::SCANOUT_VDA_WRITE:
+ //     flags = GBM_BO_USE_SCANOUT;
+ //     break;
+ //   case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE:
+ //   case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT:
+ //     // mmap cannot be used with gbm buffers on a different process. That is,
+ //     // Linux disallows this and "permission denied" is returned. To overcome
+ //     // this and make software rasterization working, buffers must be created
+ //     // on the browser process and gbm_bo_map must be used.
+ //     // TODO(msisov): add support fir these two buffer usage cases.
+ //     // https://crbug.com/864914
+ //     LOG(FATAL) << "This scenario is not supported in Wayland now";
+ //     break;
+ //   default:
+ //     NOTREACHED() << "Not supported buffer format";
+ //     break;
+ // }
+
+    switch (usage) {
     case gfx::BufferUsage::GPU_READ:
-      flags = GBM_BO_USE_LINEAR;
+      flags = GBM_BO_USE_TEXTURING;
       break;
     case gfx::BufferUsage::SCANOUT:
-      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT;
+      flags = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
       break;
     case gfx::BufferUsage::SCANOUT_CAMERA_READ_WRITE:
-      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_WRITE | GBM_BO_USE_SCANOUT;
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_CAMERA_WRITE | GBM_BO_USE_SCANOUT |
+              GBM_BO_USE_TEXTURING;
+      break;
+    case gfx::BufferUsage::CAMERA_AND_CPU_READ_WRITE:
+      flags =
+          GBM_BO_USE_LINEAR | GBM_BO_USE_CAMERA_WRITE | GBM_BO_USE_TEXTURING;
       break;
     case gfx::BufferUsage::SCANOUT_CPU_READ_WRITE:
-      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT;
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING;
       break;
     case gfx::BufferUsage::SCANOUT_VDA_WRITE:
-      flags = GBM_BO_USE_SCANOUT;
+      flags = GBM_BO_USE_SCANOUT | GBM_BO_USE_TEXTURING |
+              GBM_BO_USE_HW_VIDEO_DECODER;
       break;
     case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE:
     case gfx::BufferUsage::GPU_READ_CPU_READ_WRITE_PERSISTENT:
-      // mmap cannot be used with gbm buffers on a different process. That is,
-      // Linux disallows this and "permission denied" is returned. To overcome
-      // this and make software rasterization working, buffers must be created
-      // on the browser process and gbm_bo_map must be used.
-      // TODO(msisov): add support fir these two buffer usage cases.
-      // https://crbug.com/864914
-      LOG(FATAL) << "This scenario is not supported in Wayland now";
-      break;
-    default:
-      NOTREACHED() << "Not supported buffer format";
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_TEXTURING;
+      LOG(ERROR) << "TADAM GPU READ CPU READ WRITE";
       break;
   }
 
@@ -111,7 +144,6 @@ uint64_t GbmPixmapWayland::GetDmaBufModifier(size_t plane) const {
   // TODO(msisov): figure out why returning format modifier results in
   // EGL_BAD_ALLOC.
   //
-  // return gbm_bo_->get_format_modifier();
   return 0;
 }
 
@@ -169,9 +201,10 @@ gfx::NativePixmapHandle GbmPixmapWayland::ExportHandle() {
 bool GbmPixmapWayland::CreateBo(uint32_t format,
                                 const gfx::Size& size,
                                 uint32_t flags) {
+  //CreateBoIntel(format, size, flags);
   DCHECK(connection_);
   gbm_bo* bo = gbm_bo_create(connection_->gbm_device()->device(), size.width(),
-                             size.height(), format, flags);
+                     size.height(), format, flags);
   if (!bo) {
     LOG(ERROR) << "Failed to create bo";
     return false;
@@ -180,12 +213,12 @@ bool GbmPixmapWayland::CreateBo(uint32_t format,
   std::vector<base::ScopedFD> fds;
   std::vector<gfx::NativePixmapPlane> planes;
 
-  const uint64_t modifier = gbm_bo_get_format(bo);
-  size_t plane_count = gbm_bo_get_plane_count(bo);
+  uint64_t modifier = gbm_bo_get_format(bo);
+  size_t plane_count = gbm_bo_get_num_planes(bo);
   for (size_t i = 0; i < plane_count; ++i) {
     // The fd returned by gbm_bo_get_fd is not ref-counted and needs to be
     // kept open for the lifetime of the buffer.
-    base::ScopedFD fd(gbm_bo_get_fd(bo));
+    base::ScopedFD fd(gbm_bo_get_plane_fd(bo, i));
 
     // TODO(dcastagna): support multiple fds.
     // crbug.com/642410
@@ -197,29 +230,32 @@ bool GbmPixmapWayland::CreateBo(uint32_t format,
       }
       fds.emplace_back(std::move(fd));
     }
-
     planes.emplace_back(
-        gbm_bo_get_stride_for_plane(bo, i), gbm_bo_get_offset(bo, i),
-        gbm_bo_get_height(bo) * gbm_bo_get_stride_for_plane(bo, i), modifier);
+        gbm_bo_get_plane_stride(bo, i), gbm_bo_get_plane_offset(bo, i),
+        gbm_bo_get_plane_size(bo, i), gbm_bo_get_plane_format_modifier(bo, i));
   }
+  gbm_bo_.reset(new GbmBoWrapper(bo, format, flags, modifier,
+                                     std::move(fds), size, std::move(planes)));
+  return true;
+}
 
-  gbm_bo_.reset(new GbmBoWrapper(bo, format, flags, modifier, std::move(fds),
-                                 size, std::move(planes)));
+bool GbmPixmapWayland::CreateBoIntel(uint32_t format,
+                                     const gfx::Size& size,
+                                     uint32_t flags) {
   return true;
 }
 
 void GbmPixmapWayland::CreateZwpLinuxDmabuf() {
-  gbm_bo* bo = gbm_bo_->bo();
   uint64_t modifier = gbm_bo_->format_modifier();
 
   std::vector<uint32_t> strides;
   std::vector<uint32_t> offsets;
   std::vector<uint64_t> modifiers;
 
-  size_t plane_count = gbm_bo_get_plane_count(bo);
+  size_t plane_count = gbm_bo_get_num_planes(gbm_bo_->bo());
   for (size_t i = 0; i < plane_count; ++i) {
-    strides.push_back(gbm_bo_get_stride_for_plane(bo, i));
-    offsets.push_back(gbm_bo_get_offset(bo, i));
+    strides.push_back(gbm_bo_get_plane_stride(gbm_bo_->bo(), i));
+    offsets.push_back(gbm_bo_get_plane_offset(gbm_bo_->bo(), i)); 
     if (modifier != DRM_FORMAT_MOD_INVALID)
       modifiers.push_back(modifier);
   }

@@ -11,8 +11,8 @@ source_set("linux") {
   sources = [
     "drm_util_linux.cc",
     "drm_util_linux.h",
-    "gbm_bo_wrapper.cc",
-    "gbm_bo_wrapper.h",
+    "bo_wrapper.cc",
+    "bo_wrapper.h",
     "gbm_device_linux.cc",
     "gbm_device_linux.h",
   ]
@@ -20,10 +20,21 @@ source_set("linux") {
   deps = [
     "//base:base",
     "//third_party/libdrm",
-    "//third_party/minigbm",
     "//ui/gfx:buffer_types",
     "//ui/gfx:memory_buffer",
     "//ui/gfx/geometry:geometry",
     "//ui/ozone:ozone_base",
+  ]
+}
+
+source_set("gbm") {
+  sources = [
+    "gbm_bo_wrapper.cc",
+    "gbm_bo_wrapper.h",
+  ]
+
+  deps = [
+    ":linux",
+    "//third_party/minigbm",
   ]
 }

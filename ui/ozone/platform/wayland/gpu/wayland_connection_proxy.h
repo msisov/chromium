@@ -89,6 +89,14 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
   WaylandConnection* connection() { return connection_; }
 
  private:
+  void CreateZwpLinuxDmabufInternal(base::File file,
+                            gfx::Size size,
+                            const std::vector<uint32_t>& strides,
+                            const std::vector<uint32_t>& offsets,
+                            const std::vector<uint64_t>& modifiers,
+                            uint32_t current_format,
+                            uint32_t planes_count,
+                            uint32_t buffer_id);
   void DestroyZwpLinuxDmabufInternal(uint32_t buffer_id);
   void ScheduleBufferSwapInternal(gfx::AcceleratedWidget widget,
                                   uint32_t buffer_id);
