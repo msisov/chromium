@@ -9,12 +9,15 @@
 #include "base/threading/thread_checker.h"
 #include "mojo/public/cpp/bindings/binding_set.h"
 #include "ui/gfx/native_widget_types.h"
-#include "ui/ozone/common/linux/gbm_device_linux.h"
 
 #include "base/threading/sequenced_task_runner_handle.h"
 #include "ui/ozone/public/interfaces/wayland/wayland_connection.mojom.h"
 
 #include "ui/ozone/platform/wayland/wayland_connection.h"
+
+#if defined(WAYLAND_GBM)
+#include "ui/ozone/common/linux/gbm_device_linux.h"
+#endif
 
 struct wl_shm;
 
@@ -32,7 +35,7 @@ class WaylandWindow;
 // sequence.
 class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
  public:
-  WaylandConnectionProxy(WaylandConnection* connection);
+  explicit WaylandConnectionProxy(WaylandConnection* connection);
   ~WaylandConnectionProxy() override;
 
   // WaylandConnectionProxy overrides:
@@ -59,11 +62,13 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
   // buffer swap for a WaylandWindow, which backs the following |widget|.
   void ScheduleBufferSwap(gfx::AcceleratedWidget widget, uint32_t buffer_id);
 
+#if defined(WAYLAND_GBM)
   // Returns a gbm_device based on a DRM render node.
   const GbmDeviceLinux* gbm_device() const { return gbm_device_.get(); }
   void set_gbm_device(std::unique_ptr<GbmDeviceLinux> gbm_device) {
     gbm_device_ = std::move(gbm_device);
   }
+#endif
 
   // Methods, which must be used when a single process mode is used (GPU is
   // hosted in the browser process).
@@ -97,8 +102,10 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
   // process mode, when a shared dmabuf approach is not used.
   WaylandConnection* connection_ = nullptr;
 
+#if defined(WAYLAND_GBM)
   // A DRM render node based gbm device.
   std::unique_ptr<GbmDeviceLinux> gbm_device_;
+#endif
 
   mojo::BindingSet<ozone::mojom::WaylandConnectionClient> bindings_;
 

@@ -117,28 +117,37 @@ void WaylandConnectionProxy::ScheduleBufferSwapInternal(
 
 WaylandWindow* WaylandConnectionProxy::GetWindow(
     gfx::AcceleratedWidget widget) {
-  DCHECK(connection_ && !gbm_device_);
-  return connection_->GetWindow(widget);
+  if (connection_)
+    return connection_->GetWindow(widget);
+  return nullptr;
 }
 
 void WaylandConnectionProxy::ScheduleFlush() {
-  DCHECK(connection_ && !gbm_device_);
-  return connection_->ScheduleFlush();
+  if (connection_)
+    return connection_->ScheduleFlush();
+
+  LOG(FATAL) << "Flush mustn't be called directly on the WaylandConnection, "
+                "when multi-process moe is used";
 }
 
 wl_shm* WaylandConnectionProxy::shm() {
-  DCHECK(connection_ && !gbm_device_);
-  return connection_->shm();
+  wl_shm* shm = nullptr;
+  if (connection_)
+    shm = connection_->shm();
+  return shm;
 }
 
 intptr_t WaylandConnectionProxy::Display() {
   if (connection_)
     return reinterpret_cast<intptr_t>(connection_->display());
 
+#if defined(WAYLAND_GBM)
   // It must not be a single process mode. Thus, shared dmabuf approach is used,
   // which requires |gbm_device_|.
   DCHECK(gbm_device_);
   return EGL_DEFAULT_DISPLAY;
+#endif
+  return 0;
 }
 
 void WaylandConnectionProxy::AddBindingWaylandConnectionClient(

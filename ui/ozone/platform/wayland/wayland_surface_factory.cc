@@ -14,12 +14,15 @@
 #include "ui/ozone/common/gl_ozone_egl.h"
 #include "ui/ozone/common/gl_ozone_osmesa.h"
 #include "ui/ozone/platform/wayland/gl_surface_wayland.h"
-#include "ui/ozone/platform/wayland/gpu/gbm_pixmap_wayland.h"
-#include "ui/ozone/platform/wayland/gpu/gbm_surfaceless_wayland.h"
 #include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
+
+#if defined(WAYLAND_GBM)
+#include "ui/ozone/platform/wayland/gpu/gbm_pixmap_wayland.h"
+#include "ui/ozone/platform/wayland/gpu/gbm_surfaceless_wayland.h"
+#endif
 
 namespace ui {
 
@@ -130,11 +133,9 @@ namespace {
 
 class GLOzoneEGLWayland : public GLOzoneEGL {
  public:
-  explicit GLOzoneEGLWayland(WaylandConnectionProxy* connection,
-                             WaylandSurfaceFactory* surface_factory)
+  GLOzoneEGLWayland(WaylandConnectionProxy* connection,
+                    WaylandSurfaceFactory* surface_factory)
       : connection_(connection), surface_factory_(surface_factory) {}
-  explicit GLOzoneEGLWayland(WaylandSurfaceFactory* surface_factory)
-      : surface_factory_(surface_factory) {}
   ~GLOzoneEGLWayland() override {}
 
   scoped_refptr<gl::GLSurface> CreateViewGLSurface(
@@ -142,11 +143,15 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
 
   scoped_refptr<gl::GLSurface> CreateSurfacelessViewGLSurface(
       gfx::AcceleratedWidget window) override {
+#if defined(WAYLAND_GBM)
     // If there is a gbm device available, use surfaceless gl surface.
     if (!connection_->gbm_device())
       return nullptr;
     return gl::InitializeGLSurface(
         new GbmSurfacelessWayland(surface_factory_, window));
+#else
+    return nullptr;
+#endif
   }
 
   scoped_refptr<gl::GLSurface> CreateOffscreenGLSurface(
@@ -159,7 +164,6 @@ class GLOzoneEGLWayland : public GLOzoneEGL {
  private:
   WaylandConnectionProxy* connection_ = nullptr;
   WaylandSurfaceFactory* surface_factory_ = nullptr;
-  ;
 
   DISALLOW_COPY_AND_ASSIGN(GLOzoneEGLWayland);
 };
@@ -168,7 +172,8 @@ scoped_refptr<gl::GLSurface> GLOzoneEGLWayland::CreateViewGLSurface(
     gfx::AcceleratedWidget widget) {
   DCHECK(connection_);
   WaylandWindow* window = connection_->GetWindow(widget);
-  DCHECK(window);
+  if (!window)
+    return nullptr;
   // The wl_egl_window needs to be created before the GLSurface so it can be
   // used in the GLSurface constructor.
   auto egl_window = CreateWaylandEglWindow(window);
@@ -269,11 +274,15 @@ scoped_refptr<gfx::NativePixmap> WaylandSurfaceFactory::CreateNativePixmap(
     gfx::Size size,
     gfx::BufferFormat format,
     gfx::BufferUsage usage) {
+#if defined(WAYLAND_GBM)
   scoped_refptr<GbmPixmapWayland> pixmap =
       base::MakeRefCounted<GbmPixmapWayland>(this, connection_);
   if (!pixmap->InitializeBuffer(size, format, usage))
     return nullptr;
   return pixmap;
+#else
+  return nullptr;
+#endif
 }
 
 scoped_refptr<gfx::NativePixmap>

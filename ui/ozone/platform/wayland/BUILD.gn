@@ -5,6 +5,7 @@
 visibility = [ "//ui/ozone/*" ]
 
 import("//build/config/linux/pkg_config.gni")
+import("//ui/ozone/platform/wayland/wayland.gni")
 
 pkg_config("wayland-egl") {
   packages = [ "wayland-egl" ]
@@ -16,14 +17,6 @@ source_set("wayland") {
     "client_native_pixmap_factory_wayland.h",
     "gl_surface_wayland.cc",
     "gl_surface_wayland.h",
-    "gpu/drm_render_node_handle.cc",
-    "gpu/drm_render_node_handle.h",
-    "gpu/drm_render_node_path_finder.cc",
-    "gpu/drm_render_node_path_finder.h",
-    "gpu/gbm_pixmap_wayland.cc",
-    "gpu/gbm_pixmap_wayland.h",
-    "gpu/gbm_surfaceless_wayland.cc",
-    "gpu/gbm_surfaceless_wayland.h",
     "gpu/wayland_connection_proxy.cc",
     "gpu/wayland_connection_proxy.h",
     "ozone_platform_wayland.cc",
@@ -108,6 +101,28 @@ source_set("wayland") {
   ]
 
   defines = [ "OZONE_IMPLEMENTATION" ]
+
+  import("//ui/ozone/platform/wayland/wayland.gni")
+  if (use_wayland_gbm) {
+    defines += [ "WAYLAND_GBM" ]
+    sources += [
+      "gpu/drm_render_node_handle.cc",
+      "gpu/drm_render_node_handle.h",
+      "gpu/drm_render_node_path_finder.cc",
+      "gpu/drm_render_node_path_finder.h",
+      "gpu/gbm_pixmap_wayland.cc",
+      "gpu/gbm_pixmap_wayland.h",
+      "gpu/gbm_surfaceless_wayland.cc",
+      "gpu/gbm_surfaceless_wayland.h",
+    ]
+
+    deps += [
+      "//third_party/libdrm",
+      "//third_party/minigbm",
+      "//ui/gfx:memory_buffer",
+      "//ui/ozone/common/linux",
+    ]
+  }
 
   configs += [
     ":wayland-egl",

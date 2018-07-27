@@ -10,10 +10,7 @@
 #include "ui/display/manager/fake_display_delegate.h"
 #include "ui/events/ozone/layout/keyboard_layout_engine_manager.h"
 #include "ui/events/system_input_injector.h"
-#include "ui/ozone/common/linux/gbm_device_linux.h"
 #include "ui/ozone/common/stub_overlay_manager.h"
-#include "ui/ozone/platform/wayland/gpu/drm_render_node_handle.h"
-#include "ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.h"
 #include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
 #include "ui/ozone/platform/wayland/wayland_connection_connector.h"
@@ -30,6 +27,12 @@
 #include "ui/ozone/platform/wayland/wayland_xkb_keyboard_layout_engine.h"
 #else
 #include "ui/events/ozone/layout/stub/stub_keyboard_layout_engine.h"
+#endif
+
+#if defined(WAYLAND_GBM)
+#include "ui/ozone/common/linux/gbm_device_linux.h"
+#include "ui/ozone/platform/wayland/gpu/drm_render_node_handle.h"
+#include "ui/ozone/platform/wayland/gpu/drm_render_node_path_finder.h"
 #endif
 
 namespace ui {
@@ -93,8 +96,10 @@ class OzonePlatformWayland : public OzonePlatform {
     if (!connection_->Initialize())
       LOG(FATAL) << "Failed to initialize Wayland platform";
 
+#if defined(WAYLAND_GBM)
     if (!args.single_process)
       connector_.reset(new WaylandConnectionConnector(connection_.get()));
+#endif
 
     cursor_factory_.reset(new BitmapCursorFactoryOzone);
     overlay_manager_.reset(new StubOverlayManager);
@@ -103,9 +108,9 @@ class OzonePlatformWayland : public OzonePlatform {
   }
 
   void InitializeGPU(const InitParams& args) override {
-    proxy_.reset(new WaylandConnectionProxy(connection_.get()));
-
     if (!args.single_process) {
+      proxy_.reset(new WaylandConnectionProxy(nullptr));
+#if defined(WAYLAND_GBM)
       DrmRenderNodePathFinder path_finder;
       const base::FilePath drm_node_path = path_finder.GetDrmRenderNodePath();
       if (drm_node_path.empty())
@@ -121,8 +126,10 @@ class OzonePlatformWayland : public OzonePlatform {
         LOG(FATAL) << "Failed to initialize gbm device.";
 
       proxy_->set_gbm_device(std::move(gbm_device_));
+#endif
+    } else {
+      proxy_.reset(new WaylandConnectionProxy(connection_.get()));
     }
-
     surface_factory_.reset(new WaylandSurfaceFactory(proxy_.get()));
   }
 
