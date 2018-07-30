@@ -147,6 +147,8 @@ void DesktopWindowTreeHostPlatform::CloseNow() {
   if (!weak_ref || got_on_closed_)
     return;
 
+  native_widget_delegate_->OnNativeWidgetDestroying();
+
   if (non_client_window_event_filter_)
     RemoveNonClientEventFilter();
 
