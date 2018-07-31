@@ -6,13 +6,21 @@
 
 namespace ui {
 
+namespace {
+
+constexpr float kDefaultDeviceScaleFactor = 1.0f;
+
+}  // namespace
+
 Cursor::Cursor()
     : native_type_(CursorType::kNull),
       platform_cursor_(0),
-      device_scale_factor_(0.0f) {}
+      device_scale_factor_(kDefaultDeviceScaleFactor) {}
 
 Cursor::Cursor(CursorType type)
-    : native_type_(type), platform_cursor_(0), device_scale_factor_(0.0f) {}
+    : native_type_(type),
+      platform_cursor_(0),
+      device_scale_factor_(kDefaultDeviceScaleFactor) {}
 
 Cursor::Cursor(const Cursor& cursor)
     : native_type_(cursor.native_type_),
