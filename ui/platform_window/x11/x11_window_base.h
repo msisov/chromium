@@ -11,12 +11,14 @@
 
 #include "base/callback.h"
 #include "base/containers/flat_set.h"
+#include "ui/base/dragdrop/os_exchange_data.h"
 #include "base/macros.h"
 #include "ui/gfx/geometry/rect.h"
 #include "ui/gfx/x/x11.h"
 #include "ui/gfx/x/x11_types.h"
 #include "ui/platform_window/platform_window.h"
 #include "ui/platform_window/platform_window_delegate.h"
+#include "ui/platform_window/platform_window_handler/wm_drag_handler.h"
 #include "ui/platform_window/x11/x11_window_export.h"
 
 namespace ui {
@@ -25,10 +27,17 @@ class XScopedEventSelector;
 
 // Abstract base implementation for a X11 based PlatformWindow. Methods that
 // are platform specific are left unimplemented.
-class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow {
+class X11_WINDOW_EXPORT X11WindowBase : public PlatformWindow,
+                                        public WmDragHandler {
  public:
   X11WindowBase(PlatformWindowDelegate* delegate, const gfx::Rect& bounds);
   ~X11WindowBase() override;
+
+  // Initiates Drag Action.
+  void StartDrag(const ui::OSExchangeData& data,
+                 int operation,
+                 gfx::NativeCursor cursor,
+                 base::OnceCallback<void(int)> callback) override;
 
   // PlatformWindow:
   void Show() override;

@@ -172,7 +172,7 @@ void WholeScreenMoveLoop::EndMoveLoop() {
 
   XDisplay* display = gfx::GetXDisplay();
   unsigned int esc_keycode = XKeysymToKeycode(display, XK_Escape);
-  for (size_t i = 0; i < arraysize(kModifiersMasks); ++i) {
+  for (size_t i = 0; i < base::size(kModifiersMasks); ++i) {
     XUngrabKey(display, esc_keycode, kModifiersMasks[i], grab_input_window_);
   }
 
@@ -202,7 +202,7 @@ bool WholeScreenMoveLoop::GrabPointer() {
 void WholeScreenMoveLoop::GrabEscKey() {
   XDisplay* display = gfx::GetXDisplay();
   unsigned int esc_keycode = XKeysymToKeycode(display, XK_Escape);
-  for (size_t i = 0; i < arraysize(kModifiersMasks); ++i) {
+  for (size_t i = 0; i < base::size(kModifiersMasks); ++i) {
     XGrabKey(display, esc_keycode, kModifiersMasks[i], grab_input_window_,
              x11::False, GrabModeAsync, GrabModeAsync);
   }

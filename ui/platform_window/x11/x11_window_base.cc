@@ -354,6 +354,16 @@ bool X11WindowBase::RunMoveLoop(const gfx::Vector2d& drag_offset) {
 
 void X11WindowBase::StopMoveLoop() {}
 
+void X11WindowBase::StartDrag(const ui::OSExchangeData& data,
+                              int operation,
+                              gfx::NativeCursor cursor,
+                              base::OnceCallback<void(int)> callback) {
+  // If this is for ozone/X11, the child class of this, X11WindowOzone, will
+  // handle it. Otherwise, DragDrop has been implemented directly, for instance
+  // DesktopDragDropClientAuraX11 or DragDropControllerMus.
+  NOTREACHED();
+}
+
 void X11WindowBase::UnConfineCursor() {
   if (!has_pointer_barriers_)
     return;

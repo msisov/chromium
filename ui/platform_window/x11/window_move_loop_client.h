@@ -13,8 +13,6 @@
 #include "ui/gfx/geometry/point.h"
 #include "ui/platform_window/x11/whole_screen_move_loop.h"
 #include "ui/platform_window/x11/x11_window_export.h"
-#include "ui/views/views_export.h"
-#include "ui/wm/public/window_move_client.h"
 
 namespace ui {
 
