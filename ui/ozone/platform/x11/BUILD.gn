@@ -37,6 +37,7 @@ source_set("x11") {
     "//gpu/vulkan:buildflags",
     "//skia",
     "//ui/base",
+    "//ui/base/ime",
     "//ui/base/x",
     "//ui/display/manager",
     "//ui/events",
@@ -59,7 +60,10 @@ source_set("x11") {
     deps += [ "//gpu/vulkan/x" ]
   }
 
-  configs += [ "//build/config/linux:x11" ]
+  configs += [
+    "//build/config/linux:x11",
+    "//build/config/linux:xrandr",
+  ]
 
   public_configs = [ "//third_party/khronos:khronos_headers" ]
 }
