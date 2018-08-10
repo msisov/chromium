@@ -9,14 +9,15 @@
 
 #include "base/message_loop/message_loop.h"
 #include "base/strings/utf_string_conversions.h"
+#include "ui/base/ime/linux/fake_input_method_context_factory.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/events/devices/x11/touch_factory_x11.h"
 #include "ui/events/platform/x11/x11_event_source_libevent.h"
 #include "ui/events/system_input_injector.h"
 #include "ui/gfx/x/x11.h"
 #include "ui/ozone/common/stub_overlay_manager.h"
-#include "ui/ozone/platform/x11/x11_native_display_delegate.h"
 #include "ui/ozone/platform/x11/x11_cursor_factory_ozone.h"
+#include "ui/ozone/platform/x11/x11_native_display_delegate.h"
 #include "ui/ozone/platform/x11/x11_surface_factory.h"
 #include "ui/ozone/platform/x11/x11_window_manager_ozone.h"
 #include "ui/ozone/platform/x11/x11_window_ozone.h"
@@ -84,8 +85,13 @@ class OzonePlatformX11 : public OzonePlatform {
     input_controller_ = CreateStubInputController();
     cursor_factory_ozone_ = std::make_unique<X11CursorFactoryOzone>();
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
-
     TouchFactory::SetTouchDeviceListFromCommandLine();
+
+    if (LinuxInputMethodContextFactory::instance())
+      return;
+    fake_input_method_factory_ =
+        std::make_unique<FakeInputMethodContextFactory>();
+    LinuxInputMethodContextFactory::SetInstance(fake_input_method_factory_.get());
   }
 
   void InitializeGPU(const InitParams& params) override {
@@ -142,6 +148,7 @@ class OzonePlatformX11 : public OzonePlatform {
   std::unique_ptr<InputController> input_controller_;
   std::unique_ptr<X11CursorFactoryOzone> cursor_factory_ozone_;
   std::unique_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
+  std::unique_ptr<FakeInputMethodContextFactory> fake_input_method_factory_;
 
   // Objects in the GPU process.
   std::unique_ptr<X11SurfaceFactory> surface_factory_ozone_;
