@@ -41,6 +41,7 @@ source_set("x11") {
     "//gpu/vulkan:buildflags",
     "//skia",
     "//ui/base",
+    "//ui/base/ime",
     "//ui/base/x",
     "//ui/display/manager",
     "//ui/events",

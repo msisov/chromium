@@ -50,11 +50,13 @@ void InitializeInputMethodForTesting() {
   if (!g_linux_input_method_context_factory_for_testing)
     g_linux_input_method_context_factory_for_testing =
         new FakeInputMethodContextFactory();
+#if !defined(USE_OZONE)
   const LinuxInputMethodContextFactory* factory =
       LinuxInputMethodContextFactory::instance();
   CHECK(!factory || factory == g_linux_input_method_context_factory_for_testing)
       << "LinuxInputMethodContextFactory was already initialized somewhere "
       << "else.";
+#endif
   LinuxInputMethodContextFactory::SetInstance(
       g_linux_input_method_context_factory_for_testing);
 #elif defined(OS_WIN)

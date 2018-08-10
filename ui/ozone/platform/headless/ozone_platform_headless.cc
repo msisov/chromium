@@ -8,6 +8,7 @@
 #include "base/files/file_path.h"
 #include "base/macros.h"
 #include "ui/base/cursor/ozone/bitmap_cursor_factory_ozone.h"
+#include "ui/base/ime/linux/fake_input_method_context_factory.h"
 #include "ui/events/ozone/layout/keyboard_layout_engine_manager.h"
 #include "ui/events/ozone/layout/stub/stub_keyboard_layout_engine.h"
 #include "ui/events/platform/platform_event_source.h"
@@ -90,6 +91,13 @@ class OzonePlatformHeadless : public OzonePlatform {
     input_controller_ = CreateStubInputController();
     cursor_factory_ozone_ = std::make_unique<BitmapCursorFactoryOzone>();
     gpu_platform_support_host_.reset(CreateStubGpuPlatformSupportHost());
+
+    if (LinuxInputMethodContextFactory::instance())
+      return;
+    fake_input_method_factory_ =
+        std::make_unique<FakeInputMethodContextFactory>();
+    LinuxInputMethodContextFactory::SetInstance(
+        fake_input_method_factory_.get());
   }
 
   void InitializeGPU(const InitParams& params) override {
@@ -105,6 +113,7 @@ class OzonePlatformHeadless : public OzonePlatform {
   std::unique_ptr<InputController> input_controller_;
   std::unique_ptr<GpuPlatformSupportHost> gpu_platform_support_host_;
   std::unique_ptr<OverlayManagerOzone> overlay_manager_;
+  std::unique_ptr<FakeInputMethodContextFactory> fake_input_method_factory_;
   base::FilePath file_path_;
 
   DISALLOW_COPY_AND_ASSIGN(OzonePlatformHeadless);
