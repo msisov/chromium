@@ -30,6 +30,10 @@
 #include <objidl.h>
 #endif
 
+#if defined(USE_OZONE)
+#include "ui/ozone/public/clipboard_delegate.h"
+#endif
+
 class SkBitmap;
 
 #ifdef __OBJC__
@@ -211,6 +215,10 @@ class UI_BASE_EXPORT Clipboard : public base::ThreadChecker {
 
   // Resets the clipboard last modified time to Time::Time().
   virtual void ClearLastModifiedTime();
+
+#if defined(USE_OZONE)
+  virtual void SetDelegate(ClipboardDelegate* delegate) {}
+#endif
 
   // Gets the FormatType corresponding to an arbitrary format string,
   // registering it with the system if needed. Due to Windows/Linux

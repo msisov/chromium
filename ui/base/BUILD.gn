@@ -656,11 +656,18 @@ component("base") {
         "clipboard/clipboard_aurax11.h",
       ]
     } else if (!is_win) {
-      # This file is used for all non-X11, non-Windows aura Builds.
-      sources += [
-        "clipboard/clipboard_aura.cc",
-        "clipboard/clipboard_aura.h",
-      ]
+      if (use_ozone) {
+        sources += [
+          "clipboard/ozone/clipboard_ozone.cc",
+          "clipboard/ozone/clipboard_ozone.h",
+        ]
+      } else {
+        # This file is used for all non-X11, non-Windows aura Builds.
+        sources += [
+          "clipboard/clipboard_aura.cc",
+          "clipboard/clipboard_aura.h",
+        ]
+      }
     }
 
     # Cursor

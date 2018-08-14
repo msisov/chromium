@@ -50,9 +50,8 @@ class OZONE_BASE_EXPORT ClipboardDelegate {
   // RequestDataClosure is invoked to acknowledge that the requested clipboard
   // data has been read and stored into 'data_map'.
   using RequestDataClosure =
-      base::OnceCallback<void(const base::Optional<std::vector<uint8_t>>&)>;
+      base::OnceCallback<void(DataMap)>;
   virtual void RequestClipboardData(const std::string& mime_type,
-                                    DataMap* data_map,
                                     RequestDataClosure callback) = 0;
 
   // Gets the mime types of the data available for clipboard operations

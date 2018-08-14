@@ -78,7 +78,6 @@ class WaylandConnection : public PlatformEventSource,
       ClipboardDelegate::OfferDataClosure callback) override;
   void RequestClipboardData(
       const std::string& mime_type,
-      ClipboardDelegate::DataMap* data_map,
       ClipboardDelegate::RequestDataClosure callback) override;
   void GetAvailableMimeTypes(
       ClipboardDelegate::GetMimeTypesClosure callback) override;

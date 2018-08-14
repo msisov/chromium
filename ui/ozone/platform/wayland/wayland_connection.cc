@@ -16,6 +16,7 @@
 #include "base/threading/thread_task_runner_handle.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
+#include "ui/base/clipboard/clipboard.h"
 
 static_assert(XDG_SHELL_VERSION_CURRENT == 5, "Unsupported xdg-shell version");
 
@@ -166,12 +167,8 @@ void WaylandConnection::OfferClipboardData(
 
 void WaylandConnection::RequestClipboardData(
     const std::string& mime_type,
-    ClipboardDelegate::DataMap* data_map,
     ClipboardDelegate::RequestDataClosure callback) {
   read_clipboard_closure_ = std::move(callback);
-
-  DCHECK(data_map);
-  data_map_ = data_map;
   data_device_->RequestSelectionData(mime_type);
 }
 
@@ -191,18 +188,13 @@ void WaylandConnection::DataSourceCancelled() {
 
 void WaylandConnection::SetClipboardData(const std::string& contents,
                                          const std::string& mime_type) {
-  if (!data_map_)
+  if (read_clipboard_closure_.is_null())
     return;
 
-  (*data_map_)[mime_type] =
+  ClipboardDelegate::DataMap data_map;
+  data_map[mime_type] =
       std::vector<uint8_t>(contents.begin(), contents.end());
-
-  if (!read_clipboard_closure_.is_null()) {
-    auto it = data_map_->find(mime_type);
-    DCHECK(it != data_map_->end());
-    std::move(read_clipboard_closure_).Run(it->second);
-  }
-  data_map_ = nullptr;
+  std::move(read_clipboard_closure_).Run(std::move(data_map));
 }
 
 void WaylandConnection::OnDispatcherListChanged() {
@@ -284,6 +276,8 @@ void WaylandConnection::Global(void* data,
     wl_data_device* data_device = connection->data_device_manager_->GetDevice();
     connection->data_device_.reset(
         new WaylandDataDevice(connection, data_device));
+    ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+    clipboard->SetDelegate(connection->GetClipboardDelegate());
   } else if (!connection->shell_v6_ &&
              strcmp(interface, "zxdg_shell_v6") == 0) {
     // Check for zxdg_shell_v6 first.
