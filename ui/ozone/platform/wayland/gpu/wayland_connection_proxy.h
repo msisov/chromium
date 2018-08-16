@@ -33,6 +33,7 @@ class WaylandWindow;
 // sequence.
 class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
  public:
+  using FrameCallback = base::OnceCallback<void()>;
   explicit WaylandConnectionProxy(WaylandConnection* connection);
   ~WaylandConnectionProxy() override;
 
@@ -58,7 +59,9 @@ class WaylandConnectionProxy : public ozone::mojom::WaylandConnectionClient {
 
   // Asks Wayland to find a wl_buffer with the |buffer_id| and schedule a
   // buffer swap for a WaylandWindow, which backs the following |widget|.
-  void ScheduleBufferSwap(gfx::AcceleratedWidget widget, uint32_t buffer_id);
+  void ScheduleBufferSwap(gfx::AcceleratedWidget widget,
+                          uint32_t buffer_id,
+                          FrameCallback frame_callback);
 
 #if defined(WAYLAND_GBM)
   // Returns a gbm_device based on a DRM render node.

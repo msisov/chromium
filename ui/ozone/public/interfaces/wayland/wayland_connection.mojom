@@ -26,7 +26,8 @@ interface WaylandConnection {
   DestroyZwpLinuxDmabuf(uint32 buffer_id);
 
   // Swaps wl_buffers for a WaylandWindow with the following |widget|.
-  ScheduleBufferSwap(gfx.mojom.AcceleratedWidget widget, uint32 buffer_id);
+  // A callback is called on frame callback sent from the Wayland server.
+  ScheduleBufferSwap(gfx.mojom.AcceleratedWidget widget, uint32 buffer_id) => ();
 };
 
 // Used by the browser process to provide the GPU process with a mojo ptr to a

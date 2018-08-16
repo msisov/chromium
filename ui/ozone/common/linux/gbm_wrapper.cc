@@ -156,8 +156,10 @@ class Device final : public ui::GbmDevice {
                                               uint32_t flags) override {
     struct gbm_bo* bo =
         gbm_bo_create(device_, size.width(), size.height(), format, flags);
-    if (!bo)
+    if (!bo) {
+      LOG(ERROR) << "Couldn't create bo";
       return nullptr;
+    }
 
     return CreateBufferForBO(bo, format, size, flags);
   }

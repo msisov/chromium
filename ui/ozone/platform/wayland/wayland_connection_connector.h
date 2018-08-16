@@ -49,6 +49,7 @@ class WaylandConnectionConnector : public GpuPlatformSupportHost {
   GpuHostBindInterfaceCallback binder_;
   GpuHostTerminateCallback terminate_callback_;
 
+  void BindAndSetWaylandConnection(ozone::mojom::WaylandConnectionPtr wc_ptr);
   scoped_refptr<base::SingleThreadTaskRunner> io_runner_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandConnectionConnector);

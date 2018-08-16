@@ -199,15 +199,12 @@ void GbmSurfacelessWayland::SubmitFrame() {
     }
 
     uint32_t buffer_id = planes_.back().pixmap->GetUniqueId();
-    surface_factory_->ScheduleBufferSwap(widget_, buffer_id);
+    auto frame_callback = base::Bind(&GbmSurfacelessWayland::OnSubmission,
+                                     weak_factory_.GetWeakPtr(),
+                                     gfx::SwapResult::SWAP_ACK, nullptr);
 
-    // Check comment in ::SupportsPresentationCallback.
-    OnSubmission(gfx::SwapResult::SWAP_ACK, nullptr);
-    OnPresentation(
-        gfx::PresentationFeedback(base::TimeTicks::Now(), base::TimeDelta(),
-                                  gfx::PresentationFeedback::kZeroCopy));
-
-    planes_.clear();
+    surface_factory_->ScheduleBufferSwap(widget_, buffer_id,
+                                         std::move(frame_callback));
   }
 }
 
@@ -228,6 +225,12 @@ void GbmSurfacelessWayland::OnSubmission(
     gfx::SwapResult result,
     std::unique_ptr<gfx::GpuFence> out_fence) {
   submitted_frame_->swap_result = result;
+
+  // Check comment in ::SupportsPresentationCallback.
+  OnPresentation(
+      gfx::PresentationFeedback(base::TimeTicks::Now(), base::TimeDelta(),
+                                gfx::PresentationFeedback::kZeroCopy));
+  planes_.clear();
 }
 
 void GbmSurfacelessWayland::OnPresentation(

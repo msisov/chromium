@@ -27,6 +27,7 @@ class ClientNativePixmapFactoryWayland : public gfx::ClientNativePixmapFactory {
     if (properties.supported_buffer_formats.empty()) {
       // If the compositor did not announce supported buffer formats, do our
       // best and assume those are supported.
+      return false;
       return dmabuf_factory_->IsConfigurationSupported(format, usage);
     }
 

@@ -64,7 +64,8 @@ class WaylandConnection : public PlatformEventSource,
   // Called by the GPU and asks to attach a wl_buffer with a |buffer_id| to a
   // WaylandWindow with the specified |widget|.
   void ScheduleBufferSwap(gfx::AcceleratedWidget widget,
-                          uint32_t buffer_id) override;
+                          uint32_t buffer_id,
+                          ScheduleBufferSwapCallback callback) override;
 
   // Schedules a flush of the Wayland connection.
   void ScheduleFlush();
@@ -222,7 +223,15 @@ class WaylandConnection : public PlatformEventSource,
   // been created yet. Thus, store the request in a pending map. Once buffer
   // is created, it will be attached to requested WaylandWindow based on the
   // gfx::AcceleratedWidget.
-  base::flat_map<uint32_t, gfx::AcceleratedWidget> pending_buffer_map_;
+  base::flat_map<uint32_t,
+                 std::pair<gfx::AcceleratedWidget, ScheduleBufferSwapCallback>>
+      pending_buffer_map_;
+
+  // A map, which stores wl_callbacks and their corresponding
+  // ScheduleBufferSwapCallback, which is then called to notify GPU about
+  // swapped buffers.
+  base::flat_map<wl_callback*, ScheduleBufferSwapCallback>
+      pending_buffer_swap_callbacks_;
 
   std::unique_ptr<WaylandDataDeviceManager> data_device_manager_;
   std::unique_ptr<WaylandDataDevice> data_device_;
@@ -250,6 +259,9 @@ class WaylandConnection : public PlatformEventSource,
   mojo::Binding<ozone::mojom::WaylandConnection> binding_;
 
   std::vector<gfx::BufferFormat> buffer_formats_;
+
+  static void FrameCallback(void* data, wl_callback* callback, uint32_t time);
+  wl::Object<wl_callback> frame_callback_;
 
   // A callback, which is used to terminate a GPU process in case of invalid
   // data sent by the GPU to the browser process.

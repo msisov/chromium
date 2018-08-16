@@ -15,7 +15,6 @@
 #include "ui/ozone/common/egl_util.h"
 #include "ui/ozone/common/gl_ozone_egl.h"
 #include "ui/ozone/platform/wayland/gl_surface_wayland.h"
-#include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 #include "ui/ozone/platform/wayland/wayland_object.h"
 #include "ui/ozone/platform/wayland/wayland_window.h"
 #include "ui/ozone/public/surface_ozone_canvas.h"
@@ -231,9 +230,11 @@ GbmSurfacelessWayland* WaylandSurfaceFactory::GetSurface(
   return it->second;
 }
 
-void WaylandSurfaceFactory::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
-                                               uint32_t buffer_id) {
-  connection_->ScheduleBufferSwap(widget, buffer_id);
+void WaylandSurfaceFactory::ScheduleBufferSwap(
+    gfx::AcceleratedWidget widget,
+    uint32_t buffer_id,
+    WaylandConnectionProxy::FrameCallback frame_callback) {
+  connection_->ScheduleBufferSwap(widget, buffer_id, std::move(frame_callback));
 }
 
 std::unique_ptr<SurfaceOzoneCanvas>

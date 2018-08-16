@@ -66,7 +66,8 @@ void WaylandConnectionConnector::OnGpuServiceLaunched(
   auto on_terminate_gpu_cb =
       base::BindOnce(&WaylandConnectionConnector::OnTerminateGpuProcess,
                      base::Unretained(this));
-  connection_->SetTerminateGpuCallback(std::move(on_terminate_gpu_cb));
+//  connection_->SetTerminateGpuCallback(std::move(on_terminate_gpu_cb));
+//  OnWaylandConnectionPtrBinded(connection_->BindInterface());
 
   base::PostTaskAndReplyWithResult(
       ui_runner.get(), FROM_HERE,
@@ -79,9 +80,14 @@ void WaylandConnectionConnector::OnGpuServiceLaunched(
 void WaylandConnectionConnector::OnWaylandConnectionPtrBinded(
     ozone::mojom::WaylandConnectionPtr wc_ptr) const {
   ozone::mojom::WaylandConnectionClientPtr wcp_ptr;
-  auto request = mojo::MakeRequest(&wcp_ptr);
-  BindInterfaceInGpuProcess(std::move(request), binder_);
-  wcp_ptr->SetWaylandConnection(std::move(wc_ptr));
+ auto request = mojo::MakeRequest(&wcp_ptr);
+ BindInterfaceInGpuProcess(std::move(request), binder_);
+ wcp_ptr->SetWaylandConnection(std::move(wc_ptr));
+  //io_runner_->PostTask(FROM_HERE, base::Bind(&WaylandConnectionConnector::BindAndSetWaylandConnection, base::Unretained(this), std::move(wc_ptr)));
+}
+
+void WaylandConnectionConnector::BindAndSetWaylandConnection(ozone::mojom::WaylandConnectionPtr wc_ptr) {
+
 }
 
 void WaylandConnectionConnector::OnTerminateGpuProcess(std::string message) {

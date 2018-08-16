@@ -80,10 +80,11 @@ void WaylandConnectionProxy::DestroyZwpLinuxDmabufInternal(uint32_t buffer_id) {
 }
 
 void WaylandConnectionProxy::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
-                                                uint32_t buffer_id) {
+                                                uint32_t buffer_id,
+                                                FrameCallback frame_callback) {
   DCHECK(gpu_thread_runner_->BelongsToCurrentThread());
   DCHECK(wc_ptr_);
-  wc_ptr_->ScheduleBufferSwap(widget, buffer_id);
+  wc_ptr_->ScheduleBufferSwap(widget, buffer_id, std::move(frame_callback));
 }
 
 WaylandWindow* WaylandConnectionProxy::GetWindow(

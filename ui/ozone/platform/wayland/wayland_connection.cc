@@ -7,6 +7,8 @@
 #include <drm_fourcc.h>
 
 #include <linux-dmabuf-unstable-v1-client-protocol.h>
+#include <wayland-client-core.h>
+#include <wayland-client-protocol.h>
 #include <xdg-shell-unstable-v5-client-protocol.h>
 #include <xdg-shell-unstable-v6-client-protocol.h>
 
@@ -80,7 +82,6 @@ bool WaylandConnection::Initialize() {
     LOG(ERROR) << "No xdg_shell object";
     return false;
   }
-
   return true;
 }
 
@@ -104,6 +105,7 @@ bool WaylandConnection::StartProcessingEvents() {
 void WaylandConnection::ScheduleFlush() {
   if (scheduled_flush_ || !watching_)
     return;
+
   DCHECK(base::MessageLoopForUI::IsCurrent());
   base::ThreadTaskRunnerHandle::Get()->PostTask(
       FROM_HERE,
@@ -165,12 +167,29 @@ int WaylandConnection::GetKeyboardModifiers() {
   return modifiers;
 }
 
+void WaylandConnection::FrameCallback(void* data,
+                                      wl_callback* callback,
+                                      uint32_t time) {
+  //  static_cast<WaylandConnection*>(data)->frame_callback_.reset();
+  WaylandConnection* connection = static_cast<WaylandConnection*>(data);
+  auto it = connection->pending_buffer_swap_callbacks_.find(callback);
+  DCHECK(it != connection->pending_buffer_swap_callbacks_.end());
+  std::move(it->second).Run();
+  wl_callback_destroy(it->first);
+  connection->pending_buffer_swap_callbacks_.erase(it);
+}
+
 // TODO(msisov): handle buffer swap failure or success.
-void WaylandConnection::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
-                                           uint32_t buffer_id) {
+void WaylandConnection::ScheduleBufferSwap(
+    gfx::AcceleratedWidget widget,
+    uint32_t buffer_id,
+    ScheduleBufferSwapCallback callback) {
   DCHECK(base::MessageLoopForUI::IsCurrent());
   if (!ValidateDataFromGpu(widget, buffer_id))
     return;
+
+  //if (!io_runner_)
+  // io_runner_ = base::ThreadTaskRunnerHandle::Get();
 
   auto it = buffers_.find(buffer_id);
   // A buffer might not exist by this time. So, store the request and process
@@ -180,10 +199,17 @@ void WaylandConnection::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
     if (pending_buffers_it != pending_buffer_map_.end()) {
       // If a buffer didn't exist and second call for a swap comes, buffer must
       // be associated with the same widget.
-      DCHECK_EQ(pending_buffers_it->second, widget);
+      NOTREACHED() << "This must not happen ever!";
+      DCHECK_EQ(pending_buffers_it->second.first, widget);
     } else {
+      LOG(ERROR) << "YEAH";
+      auto widget_callback_pair =
+          std::pair<gfx::AcceleratedWidget, ScheduleBufferSwapCallback>(
+              widget, std::move(callback));
       pending_buffer_map_.insert(
-          std::pair<uint32_t, gfx::AcceleratedWidget>(buffer_id, widget));
+          std::pair<uint32_t, std::pair<gfx::AcceleratedWidget,
+                                        ScheduleBufferSwapCallback>>(
+              buffer_id, std::move(widget_callback_pair)));
     }
     return;
   }
@@ -192,6 +218,14 @@ void WaylandConnection::ScheduleBufferSwap(gfx::AcceleratedWidget widget,
   WaylandWindow* window = GetWindow(widget);
   if (!window)
     return;
+
+  wl_callback* wl_frame_callback;
+  static const wl_callback_listener frame_listener = {FrameCallback};
+  wl_frame_callback = wl_surface_frame(window->surface());
+  wl_callback_add_listener(wl_frame_callback, &frame_listener, this);
+  pending_buffer_swap_callbacks_.insert(
+      std::pair<wl_callback*, ScheduleBufferSwapCallback>(wl_frame_callback,
+                                                          std::move(callback)));
 
   // TODO(msisov): it would be beneficial to use real damage regions to improve
   // performance.
@@ -218,7 +252,6 @@ void WaylandConnection::CreateZwpLinuxDmabuf(
     uint32_t buffer_id) {
   TRACE_EVENT2("Wayland", "WaylandConnection::CreateZwpLinuxDmabuf", "Format",
                format, "Buffer id", buffer_id);
-
   static const struct zwp_linux_buffer_params_v1_listener params_listener = {
       WaylandConnection::CreateSucceeded, WaylandConnection::CreateFailed};
 
@@ -297,9 +330,11 @@ void WaylandConnection::CreateSucceeded(
 
   auto pending_buffers_it = connection->pending_buffer_map_.find(buffer_id);
   if (pending_buffers_it != connection->pending_buffer_map_.end()) {
-    gfx::AcceleratedWidget widget = pending_buffers_it->second;
+    gfx::AcceleratedWidget widget = pending_buffers_it->second.first;
+    ScheduleBufferSwapCallback callback =
+        std::move(pending_buffers_it->second.second);
     connection->pending_buffer_map_.erase(pending_buffers_it);
-    connection->ScheduleBufferSwap(widget, buffer_id);
+    connection->ScheduleBufferSwap(widget, buffer_id, std::move(callback));
   }
 }
 

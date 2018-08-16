@@ -13,10 +13,10 @@
 #include "base/posix/eintr_wrapper.h"
 #include "base/single_thread_task_runner.h"
 #include "base/threading/sequenced_task_runner_handle.h"
+#include "ui/ozone/platform/wayland/gpu/wayland_connection_proxy.h"
 
 namespace ui {
 
-class WaylandConnectionProxy;
 class GbmSurfacelessWayland;
 
 class WaylandSurfaceFactory : public SurfaceFactoryOzone {
@@ -25,7 +25,9 @@ class WaylandSurfaceFactory : public SurfaceFactoryOzone {
   ~WaylandSurfaceFactory() override;
 
   // These methods are used, when a dmabuf based approach is used.
-  void ScheduleBufferSwap(gfx::AcceleratedWidget widget, uint32_t buffer_id);
+  void ScheduleBufferSwap(gfx::AcceleratedWidget widget,
+                          uint32_t buffer_id,
+                          WaylandConnectionProxy::FrameCallback frame_callback);
   void RegisterSurface(gfx::AcceleratedWidget widget,
                        GbmSurfacelessWayland* surface);
   void UnregisterSurface(gfx::AcceleratedWidget widget);
