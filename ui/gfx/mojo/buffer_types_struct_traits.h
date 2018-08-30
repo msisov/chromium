@@ -306,6 +306,10 @@ struct StructTraits<gfx::mojom::NativePixmapHandleDataView,
     return pixmap_handle.planes;
   }
 
+  static uint32_t format(const gfx::NativePixmapHandle& pixmap_handle) {
+    return pixmap_handle.format;
+  }
+
   static bool Read(gfx::mojom::NativePixmapHandleDataView data,
                    gfx::NativePixmapHandle* out);
 };

@@ -80,6 +80,7 @@ GpuMemoryBufferImplNativePixmap::CreateFromHandle(
         scoped_native_pixmap_handle_fd.release(), true /* auto_close */);
   }
   native_pixmap_handle.planes = handle.native_pixmap_handle.planes;
+  native_pixmap_handle.format = handle.native_pixmap_handle.format;
   std::unique_ptr<gfx::ClientNativePixmap> native_pixmap =
       client_native_pixmap_factory->ImportFromHandle(native_pixmap_handle, size,
                                                      usage);

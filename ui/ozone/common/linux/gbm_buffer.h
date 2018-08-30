@@ -11,6 +11,8 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_pixmap_handle.h"
 
+struct gbm_bo;
+
 namespace ui {
 
 class GbmBuffer {
@@ -34,6 +36,8 @@ class GbmBuffer {
   virtual size_t GetPlaneSize(size_t plane) const = 0;
   virtual uint32_t GetHandle() const = 0;
   virtual gfx::NativePixmapHandle ExportHandle() const = 0;
+
+  virtual gbm_bo* bo() const = 0;
 };
 
 }  // namespace ui

@@ -11,6 +11,10 @@
 #include <sys/mman.h>
 #include <xf86drm.h>
 
+#include <gbm.h>
+#include "ui/ozone/common/linux/gbm_wrapper.h"
+#include "ui/ozone/common/linux/gbm_buffer.h"
+
 #include "base/memory/ptr_util.h"
 #include "base/posix/eintr_wrapper.h"
 #include "base/process/memory.h"
@@ -74,13 +78,35 @@ ClientNativePixmapDmaBuf::ClientNativePixmapDmaBuf(
   // TODO(dcastagna): support multiple fds.
   DCHECK_EQ(1u, handle.fds.size());
   DCHECK_GE(handle.fds.front().fd, 0);
-  dmabuf_fd_.reset(handle.fds.front().fd);
+
+//  dmabuf_fd_.reset(handle.fds.front().fd);
 
   DCHECK_GE(handle.planes.back().size, 0u);
   size_t map_size = handle.planes.back().offset + handle.planes.back().size;
+
+  base::ScopedFD drm_fd(open("/dev/dri/renderD128", O_RDWR));
+  CHECK(drm_fd.is_valid());
+
+  gbm_device_ = ui::CreateGbmDevice(drm_fd.release());
+  CHECK(gbm_device_);
+
+ 
+  std::vector<base::ScopedFD> fds;
+  fds.push_back(base::ScopedFD(HANDLE_EINTR(dup(handle.fds.front().fd))));
+  gbm_bo_ = gbm_device_->CreateBufferFromFds(handle.format, size_, std::move(fds), handle.planes); 
+  CHECK(gbm_bo_);
+
+//
+
+//  DCHECK(data_);
+
+  dmabuf_fd_.reset(gbm_bo_get_fd(gbm_bo_->bo()));
   data_ = mmap(nullptr, map_size, (PROT_READ | PROT_WRITE), MAP_SHARED,
                dmabuf_fd_.get(), 0);
-  if (data_ == MAP_FAILED) {
+// data_ = gbm_bo_map(gbm_bo_->bo(), 0, 0, size_.width(), size_.height(), GBM_BO_TRANSFER_READ_WRITE, 
+//      &stride_, &map_data_, 0);
+  CHECK(data_);
+ if (data_ == MAP_FAILED) {
     logging::SystemErrorCode mmap_error = logging::GetLastSystemErrorCode();
     if (mmap_error == ENOMEM)
       base::TerminateBecauseOutOfMemory(map_size);
@@ -96,6 +122,9 @@ ClientNativePixmapDmaBuf::~ClientNativePixmapDmaBuf() {
       pixmap_handle_.planes.back().offset + pixmap_handle_.planes.back().size;
   int ret = munmap(data_, map_size);
   DCHECK(!ret);
+ close(dmabuf_fd_.release());
+//  gbm_bo_unmap(gbm_bo_->bo(), map_data_);
+  gbm_bo_.reset();
 }
 
 bool ClientNativePixmapDmaBuf::Map() {

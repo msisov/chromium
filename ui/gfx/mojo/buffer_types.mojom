@@ -78,6 +78,8 @@ struct NativePixmapHandle {
   array<handle> fds;
 
   array<NativePixmapPlane> planes;
+
+  uint32 format;
 };
 
 [EnableIf=is_android]

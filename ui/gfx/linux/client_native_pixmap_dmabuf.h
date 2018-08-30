@@ -15,6 +15,9 @@
 #include "ui/gfx/geometry/size.h"
 #include "ui/gfx/native_pixmap_handle.h"
 
+#include "ui/ozone/common/linux/gbm_buffer.h"
+#include "ui/ozone/common/linux/gbm_device.h"
+
 namespace gfx {
 
 class ClientNativePixmapDmaBuf : public gfx::ClientNativePixmap {
@@ -40,6 +43,11 @@ class ClientNativePixmapDmaBuf : public gfx::ClientNativePixmap {
   const gfx::Size size_;
   base::ScopedFD dmabuf_fd_;
   void* data_;
+
+  std::unique_ptr<ui::GbmBuffer> gbm_bo_ = nullptr;
+  std::unique_ptr<ui::GbmDevice> gbm_device_ = nullptr;
+  uint32_t stride_ = 0;
+  void* map_data_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(ClientNativePixmapDmaBuf);
 };

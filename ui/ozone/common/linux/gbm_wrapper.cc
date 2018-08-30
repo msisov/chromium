@@ -5,6 +5,9 @@
 #include "ui/ozone/common/linux/gbm_wrapper.h"
 
 #include <gbm.h>
+#include <drm.h>
+#include <xf86drm.h>
+#include <fcntl.h>
 
 #include "base/posix/eintr_wrapper.h"
 #include "ui/gfx/buffer_format_util.h"
@@ -31,7 +34,7 @@ class Buffer final : public ui::GbmBuffer {
         size_(size),
         planes_(std::move(planes)) {}
 
-  ~Buffer() override { gbm_bo_destroy(bo_); }
+  ~Buffer() override { CHECK(bo_); gbm_bo_destroy(bo_); }
 
   uint32_t GetFormat() const override { return format_; }
   uint64_t GetFormatModifier() const override { return format_modifier_; }
@@ -72,6 +75,7 @@ class Buffer final : public ui::GbmBuffer {
   }
   uint32_t GetPlaneHandle(size_t plane) const override {
     DCHECK_LT(plane, planes_.size());
+//    return gbm_bo_get_handle(bo_).u32;
     return gbm_bo_get_plane_handle(bo_, plane).u32;
   }
   uint32_t GetHandle() const override { return gbm_bo_get_handle(bo_).u32; }
@@ -97,6 +101,7 @@ class Buffer final : public ui::GbmBuffer {
     return handle;
   }
 
+  gbm_bo* bo() const override { return bo_; }
  private:
   gbm_bo* bo_ = nullptr;
 
@@ -125,7 +130,13 @@ std::unique_ptr<Buffer> CreateBufferForBO(struct gbm_bo* bo,
   for (size_t i = 0; i < gbm_bo_get_num_planes(bo); ++i) {
     // The fd returned by gbm_bo_get_fd is not ref-counted and need to be
     // kept open for the lifetime of the buffer.
-    base::ScopedFD fd(gbm_bo_get_plane_fd(bo, i));
+//    base::ScopedFD fd(gbm_bo_get_plane_fd(bo, i)); 
+    int t_fd = 0;
+    int ret = drmPrimeHandleToFD(gbm_device_get_fd(gbm_bo_get_device(bo)), gbm_bo_get_handle(bo).u32, DRM_CLOEXEC | DRM_RDWR, &t_fd);
+    if (ret)
+      CHECK(false);
+    base::ScopedFD fd(t_fd);
+    
 
     // TODO(dcastagna): support multiple fds.
     // crbug.com/642410
@@ -150,6 +161,8 @@ class Device final : public ui::GbmDevice {
  public:
   Device(gbm_device* device) : device_(device) {}
   ~Device() override { gbm_device_destroy(device_); }
+
+  gbm_device* device() override { return device_;}
 
   std::unique_ptr<ui::GbmBuffer> CreateBuffer(uint32_t format,
                                               const gfx::Size& size,
@@ -214,9 +227,11 @@ class Device final : public ui::GbmDevice {
         return nullptr;
       }
     }
-
-    return std::make_unique<Buffer>(bo, format, gbm_flags, planes[0].modifier,
-                                    std::move(fds), size, std::move(planes));
+    if (bo) {
+      return std::make_unique<Buffer>(bo, format, gbm_flags, planes[0].modifier,
+                                      std::move(fds), size, std::move(planes));
+    }
+    return nullptr;
   }
 
  private:

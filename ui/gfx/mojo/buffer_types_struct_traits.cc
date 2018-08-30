@@ -50,6 +50,7 @@ bool StructTraits<
     constexpr bool auto_close = true;
     out->fds.push_back(base::FileDescriptor(platform_file, auto_close));
   }
+  out->format = data.format();
   return data.ReadPlanes(&out->planes);
 #else
   return false;

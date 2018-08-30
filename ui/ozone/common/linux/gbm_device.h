@@ -12,6 +12,8 @@
 
 #include <gbm.h>
 
+struct gbm_device;
+
 namespace ui {
 
 class GbmBuffer;
@@ -33,6 +35,8 @@ class GbmDevice {
       const gfx::Size& size,
       std::vector<base::ScopedFD> fds,
       const std::vector<gfx::NativePixmapPlane>& planes) = 0;
+
+  virtual gbm_device* device() = 0;
 };
 
 }  // namespace ui

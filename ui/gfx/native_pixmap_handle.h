@@ -59,6 +59,9 @@ struct GFX_EXPORT NativePixmapHandle {
   std::vector<base::FileDescriptor> fds;
 #endif
   std::vector<NativePixmapPlane> planes;
+
+  uint32_t format;
+  int device_fd;
 };
 
 #if defined(OS_LINUX)

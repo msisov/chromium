@@ -8,6 +8,9 @@
 #include <gbm.h>
 #include <xf86drmMode.h>
 
+#include <stdio.h>
+ #include <errno.h>
+
 #include "base/files/platform_file.h"
 #include "base/logging.h"
 #include "base/posix/eintr_wrapper.h"
@@ -31,7 +34,8 @@ GbmPixmapWayland::GbmPixmapWayland(WaylandSurfaceFactory* surface_manager,
     : surface_manager_(surface_manager), connection_(connection) {}
 
 GbmPixmapWayland::~GbmPixmapWayland() {
-  connection_->DestroyZwpLinuxDmabuf(GetUniqueId());
+  if (gbm_bo_)
+    connection_->DestroyZwpLinuxDmabuf(GetUniqueId());
 }
 
 bool GbmPixmapWayland::InitializeBuffer(gfx::Size size,
@@ -64,7 +68,8 @@ bool GbmPixmapWayland::InitializeBuffer(gfx::Size size,
       // on the browser process and gbm_bo_map must be used.
       // TODO(msisov): add support fir these two buffer usage cases.
       // https://crbug.com/864914
-      LOG(FATAL) << "This scenario is not supported in Wayland now";
+      //LOG(ERROR) << "This scenario is not supported in Wayland now";
+      flags = GBM_BO_USE_LINEAR | GBM_BO_USE_TEXTURING;
       break;
     default:
       NOTREACHED() << "Not supported buffer format";
@@ -74,7 +79,8 @@ bool GbmPixmapWayland::InitializeBuffer(gfx::Size size,
   const uint32_t fourcc_format = GetFourCCFormatFromBufferFormat(format);
   gbm_bo_ = connection_->gbm_device()->CreateBuffer(fourcc_format, size, flags);
   if (!gbm_bo_) {
-    LOG(FATAL) << "Cannot create bo";
+    perror("Cannot create bo: ");
+    LOG(ERROR) << "Cannot create bo";
     return false;
   }
 
@@ -157,6 +163,8 @@ gfx::NativePixmapHandle GbmPixmapWayland::ExportHandle() {
     }
     handle.planes.emplace_back(GetDmaBufPitch(i), GetDmaBufOffset(i),
                                gbm_bo_->GetPlaneSize(i), GetDmaBufModifier(i));
+    handle.format = gbm_bo_->GetFormat();
+    handle.device_fd = HANDLE_EINTR(dup(gbm_device_get_fd(connection_->gbm_device()->device())));
   }
   return handle;
 }
