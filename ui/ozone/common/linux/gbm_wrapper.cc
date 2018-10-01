@@ -62,7 +62,12 @@ void InitializeImportData(uint32_t format,
 }
 
 int GetPlaneFdForBo(gbm_bo* bo, size_t plane) {
+#if defined(USING_MINIGBM)
   DCHECK(plane < gbm_bo_get_plane_count(bo));
+#else
+  const int plane_count = gbm_bo_get_plane_count(bo);
+  DCHECK(plane_count > 0 && plane < static_cast<size_t>(plane_count));
+#endif
 
   // System linux gbm (or Mesa gbm) does not provide fds per plane basis. Thus,
   // get plane handle and use drm ioctl to get a prime fd out of it avoid having
