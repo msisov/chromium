@@ -35,6 +35,11 @@ class ClientNativePixmapCast : public gfx::ClientNativePixmap {
 
 class ClientNativePixmapFactoryCast : public gfx::ClientNativePixmapFactory {
  public:
+  ClientNativePixmapFactoryCast()
+      : gfx::ClientNativePixmapFactory(
+            true /* supports import handle from dmabufs */) {}
+  ~ClientNativePixmapFactoryCast() override {}
+
   // ClientNativePixmapFactoryCast implementation:
   bool IsConfigurationSupported(gfx::BufferFormat format,
                                 gfx::BufferUsage usage) const override {

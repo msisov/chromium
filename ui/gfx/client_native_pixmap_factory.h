@@ -23,6 +23,7 @@ class Size;
 // provide a client pixmap for non-GPU processes.
 class GFX_EXPORT ClientNativePixmapFactory {
  public:
+  explicit ClientNativePixmapFactory(bool supports_import_from_dmabuf);
   virtual ~ClientNativePixmapFactory();
 
   // Returns true if format/usage configuration is supported.
@@ -40,7 +41,14 @@ class GFX_EXPORT ClientNativePixmapFactory {
  protected:
   ClientNativePixmapFactory();
 
+  bool supports_native_pixmap_import_from_dmabuf() const {
+    return supports_native_pixmap_import_from_dmabuf_;
+  }
+
  private:
+  // Says if ClientNativePixmapDmaBuf can be used to import handle from dmabuf.
+  const bool supports_native_pixmap_import_from_dmabuf_ = false;
+
   DISALLOW_COPY_AND_ASSIGN(ClientNativePixmapFactory);
 };
 

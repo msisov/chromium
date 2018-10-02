@@ -6,7 +6,10 @@
 
 namespace gfx {
 
-ClientNativePixmapFactory::ClientNativePixmapFactory() {}
+ClientNativePixmapFactory::ClientNativePixmapFactory(
+    bool supports_native_pixmap_import_from_dmabuf)
+    : supports_native_pixmap_import_from_dmabuf_(
+          supports_native_pixmap_import_from_dmabuf) {}
 
 ClientNativePixmapFactory::~ClientNativePixmapFactory() {}
 

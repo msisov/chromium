@@ -11,7 +11,7 @@ namespace {
 
 class StubClientNativePixmapFactory : public gfx::ClientNativePixmapFactory {
  public:
-  StubClientNativePixmapFactory() {}
+  StubClientNativePixmapFactory() : ClientNativePixmapFactory(false) {}
   ~StubClientNativePixmapFactory() override {}
 
   // ClientNativePixmapFactory:

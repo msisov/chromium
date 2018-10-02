@@ -177,7 +177,9 @@ class TestGpuService : public mojom::GpuService {
 class FakeClientNativePixmapFactory : public gfx::ClientNativePixmapFactory {
  public:
   explicit FakeClientNativePixmapFactory(bool allow_native_buffers)
-      : allow_native_buffers_(allow_native_buffers) {}
+      : gfx::ClientNativePixmapFactory(
+            false /* supports handle import from dmabuf */),
+        allow_native_buffers_(allow_native_buffers) {}
   ~FakeClientNativePixmapFactory() override {}
 
   // gfx::ClientNativePixmapFactory:

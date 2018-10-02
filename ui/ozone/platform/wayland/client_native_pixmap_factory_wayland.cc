@@ -15,8 +15,11 @@ namespace ui {
 // support when Wayland dmabuf is used.
 class ClientNativePixmapFactoryWayland : public gfx::ClientNativePixmapFactory {
  public:
-  ClientNativePixmapFactoryWayland() {
-    dmabuf_factory_.reset(gfx::CreateClientNativePixmapFactoryDmabuf());
+  ClientNativePixmapFactoryWayland()
+      : ClientNativePixmapFactory(
+            true /* supports handle import from dmabufs */) {
+    dmabuf_factory_.reset(gfx::CreateClientNativePixmapFactoryDmabuf(
+        supports_native_pixmap_import_from_dmabuf()));
   }
   ~ClientNativePixmapFactoryWayland() override {}
 
