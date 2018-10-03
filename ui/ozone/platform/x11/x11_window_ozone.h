@@ -8,6 +8,7 @@
 #include "base/macros.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/events/platform/x11/x11_event_source_libevent.h"
+#include "ui/platform_window/platform_window_handler/wm_move_resize_handler.h"
 #include "ui/platform_window/x11/window_move_loop_client.h"
 #include "ui/platform_window/x11/x11_window_base.h"
 
@@ -21,7 +22,8 @@ class X11WindowManagerOzone;
 // PlatformWindow implementation for X11 Ozone. PlatformEvents are ui::Events.
 class X11WindowOzone : public X11WindowBase,
                        public PlatformEventDispatcher,
-                       public XEventDispatcher {
+                       public XEventDispatcher,
+                       public WmMoveResizeHandler {
  public:
   X11WindowOzone(X11WindowManagerOzone* window_manager,
                  PlatformWindowDelegate* delegate,
@@ -61,6 +63,11 @@ class X11WindowOzone : public X11WindowBase,
   void OnMouseMoved(const gfx::Point& point, gfx::AcceleratedWidget* widget);
   void OnDragSessionClose(int dnd_action);
 
+  // WmMoveResizeHandler
+  void DispatchHostWindowDragMovement(
+      int hittest,
+      const gfx::Point& pointer_location) override;
+
  private:
   enum SourceState {
     // |source_current_window_| will receive a drop once we receive an
@@ -80,6 +87,8 @@ class X11WindowOzone : public X11WindowBase,
   bool CanDispatchEvent(const PlatformEvent& event) override;
   uint32_t DispatchEvent(const PlatformEvent& event) override;
   bool ProcessDragDropEvent(XEvent* xev);
+
+  WmMoveResizeHandler* AsWmMoveResizeHandler();
 
   X11WindowManagerOzone* window_manager_;
 
