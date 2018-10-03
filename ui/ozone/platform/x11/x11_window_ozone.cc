@@ -6,6 +6,7 @@
 
 #include "base/bind.h"
 #include "ui/base/dragdrop/os_exchange_data.h"
+#include "ui/base/hit_test.h"
 #include "ui/base/x/x11_util.h"
 #include "ui/events/event.h"
 #include "ui/events/event_utils.h"
@@ -20,6 +21,60 @@
 #include "ui/ozone/platform/x11/x11_window_manager_ozone.h"
 
 namespace ui {
+
+namespace {
+
+// These constants are defined in the Extended Window Manager Hints
+// standard...and aren't in any header that I can find.
+const int k_NET_WM_MOVERESIZE_SIZE_TOPLEFT = 0;
+const int k_NET_WM_MOVERESIZE_SIZE_TOP = 1;
+const int k_NET_WM_MOVERESIZE_SIZE_TOPRIGHT = 2;
+const int k_NET_WM_MOVERESIZE_SIZE_RIGHT = 3;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT = 4;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOM = 5;
+const int k_NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT = 6;
+const int k_NET_WM_MOVERESIZE_SIZE_LEFT = 7;
+const int k_NET_WM_MOVERESIZE_MOVE = 8;
+
+// Identifies the direction of the "hittest" for X11.
+bool IdentifyDirection(int hittest, int* direction) {
+  DCHECK(direction);
+  *direction = -1;
+  switch (hittest) {
+    case HTBOTTOM:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOM;
+      break;
+    case HTBOTTOMLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOMLEFT;
+      break;
+    case HTBOTTOMRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_BOTTOMRIGHT;
+      break;
+    case HTCAPTION:
+      *direction = k_NET_WM_MOVERESIZE_MOVE;
+      break;
+    case HTLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_LEFT;
+      break;
+    case HTRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_RIGHT;
+      break;
+    case HTTOP:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOP;
+      break;
+    case HTTOPLEFT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOPLEFT;
+      break;
+    case HTTOPRIGHT:
+      *direction = k_NET_WM_MOVERESIZE_SIZE_TOPRIGHT;
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+}  // namespace
 
 X11WindowOzone::X11WindowOzone(X11WindowManagerOzone* window_manager,
                                PlatformWindowDelegate* delegate,
@@ -41,6 +96,10 @@ X11WindowOzone::X11WindowOzone(X11WindowManagerOzone* window_manager,
   XChangeProperty(xdisplay(), xwindow(), gfx::GetAtom(kXdndAware), XA_ATOM, 32,
                   PropModeReplace,
                   reinterpret_cast<unsigned char*>(&xdnd_version), 1);
+
+  // Set a class property key, which allows |this| to be used for interactive
+  // events, e.g. move or resize.
+  SetWmMoveResizeHandler(this, AsWmMoveResizeHandler());
 }
 
 X11WindowOzone::~X11WindowOzone() {
@@ -175,6 +234,36 @@ void X11WindowOzone::OnDragSessionClose(int dnd_action) {
   NOTIMPLEMENTED_LOG_ONCE();
 }
 
+void X11WindowOzone::DispatchHostWindowDragMovement(
+    int hittest,
+    const gfx::Point& pointer_location) {
+  int direction;
+  if (!IdentifyDirection(hittest, &direction))
+    return;
+
+  // We most likely have an implicit grab right here. We need to dump it
+  // because what we're about to do is tell the window manager
+  // that it's now responsible for moving the window around; it immediately
+  // grabs when it receives the event below.
+  XUngrabPointer(xdisplay(), x11::CurrentTime);
+
+  XEvent event;
+  memset(&event, 0, sizeof(event));
+  event.xclient.type = ClientMessage;
+  event.xclient.display = xdisplay();
+  event.xclient.window = xwindow();
+  event.xclient.message_type = gfx::GetAtom("_NET_WM_MOVERESIZE");
+  event.xclient.format = 32;
+  event.xclient.data.l[0] = pointer_location.x();
+  event.xclient.data.l[1] = pointer_location.y();
+  event.xclient.data.l[2] = direction;
+  event.xclient.data.l[3] = 0;
+  event.xclient.data.l[4] = 0;
+
+  XSendEvent(xdisplay(), xroot_window(), x11::False,
+             SubstructureRedirectMask | SubstructureNotifyMask, &event);
+}
+
 void X11WindowOzone::OnDragMotion(const gfx::PointF& screen_point,
                                   int flags,
                                   ::Time event_time,
@@ -294,6 +383,10 @@ bool X11WindowOzone::ProcessDragDropEvent(XEvent* xev) {
       break;
   }
   return false;
+}
+
+WmMoveResizeHandler* X11WindowOzone::AsWmMoveResizeHandler() {
+  return static_cast<WmMoveResizeHandler*>(this);
 }
 
 }  // namespace ui
