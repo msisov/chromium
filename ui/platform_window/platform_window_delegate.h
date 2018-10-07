@@ -5,6 +5,7 @@
 #ifndef UI_PLATFORM_WINDOW_PLATFORM_WINDOW_DELEGATE_H_
 #define UI_PLATFORM_WINDOW_PLATFORM_WINDOW_DELEGATE_H_
 
+#include "ui/base/class_property.h"
 #include "ui/gfx/native_widget_types.h"
 
 namespace gfx {
@@ -23,7 +24,7 @@ enum PlatformWindowState {
   PLATFORM_WINDOW_STATE_FULLSCREEN,
 };
 
-class PlatformWindowDelegate {
+class PlatformWindowDelegate : public PropertyHandler {
  public:
   virtual ~PlatformWindowDelegate() {}
 

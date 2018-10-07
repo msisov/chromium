@@ -717,8 +717,14 @@ jumbo_component("views") {
         ]
         deps += [ "//ui/events:dom_keyboard_layout" ]
       } else if (use_ozone) {
-        public += [ "widget/desktop_aura/desktop_screen_ozone.h" ]
-        sources += [ "widget/desktop_aura/desktop_screen_ozone.cc" ]
+        public += [
+          "widget/desktop_aura/desktop_drag_drop_client_ozone.h",
+          "widget/desktop_aura/desktop_screen_ozone.h",
+        ]
+        sources += [
+          "widget/desktop_aura/desktop_drag_drop_client_ozone.cc",
+          "widget/desktop_aura/desktop_screen_ozone.cc",
+        ]
       }
       if (is_linux) {
         sources += [
@@ -1175,8 +1181,10 @@ test("views_unittests") {
   }
 
   if (is_linux && !is_chromeos && !use_x11) {
-    sources +=
-        [ "widget/desktop_aura/desktop_window_tree_host_platform_unittest.cc" ]
+    sources += [
+      "widget/desktop_aura/desktop_drag_drop_client_ozone_unittest.cc",
+      "widget/desktop_aura/desktop_window_tree_host_platform_unittest.cc",
+    ]
   }
 
   if (!is_chromeos) {
@@ -1187,6 +1195,7 @@ test("views_unittests") {
     ":test_support",
     ":views_unittests_sources",
     "//mojo/core/embedder",
+    "//ui/platform_window/platform_window_handler",
   ]
 }
 
