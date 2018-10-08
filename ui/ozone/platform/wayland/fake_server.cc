@@ -1086,7 +1086,9 @@ MockOutput::MockOutput()
     : Global(&wl_output_interface, nullptr, kOutputVersion),
       rect_(gfx::Rect(0, 0, 800, 600)) {}
 
-MockOutput::~MockOutput() {}
+MockOutput::~MockOutput() {
+  LOG(ERROR) << "OUTPUT " << this;
+}
 
 // Notify clients of the change for output position.
 void MockOutput::OnBind() {
@@ -1094,6 +1096,7 @@ void MockOutput::OnBind() {
   const char* kUnknownModel = "unknown";
   wl_output_send_geometry(resource(), rect_.x(), rect_.y(), 0, 0, 0,
                           kUnknownMake, kUnknownModel, 0);
+  LOG(ERROR) << "RECT_ " << rect_.size().ToString();
   wl_output_send_mode(resource(), WL_OUTPUT_MODE_CURRENT, rect_.width(),
                       rect_.height(), 0);
 }
@@ -1152,7 +1155,8 @@ bool FakeServer::Start(uint32_t shell_version) {
     return false;
   if (!compositor_.Initialize(display_.get()))
     return false;
-  if (!output_.Initialize(display_.get()))
+  output_ = std::make_unique<MockOutput>();
+  if (!output_->Initialize(display_.get()))
     return false;
   if (!data_device_manager_.Initialize(display_.get()))
     return false;

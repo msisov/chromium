@@ -453,10 +453,19 @@ class FakeServer : public base::Thread, base::MessagePumpLibevent::FdWatcher {
     return resource ? T::FromResource(resource) : nullptr;
   }
 
+  MockOutput* CreateAndGetOutput() {
+    auto output = std::make_unique<MockOutput>();
+    output->Initialize(display());
+
+    MockOutput* output_ptr = output.get();
+    globals_.push_back(std::move(output));
+    return output_ptr;
+  }
+
   MockDataDeviceManager* data_device_manager() { return &data_device_manager_; }
   MockSeat* seat() { return &seat_; }
   MockXdgShell* xdg_shell() { return &xdg_shell_; }
-  MockOutput* output() { return &output_; }
+  MockOutput* output() { return output_.get(); }
   MockTextInputManagerV1* text_input_manager_v1() {
     return &zwp_text_input_manager_v1_;
   }
@@ -482,11 +491,13 @@ class FakeServer : public base::Thread, base::MessagePumpLibevent::FdWatcher {
   // Represent Wayland global objects
   MockCompositor compositor_;
   MockDataDeviceManager data_device_manager_;
-  MockOutput output_;
+  std::unique_ptr<MockOutput> output_;
   MockSeat seat_;
   MockXdgShell xdg_shell_;
   MockXdgShellV6 zxdg_shell_v6_;
   MockTextInputManagerV1 zwp_text_input_manager_v1_;
+
+  std::vector<std::unique_ptr<Global>> globals_;
 
   base::MessagePumpLibevent::FdWatchController controller_;
 

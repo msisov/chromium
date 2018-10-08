@@ -21,7 +21,7 @@ WaylandOutput::WaylandOutput(const uint32_t output_id, wl_output* output)
       device_scale_factor_(kDefaultScaleFactor),
       rect_in_physical_pixels_(gfx::Rect()) {}
 
-WaylandOutput::~WaylandOutput() = default;
+WaylandOutput::~WaylandOutput() { LOG(ERROR) << "~" << this; }
 
 void WaylandOutput::Initialize(Delegate* delegate) {
   DCHECK(!delegate_);
@@ -66,6 +66,8 @@ void WaylandOutput::OutputHandleMode(void* data,
   if (wayland_output && (flags & WL_OUTPUT_MODE_CURRENT)) {
     wayland_output->rect_in_physical_pixels_.set_width(width);
     wayland_output->rect_in_physical_pixels_.set_height(height);
+    LOG(ERROR) << "WIDTH " << width << " HEIGHT "<< height << " output " << wayland_output;
+    DCHECK(!wayland_output->rect_in_physical_pixels_.IsEmpty());
     wayland_output->TriggerDelegateNotification();
   }
 }
