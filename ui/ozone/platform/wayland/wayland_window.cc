@@ -16,6 +16,7 @@
 #include "ui/events/ozone/events_ozone.h"
 #include "ui/gfx/geometry/point_f.h"
 #include "ui/ozone/platform/wayland/wayland_connection.h"
+#include "ui/ozone/platform/wayland/wayland_output_manager.h"
 #include "ui/ozone/platform/wayland/wayland_pointer.h"
 #include "ui/ozone/platform/wayland/xdg_popup_wrapper_v5.h"
 #include "ui/ozone/platform/wayland/xdg_popup_wrapper_v6.h"
@@ -92,7 +93,7 @@ WaylandWindow::~WaylandWindow() {
   }
 
   PlatformEventSource::GetInstance()->RemovePlatformEventDispatcher(this);
-  connection_->RemoveWindow(surface_.id());
+  connection_->RemoveWindow(GetWidget());
 
   if (parent_window_)
     parent_window_->set_child_window(nullptr);
@@ -120,6 +121,8 @@ bool WaylandWindow::Initialize(PlatformWindowInitProperties properties) {
   }
   wl_surface_set_user_data(surface_.get(), this);
 
+  AddSurfaceListener();
+
   ui::PlatformWindowType ui_window_type = properties.type;
   switch (ui_window_type) {
     case ui::PlatformWindowType::kMenu:
@@ -140,11 +143,17 @@ bool WaylandWindow::Initialize(PlatformWindowInitProperties properties) {
 
   connection_->ScheduleFlush();
 
-  connection_->AddWindow(surface_.id(), this);
+  connection_->AddWindow(GetWidget(), this);
   PlatformEventSource::GetInstance()->AddPlatformEventDispatcher(this);
-  delegate_->OnAcceleratedWidgetAvailable(surface_.id());
+  delegate_->OnAcceleratedWidgetAvailable(GetWidget());
 
   return true;
+}
+
+gfx::AcceleratedWidget WaylandWindow::GetWidget() {
+  if (!surface_)
+    return gfx::kNullAcceleratedWidget;
+  return surface_.id();
 }
 
 void WaylandWindow::CreateXdgPopup() {
@@ -635,6 +644,51 @@ WaylandWindow* WaylandWindow::GetParentWindow(
 
 WmMoveResizeHandler* WaylandWindow::AsWmMoveResizeHandler() {
   return static_cast<WmMoveResizeHandler*>(this);
+}
+
+void WaylandWindow::AddSurfaceListener() {
+  static struct wl_surface_listener surface_listener = {
+      &WaylandWindow::Enter, &WaylandWindow::Leave,
+  };
+  wl_surface_add_listener(surface_.get(), &surface_listener, this);
+}
+
+void WaylandWindow::SetEnteredOutputId(struct wl_output* output) {
+  const uint32_t entered_output_id =
+      connection_->wayland_output_manager()->GetIdForOutput(output);
+  DCHECK_NE(entered_output_id, 0u);
+  entered_outputs_ids_.push_back(entered_output_id);
+}
+
+void WaylandWindow::RemoveEnteredOutputId(struct wl_output* output) {
+  const uint32_t left_output_id =
+      connection_->wayland_output_manager()->GetIdForOutput(output);
+  auto entered_output_id_it = std::find(
+      entered_outputs_ids_.begin(), entered_outputs_ids_.end(), left_output_id);
+  DCHECK(entered_output_id_it != entered_outputs_ids_.end());
+  entered_outputs_ids_.erase(entered_output_id_it);
+}
+
+// static
+void WaylandWindow::Enter(void* data,
+                          struct wl_surface* wl_surface,
+                          struct wl_output* output) {
+  WaylandWindow* window = static_cast<WaylandWindow*>(data);
+  if (window) {
+    DCHECK(window->surface() == wl_surface);
+    window->SetEnteredOutputId(output);
+  }
+}
+
+// static
+void WaylandWindow::Leave(void* data,
+                          struct wl_surface* wl_surface,
+                          struct wl_output* output) {
+  WaylandWindow* window = static_cast<WaylandWindow*>(data);
+  if (window) {
+    DCHECK(window->surface() == wl_surface);
+    window->RemoveEnteredOutputId(output);
+  }
 }
 
 }  // namespace ui

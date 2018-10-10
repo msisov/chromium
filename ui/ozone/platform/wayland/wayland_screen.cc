@@ -9,10 +9,13 @@
 #include "ui/display/display_observer.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/geometry/size.h"
+#include "ui/ozone/platform/wayland/wayland_connection.h"
+#include "ui/ozone/platform/wayland/wayland_window.h"
 
 namespace ui {
 
-WaylandScreen::WaylandScreen() : weak_factory_(this) {}
+WaylandScreen::WaylandScreen(WaylandConnection* connection)
+    : connection_(connection), weak_factory_(this) {}
 
 WaylandScreen::~WaylandScreen() = default;
 
@@ -59,12 +62,23 @@ display::Display WaylandScreen::GetPrimaryDisplay() const {
 
 display::Display WaylandScreen::GetDisplayForAcceleratedWidget(
     gfx::AcceleratedWidget widget) const {
-  // TODO(msisov): implement wl_surface_listener::enter and
-  // wl_surface_listener::leave for a wl_surface to know what surface the window
-  // is located on.
-  //
-  // https://crbug.com/890271
-  NOTIMPLEMENTED_LOG_ONCE();
+  auto* wayland_window = connection_->GetWindow(widget);
+  if (!wayland_window)
+    return GetPrimaryDisplay();
+
+  const std::vector<uint32_t> entered_outputs_ids =
+      wayland_window->entered_outputs_ids();
+  if (entered_outputs_ids.empty())
+    return GetPrimaryDisplay();
+
+  // A widget can be located on two displays. Return the one, which was the very
+  // first used.
+  for (const auto& display : display_list_.displays()) {
+    if (display.id() == entered_outputs_ids.front())
+      return display;
+  }
+
+  NOTREACHED();
   return GetPrimaryDisplay();
 }
 
@@ -75,25 +89,65 @@ gfx::Point WaylandScreen::GetCursorScreenPoint() const {
 
 gfx::AcceleratedWidget WaylandScreen::GetAcceleratedWidgetAtScreenPoint(
     const gfx::Point& point) const {
-  // TODO(msisov): implement this once wl_surface_listener::enter and ::leave
-  // are used.
-  //
-  // https://crbug.com/890271
-  NOTIMPLEMENTED_LOG_ONCE();
-  return gfx::kNullAcceleratedWidget;
+  // This is a tricky one. To ensure right functionality, a widget under a
+  // cursor must be returned. But, Wayland clients cannot know where the windows
+  // are located in the global space coordinate system. Instead, it's possible
+  // to know widgets located on a surface local coordinate system (remember that
+  // clients cannot also know the position of the pointer in the global space
+  // coordinate system, but rather on a local surface coordinate system). That
+  // is, we will have to pretend that a single surface is a "display", where
+  // other widgets (child widgets are located in the surface local coordinate
+  // system, where the main surface has 0,0 origin) are shown. Whenever that
+  // surface is focused (the cursor is located under that widget), we will use
+  // it to determine if the point is on that main surface, a menu surface and
+  // etc.
+
+  // This call comes only when a cursor is under a certain window (see how
+  // Wayland sends pointer events for better understanding + comment above).
+  auto* window = connection_->GetCurrentFocusedWindow();
+  if (!window)
+    return gfx::kNullAcceleratedWidget;
+
+  // If |point| is at origin and the focused window does not contain that point,
+  // it must be the root parent, which contains that |point|.
+  if (point.IsOrigin() && !window->GetBounds().Contains(point)) {
+    WaylandWindow* parent_window = nullptr;
+    do {
+      parent_window = window->parent_window();
+      if (parent_window)
+        window = parent_window;
+    } while (parent_window);
+    DCHECK(!window->parent_window());
+  }
+
+  // When there is an implicit grab (mouse is pressed and not released), we
+  // start to get events even outside the surface. Thus, if it does not contain
+  // the point, return null widget here.
+  if (!window->GetBounds().Contains(point))
+    return gfx::kNullAcceleratedWidget;
+  return window->GetWidget();
 }
 
 display::Display WaylandScreen::GetDisplayNearestPoint(
     const gfx::Point& point) const {
-  NOTIMPLEMENTED_LOG_ONCE();
-  return GetPrimaryDisplay();
+  if (display_list_.displays().size() <= 1)
+    return GetPrimaryDisplay();
+  for (const auto& display : display_list_.displays()) {
+    if (display.bounds().Contains(point))
+      return display;
+  }
+
+  return *FindDisplayNearestPoint(display_list_.displays(), point);
 }
 
 display::Display WaylandScreen::GetDisplayMatching(
     const gfx::Rect& match_rect) const {
-  // TODO(msisov): https://crbug.com/890272
-  NOTIMPLEMENTED_LOG_ONCE();
-  return GetPrimaryDisplay();
+  if (match_rect.IsEmpty())
+    return GetDisplayNearestPoint(match_rect.origin());
+
+  const display::Display* match =
+      FindDisplayWithBiggestIntersection(display_list_.displays(), match_rect);
+  return match ? *match : GetPrimaryDisplay();
 }
 
 void WaylandScreen::AddObserver(display::DisplayObserver* observer) {

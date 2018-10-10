@@ -34,6 +34,9 @@ class WaylandOutput {
 
   void TriggerDelegateNotification() const;
 
+  // Says whether this WaylandOutput is a wrapper of the passed |output|.
+  bool has_output(wl_output* output) const { return output_.get() == output; }
+
   uint32_t output_id() const { return output_id_; }
 
   // Tells if the output has already received physical screen dimensions in the

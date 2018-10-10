@@ -453,11 +453,7 @@ class FakeServer : public base::Thread, base::MessagePumpLibevent::FdWatcher {
     return resource ? T::FromResource(resource) : nullptr;
   }
 
-  void CreateAndInitializeOutput() {
-    auto output = std::make_unique<MockOutput>();
-    output->Initialize(display());
-    globals_.push_back(std::move(output));
-  }
+  MockOutput* CreateAndInitializeOutput();
 
   MockDataDeviceManager* data_device_manager() { return &data_device_manager_; }
   MockSeat* seat() { return &seat_; }
