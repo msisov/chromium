@@ -17,10 +17,12 @@
 
 namespace ui {
 
+class WaylandConnection;
+
 // A PlatformScreen implementation for Wayland.
 class WaylandScreen : public PlatformScreen {
  public:
-  WaylandScreen();
+  explicit WaylandScreen(WaylandConnection* connection);
   ~WaylandScreen() override;
 
   void OnOutputAdded(uint32_t output_id, bool is_primary);
@@ -51,6 +53,9 @@ class WaylandScreen : public PlatformScreen {
   display::DisplayList display_list_;
 
   base::ObserverList<display::DisplayObserver> observers_;
+
+  // Non-owned pointer.
+  WaylandConnection* connection_ = nullptr;
 
   base::WeakPtrFactory<WaylandScreen> weak_factory_;
 
