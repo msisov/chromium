@@ -52,6 +52,8 @@ class WaylandWindow : public PlatformWindow,
   XDGSurfaceWrapper* xdg_surface() const { return xdg_surface_.get(); }
   XDGPopupWrapper* xdg_popup() const { return xdg_popup_.get(); }
 
+  gfx::AcceleratedWidget GetWidget();
+
   // Apply the bounds specified in the most recent configure event. This should
   // be called after processing all pending events in the wayland connection.
   void ApplyPendingBounds();
@@ -72,6 +74,8 @@ class WaylandWindow : public PlatformWindow,
   // xdg_popups as long as they must be destroyed in the back order.
   void set_child_window(WaylandWindow* window) { child_window_ = window; }
 
+  WaylandWindow* parent_window() const { return parent_window_; }
+
   // Set whether this window has an implicit grab (often referred to as capture
   // in Chrome code). Implicit grabs happen while a pointer is down.
   void set_has_implicit_grab(bool value) { has_implicit_grab_ = value; }
@@ -83,6 +87,10 @@ class WaylandWindow : public PlatformWindow,
   void DispatchHostWindowDragMovement(
       int hittest,
       const gfx::Point& pointer_location) override;
+
+  const std::vector<uint32_t>& entered_outputs_ids() const {
+    return entered_outputs_ids_;
+  }
 
   // WmDragHandler
   void StartDrag(const ui::OSExchangeData& data,
@@ -152,6 +160,20 @@ class WaylandWindow : public PlatformWindow,
 
   WmMoveResizeHandler* AsWmMoveResizeHandler();
 
+  // Starts getting update when the current surface enters or leaves wl_outputs.
+  void AddSurfaceListener();
+
+  void SetEnteredOutputId(struct wl_output* output);
+  void RemoveEnteredOutputId(struct wl_output* output);
+
+  // wl_surface_listener
+  static void Enter(void* data,
+                    struct wl_surface* wl_surface,
+                    struct wl_output* output);
+  static void Leave(void* data,
+                    struct wl_surface* wl_surface,
+                    struct wl_output* output);
+
   PlatformWindowDelegate* delegate_;
   WaylandConnection* connection_;
   WaylandWindow* parent_window_ = nullptr;
@@ -192,6 +214,9 @@ class WaylandWindow : public PlatformWindow,
   bool is_minimizing_ = false;
 
   bool is_tooltip_ = false;
+
+  // The ids of the outputs this surface is shown on.
+  std::vector<uint32_t> entered_outputs_ids_;
 
   DISALLOW_COPY_AND_ASSIGN(WaylandWindow);
 };
