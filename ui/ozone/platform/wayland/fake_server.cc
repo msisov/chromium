@@ -1196,6 +1196,16 @@ void FakeServer::Resume() {
   resume_event_.Signal();
 }
 
+MockOutput* FakeServer::CreateAndInitializeOutput() {
+  auto output = std::make_unique<MockOutput>();
+  output->Initialize(display());
+
+  MockOutput* output_ptr = output.get();
+  globals_.push_back(std::move(output));
+
+  return output_ptr;
+}
+
 void FakeServer::DoPause() {
   base::RunLoop().RunUntilIdle();
   pause_event_.Signal();

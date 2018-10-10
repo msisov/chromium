@@ -19,6 +19,7 @@ struct wl_output;
 
 namespace ui {
 
+class WaylandConnection;
 class WaylandOutput;
 
 class WaylandOutputManager : public WaylandOutput::Delegate {
@@ -32,8 +33,11 @@ class WaylandOutputManager : public WaylandOutput::Delegate {
   void AddWaylandOutput(const uint32_t output_id, wl_output* output);
   void RemoveWaylandOutput(const uint32_t output_id);
 
+  uint32_t GetIdForOutput(wl_output* output) const;
+
   // Creates a platform screen and feeds it with existing outputs.
-  std::unique_ptr<WaylandScreen> CreateWaylandScreen();
+  std::unique_ptr<WaylandScreen> CreateWaylandScreen(
+      WaylandConnection* connection);
 
  private:
   void OnWaylandOutputAdded(uint32_t output_id);

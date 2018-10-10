@@ -65,8 +65,19 @@ void WaylandOutputManager::RemoveWaylandOutput(const uint32_t output_id) {
   OnWaylandOutputRemoved(output_id);
 }
 
-std::unique_ptr<WaylandScreen> WaylandOutputManager::CreateWaylandScreen() {
-  auto wayland_screen = std::make_unique<WaylandScreen>();
+uint32_t WaylandOutputManager::GetIdForOutput(wl_output* output) const {
+  auto output_it = std::find_if(output_list_.begin(), output_list_.end(),
+                                [output](const auto& wayland_output) {
+                                  return wayland_output->has_output(output);
+                                });
+  // This is unlikely to happen, but let's be explicit here.
+  DCHECK(output_it != output_list_.end());
+  return output_it->get()->output_id();
+}
+
+std::unique_ptr<WaylandScreen> WaylandOutputManager::CreateWaylandScreen(
+    WaylandConnection* connection) {
+  auto wayland_screen = std::make_unique<WaylandScreen>(connection);
   wayland_screen_ = wayland_screen->GetWeakPtr();
 
   // As long as |wl_output| sends geometry and other events asynchronously (that

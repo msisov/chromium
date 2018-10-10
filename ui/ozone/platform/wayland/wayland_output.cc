@@ -34,7 +34,6 @@ void WaylandOutput::Initialize(Delegate* delegate) {
 }
 
 void WaylandOutput::TriggerDelegateNotification() const {
-  DCHECK(!rect_in_physical_pixels_.IsEmpty());
   delegate_->OnOutputHandleMetrics(output_id_, rect_in_physical_pixels_,
                                    device_scale_factor_);
 }
@@ -51,8 +50,10 @@ void WaylandOutput::OutputHandleGeometry(void* data,
                                          const char* model,
                                          int32_t output_transform) {
   WaylandOutput* wayland_output = static_cast<WaylandOutput*>(data);
-  if (wayland_output)
+  if (wayland_output) {
     wayland_output->rect_in_physical_pixels_.set_origin(gfx::Point(x, y));
+    wayland_output->TriggerDelegateNotification();
+  }
 }
 
 // static
