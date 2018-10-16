@@ -654,6 +654,7 @@ jumbo_component("base") {
       sources += [
         "clipboard/clipboard_aurax11.cc",
         "clipboard/clipboard_aurax11.h",
+        "clipboard/clipboard_linux.cc",
       ]
     } else if (!is_win) {
       # This file is used for all non-X11, non-Windows aura Builds.
