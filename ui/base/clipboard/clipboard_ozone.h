@@ -13,7 +13,12 @@
 
 namespace ui {
 
+class ClipboardDelegate;
+
 class ClipboardOzone : public Clipboard {
+ public:
+  void SetDelegate(ClipboardDelegate* delegate) override;
+
  private:
   friend class Clipboard;
 

@@ -14,6 +14,7 @@
 #include "base/message_loop/message_loop_current.h"
 #include "base/strings/string_util.h"
 #include "base/threading/thread_task_runner_handle.h"
+#include "ui/base/clipboard/clipboard.h"
 #include "ui/gfx/swap_result.h"
 #include "ui/ozone/platform/wayland/wayland_buffer_manager.h"
 #include "ui/ozone/platform/wayland/wayland_input_method_context.h"
@@ -394,6 +395,8 @@ void WaylandConnection::Global(void* data,
     wl_data_device* data_device = connection->data_device_manager_->GetDevice();
     connection->data_device_.reset(
         new WaylandDataDevice(connection, data_device));
+    ui::Clipboard* clipboard = ui::Clipboard::GetForCurrentThread();
+    clipboard->SetDelegate(connection->GetClipboardDelegate());
   } else if (!connection->shell_v6_ &&
              strcmp(interface, "zxdg_shell_v6") == 0) {
     // Check for zxdg_shell_v6 first.
