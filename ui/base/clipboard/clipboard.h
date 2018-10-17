@@ -31,6 +31,10 @@
 #include <objidl.h>
 #endif
 
+#if defined(USE_OZONE)
+#include "ui/ozone/public/clipboard_delegate.h"
+#endif
+
 class SkBitmap;
 
 #ifdef __OBJC__
@@ -213,6 +217,17 @@ class UI_BASE_EXPORT Clipboard : public base::ThreadChecker {
 
   // Resets the clipboard last modified time to Time::Time().
   virtual void ClearLastModifiedTime();
+
+#if defined(USE_OZONE)
+  // ui/base cannot add ui/ozone in deps in order to be able to get a
+  // ClipboardDelegate by calling OzonePlatform::GetInstance as long as it adds
+  // a circular dependency. Thus, set a delegate from the WaylandConnection, for
+  // example, whenever a data manager is available.
+  // TODO(tonikitoo, jkim, msisov): find a better solution? But it will require
+  // refactoring the ui/base in order to avoid ui/ozone depending on the whole
+  // ui/base and just add to deps the components it needs.
+  virtual void SetDelegate(ClipboardDelegate* delegate);
+#endif
 
   // Gets the FormatType corresponding to an arbitrary format string,
   // registering it with the system if needed. Due to Windows/Linux

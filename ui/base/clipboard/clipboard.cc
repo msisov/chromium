@@ -91,6 +91,10 @@ base::Time Clipboard::GetLastModifiedTime() const {
 
 void Clipboard::ClearLastModifiedTime() {}
 
+#if defined(USE_OZONE)
+void Clipboard::SetDelegate(ClipboardDelegate* delegate) {}
+#endif
+
 void Clipboard::DispatchObject(ObjectType type, const ObjectMapParams& params) {
   // Ignore writes with empty parameters.
   for (const auto& param : params) {

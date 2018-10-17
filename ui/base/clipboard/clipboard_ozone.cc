@@ -220,6 +220,11 @@ Clipboard* Clipboard::Create() {
   return new ClipboardOzone;
 }
 
+void ClipboardOzone::SetDelegate(ClipboardDelegate* delegate) {
+  DCHECK(async_clipboard_ozone_);
+  async_clipboard_ozone_->set_delegate(delegate);
+}
+
 // ClipboardOzone implementation.
 ClipboardOzone::ClipboardOzone() {
   async_clipboard_ozone_ =
