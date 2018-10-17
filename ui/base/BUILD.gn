@@ -650,12 +650,21 @@ jumbo_component("base") {
 
   if (use_aura) {
     # Aura clipboard.
-    if (use_x11 && is_desktop_linux) {
-      sources += [
-        "clipboard/clipboard_aurax11.cc",
-        "clipboard/clipboard_aurax11.h",
-        "clipboard/clipboard_linux.cc",
-      ]
+    if (is_desktop_linux) {
+      if (use_x11 || use_ozone) {
+        sources += [ "clipboard/clipboard_linux.cc" ]
+      }
+      if (use_ozone) {
+        sources += [
+          "clipboard/clipboard_ozone.cc",
+          "clipboard/clipboard_ozone.h",
+        ]
+      } else if (use_x11) {
+        sources += [
+          "clipboard/clipboard_aurax11.cc",
+          "clipboard/clipboard_aurax11.h",
+        ]
+      }
     } else if (!is_win) {
       # This file is used for all non-X11, non-Windows aura Builds.
       sources += [
