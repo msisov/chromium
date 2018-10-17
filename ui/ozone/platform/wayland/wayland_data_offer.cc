@@ -115,6 +115,7 @@ void WaylandDataOffer::OnOffer(void* data,
                                wl_data_offer* data_offer,
                                const char* mime_type) {
   auto* self = static_cast<WaylandDataOffer*>(data);
+  LOG(ERROR) << "ON OFFER " << mime_type;
   self->mime_types_.push_back(mime_type);
 }
 
