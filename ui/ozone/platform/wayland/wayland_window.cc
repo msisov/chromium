@@ -133,6 +133,7 @@ bool WaylandWindow::Initialize(PlatformWindowInitProperties properties) {
       CreateXdgPopup();
       break;
     case ui::PlatformWindowType::kTooltip:
+      LOG(ERROR) << "IS TOOLTIP ";
       // Tooltips subsurfaces are created on demand, upon ::Show calls.
       is_tooltip_ = true;
       break;
