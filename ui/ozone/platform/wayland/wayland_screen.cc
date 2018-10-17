@@ -120,7 +120,11 @@ gfx::AcceleratedWidget WaylandScreen::GetAcceleratedWidgetAtScreenPoint(
     DCHECK(!window->parent_window());
   }
 
-  DCHECK(window->GetBounds().Contains(point));
+  // When there is an implicit grab (mouse is pressed and not released), we
+  // start to get events even outside the surface. Thus, if it does not contain
+  // the point, return null widget here.
+  if (!window->GetBounds().Contains(point))
+    return gfx::kNullAcceleratedWidget;
   return window->GetWidget();
 }
 
