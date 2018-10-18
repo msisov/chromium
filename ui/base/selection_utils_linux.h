@@ -1,9 +1,9 @@
-// Copyright (c) 2013 The Chromium Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef UI_BASE_X_SELECTION_UTILS_H_
-#define UI_BASE_X_SELECTION_UTILS_H_
+#ifndef UI_BASE_SELECTION_UTILS_H_
+#define UI_BASE_SELECTION_UTILS_H_
 
 #include <stddef.h>
 #include <map>
@@ -11,27 +11,22 @@
 #include "base/memory/ref_counted_memory.h"
 #include "ui/base/clipboard/clipboard.h"
 #include "ui/base/ui_base_export.h"
-#include "ui/gfx/x/x11.h"
 
 namespace ui {
 class SelectionData;
 
-extern const char kString[];
-extern const char kText[];
-extern const char kUtf8String[];
-
 // Returns a list of all text atoms that we handle.
-UI_BASE_EXPORT std::vector<::Atom> GetTextAtomsFrom();
+UI_BASE_EXPORT std::vector<std::string> GetTextMimesFrom();
 
-UI_BASE_EXPORT std::vector<::Atom> GetURLAtomsFrom();
+UI_BASE_EXPORT std::vector<std::string> GetURLMimesFrom();
 
-UI_BASE_EXPORT std::vector<::Atom> GetURIListAtomsFrom();
+UI_BASE_EXPORT std::vector<std::string> GetURIListMimesFrom();
 
 // Places the intersection of |desired| and |offered| into |output|.
-UI_BASE_EXPORT void GetAtomIntersection(const std::vector< ::Atom>& desired,
-                                        const std::vector< ::Atom>& offered,
-                                        std::vector< ::Atom>* output);
-
+UI_BASE_EXPORT void GetMimesIntersection(
+    const std::vector<std::string>& desired,
+    const std::vector<std::string>& offered,
+    std::vector<std::string>* output);
 // Takes the raw bytes of the base::string16 and copies them into |bytes|.
 UI_BASE_EXPORT void AddString16ToVector(const base::string16& str,
                                         std::vector<unsigned char>* bytes);
@@ -52,7 +47,8 @@ UI_BASE_EXPORT base::string16 RefCountedMemoryToString16(
 class UI_BASE_EXPORT SelectionFormatMap {
  public:
   // Our internal data store, which we only expose through iterators.
-  typedef std::map< ::Atom, scoped_refptr<base::RefCountedMemory> > InternalMap;
+  typedef std::map<std::string, scoped_refptr<base::RefCountedMemory>>
+      InternalMap;
   typedef InternalMap::const_iterator const_iterator;
 
   SelectionFormatMap();
@@ -62,19 +58,20 @@ class UI_BASE_EXPORT SelectionFormatMap {
 
   // Adds the selection in the format |atom|. Ownership of |data| is passed to
   // us.
-  void Insert(::Atom atom, const scoped_refptr<base::RefCountedMemory>& item);
+  void Insert(std::string type,
+              const scoped_refptr<base::RefCountedMemory>& item);
 
   // Returns the first of the requested_types or NULL if missing.
-  ui::SelectionData GetFirstOf(
-      const std::vector< ::Atom>& requested_types) const;
+  SelectionData GetFirstOf(
+      const std::vector<std::string>& requested_types) const;
 
   // Returns all the selected types.
-  std::vector< ::Atom> GetTypes() const;
+  std::vector<std::string> GetTypes() const;
 
   // Pass through to STL map. Only allow non-mutation access.
   const_iterator begin() const { return data_.begin(); }
   const_iterator end() const { return data_.end(); }
-  const_iterator find(::Atom atom) const { return data_.find(atom); }
+  const_iterator find(std::string type) const { return data_.find(type); }
   size_t size() const { return data_.size(); }
 
  private:
@@ -83,19 +80,18 @@ class UI_BASE_EXPORT SelectionFormatMap {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// A holder for data with optional X11 deletion semantics.
+// A holder for data with optional deletion semantics.
 class UI_BASE_EXPORT SelectionData {
  public:
-  // |atom_cache| is still owned by caller.
   SelectionData();
-  SelectionData(::Atom type,
+  SelectionData(std::string type,
                 const scoped_refptr<base::RefCountedMemory>& memory);
   SelectionData(const SelectionData& rhs);
   ~SelectionData();
   SelectionData& operator=(const SelectionData& rhs);
 
   bool IsValid() const;
-  ::Atom GetType() const;
+  std::string GetType() const;
   const unsigned char* GetData() const;
   size_t GetSize() const;
 
@@ -111,10 +107,10 @@ class UI_BASE_EXPORT SelectionData {
   void AssignTo(base::string16* result) const;
 
  private:
-  ::Atom type_;
+  std::string type_;
   scoped_refptr<base::RefCountedMemory> memory_;
 };
 
 }  // namespace ui
 
-#endif  // UI_BASE_X_SELECTION_UTILS_H_
+#endif  // UI_BASE_SELECTION_UTILS_H_

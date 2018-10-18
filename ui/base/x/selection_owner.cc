@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #include "base/logging.h"
-#include "ui/base/x/selection_utils.h"
 #include "ui/base/x/x11_window_event_manager.h"
 #include "ui/events/platform/x11/x11_event_source.h"
 #include "ui/gfx/x/x11.h"
@@ -101,7 +100,7 @@ SelectionOwner::~SelectionOwner() {
 
 void SelectionOwner::RetrieveTargets(std::vector<XAtom>* targets) {
   for (auto it = format_map_.begin(); it != format_map_.end(); ++it) {
-    targets->push_back(it->first);
+    targets->push_back(gfx::GetAtom(it->first.c_str()));
   }
 }
 
@@ -231,7 +230,7 @@ bool SelectionOwner::ProcessTarget(XAtom target,
   }
 
   // Try to find the data type in map.
-  auto it = format_map_.find(target);
+  auto it = format_map_.find(gfx::GetAtomName(target));
   if (it != format_map_.end()) {
     if (it->second->size() > max_request_size_) {
       // We must send the data back in several chunks due to a limitation in

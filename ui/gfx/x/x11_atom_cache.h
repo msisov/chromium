@@ -21,6 +21,8 @@ namespace gfx {
 
 // Gets the X atom for default display corresponding to atom_name.
 GFX_EXPORT XAtom GetAtom(const char* atom_name);
+// Gets the name of the X atom for the default display corresponding to atom.
+GFX_EXPORT std::string GetAtomName(XAtom atom);
 
 // Pre-caches all Atoms on first use to minimize roundtrips to the X11
 // server. By default, GetAtom() will CHECK() that atoms accessed through
@@ -32,6 +34,7 @@ class GFX_EXPORT X11AtomCache {
 
  private:
   friend XAtom GetAtom(const char* atom_name);
+  friend std::string GetAtomName(XAtom atom);
   friend struct base::DefaultSingletonTraits<X11AtomCache>;
 
   X11AtomCache();
@@ -39,6 +42,7 @@ class GFX_EXPORT X11AtomCache {
 
   // Returns the pre-interned Atom without having to go to the x server.
   XAtom GetAtom(const char*) const;
+  std::string GetAtomName(XAtom atom) const;
 
   XDisplay* xdisplay_;
 

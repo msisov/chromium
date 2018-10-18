@@ -15,7 +15,6 @@
 #include "ui/base/clipboard/clipboard.h"
 #include "ui/base/clipboard/scoped_clipboard_writer.h"
 #include "ui/base/dragdrop/file_info.h"
-#include "ui/base/x/selection_utils.h"
 #include "ui/events/platform/platform_event_source.h"
 #include "ui/gfx/x/x11_atom_cache.h"
 
@@ -88,13 +87,13 @@ SelectionFormatMap OSExchangeDataProviderAuraX11Base::GetFormatMap() const {
 
 void OSExchangeDataProviderAuraX11Base::MarkOriginatedFromRenderer() {
   std::string empty;
-  format_map_.Insert(gfx::GetAtom(kRendererTaint),
+  format_map_.Insert(kRendererTaint,
                      scoped_refptr<base::RefCountedMemory>(
                          base::RefCountedString::TakeString(&empty)));
 }
 
 bool OSExchangeDataProviderAuraX11Base::DidOriginateFromRenderer() const {
-  return format_map_.find(gfx::GetAtom(kRendererTaint)) != format_map_.end();
+  return format_map_.find(kRendererTaint) != format_map_.end();
 }
 
 void OSExchangeDataProviderAuraX11Base::SetString(
@@ -106,10 +105,10 @@ void OSExchangeDataProviderAuraX11Base::SetString(
   scoped_refptr<base::RefCountedMemory> mem(
       base::RefCountedString::TakeString(&utf8));
 
-  format_map_.Insert(gfx::GetAtom(Clipboard::kMimeTypeText), mem);
-  format_map_.Insert(gfx::GetAtom(kText), mem);
-  format_map_.Insert(gfx::GetAtom(kString), mem);
-  format_map_.Insert(gfx::GetAtom(kUtf8String), mem);
+  format_map_.Insert(Clipboard::kMimeTypeText, mem);
+  format_map_.Insert(kText, mem);
+  format_map_.Insert(kString, mem);
+  format_map_.Insert(kUtf8String, mem);
 }
 
 void OSExchangeDataProviderAuraX11Base::SetURL(const GURL& url,
@@ -127,7 +126,7 @@ void OSExchangeDataProviderAuraX11Base::SetURL(const GURL& url,
     scoped_refptr<base::RefCountedMemory> mem(
         base::RefCountedBytes::TakeVector(&data));
 
-    format_map_.Insert(gfx::GetAtom(Clipboard::kMimeTypeMozillaURL), mem);
+    format_map_.Insert(Clipboard::kMimeTypeMozillaURL, mem);
 
     // Set a string fallback as well.
     SetString(spec);
@@ -147,7 +146,7 @@ void OSExchangeDataProviderAuraX11Base::SetURL(const GURL& url,
     std::string netscape_url = url.spec();
     netscape_url += "\n";
     netscape_url += base::UTF16ToUTF8(title);
-    format_map_.Insert(gfx::GetAtom(kNetscapeURL),
+    format_map_.Insert(kNetscapeURL,
                        scoped_refptr<base::RefCountedMemory>(
                            base::RefCountedString::TakeString(&netscape_url)));
   }
@@ -172,7 +171,7 @@ void OSExchangeDataProviderAuraX11Base::SetFilenames(
   std::string joined_data = base::JoinString(paths, "\n");
   scoped_refptr<base::RefCountedMemory> mem(
       base::RefCountedString::TakeString(&joined_data));
-  format_map_.Insert(gfx::GetAtom(Clipboard::kMimeTypeURIList), mem);
+  format_map_.Insert(Clipboard::kMimeTypeURIList, mem);
 }
 
 void OSExchangeDataProviderAuraX11Base::SetPickledData(
@@ -186,7 +185,7 @@ void OSExchangeDataProviderAuraX11Base::SetPickledData(
   scoped_refptr<base::RefCountedMemory> mem(
       base::RefCountedBytes::TakeVector(&bytes));
 
-  format_map_.Insert(gfx::GetAtom(format.ToString().c_str()), mem);
+  format_map_.Insert(format.ToString().c_str(), mem);
 }
 
 bool OSExchangeDataProviderAuraX11Base::GetString(
@@ -198,9 +197,9 @@ bool OSExchangeDataProviderAuraX11Base::GetString(
     return false;
   }
 
-  std::vector<::Atom> text_atoms = ui::GetTextAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(text_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> text_mimes = ui::GetTextMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(text_mimes, GetTargets(), &requested_types);
 
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
   if (data.IsValid()) {
@@ -216,9 +215,9 @@ bool OSExchangeDataProviderAuraX11Base::GetURLAndTitle(
     OSExchangeData::FilenameToURLPolicy policy,
     GURL* url,
     base::string16* title) const {
-  std::vector<::Atom> url_atoms = ui::GetURLAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes = ui::GetURLMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
   if (data.IsValid()) {
@@ -226,7 +225,7 @@ bool OSExchangeDataProviderAuraX11Base::GetURLAndTitle(
     // but that doesn't match the assumptions of the rest of the system which
     // expect single types.
 
-    if (data.GetType() == gfx::GetAtom(Clipboard::kMimeTypeMozillaURL)) {
+    if (data.GetType() == Clipboard::kMimeTypeMozillaURL) {
       // Mozilla URLs are (UTF16: URL, newline, title).
       base::string16 unparsed;
       data.AssignTo(&unparsed);
@@ -243,7 +242,7 @@ bool OSExchangeDataProviderAuraX11Base::GetURLAndTitle(
         *url = GURL(tokens[0]);
         return true;
       }
-    } else if (data.GetType() == gfx::GetAtom(Clipboard::kMimeTypeURIList)) {
+    } else if (data.GetType() == Clipboard::kMimeTypeURIList) {
       std::vector<std::string> tokens = ui::ParseURIList(data);
       for (std::vector<std::string>::const_iterator it = tokens.begin();
            it != tokens.end(); ++it) {
@@ -274,9 +273,9 @@ bool OSExchangeDataProviderAuraX11Base::GetFilename(
 
 bool OSExchangeDataProviderAuraX11Base::GetFilenames(
     std::vector<FileInfo>* filenames) const {
-  std::vector<::Atom> url_atoms = ui::GetURIListAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes = ui::GetURIListMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   filenames->clear();
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
@@ -298,8 +297,8 @@ bool OSExchangeDataProviderAuraX11Base::GetFilenames(
 bool OSExchangeDataProviderAuraX11Base::GetPickledData(
     const Clipboard::FormatType& format,
     base::Pickle* pickle) const {
-  std::vector<::Atom> requested_types;
-  requested_types.push_back(gfx::GetAtom(format.ToString().c_str()));
+  std::vector<std::string> requested_types;
+  requested_types.push_back(format.ToString().c_str());
 
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
   if (data.IsValid()) {
@@ -314,17 +313,17 @@ bool OSExchangeDataProviderAuraX11Base::GetPickledData(
 }
 
 bool OSExchangeDataProviderAuraX11Base::HasString() const {
-  std::vector<::Atom> text_atoms = ui::GetTextAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(text_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> text_mimes = ui::GetTextMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(text_mimes, GetTargets(), &requested_types);
   return !requested_types.empty() && !HasFile();
 }
 
 bool OSExchangeDataProviderAuraX11Base::HasURL(
     OSExchangeData::FilenameToURLPolicy policy) const {
-  std::vector<::Atom> url_atoms = ui::GetURLAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes = ui::GetURLMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   if (requested_types.empty())
     return false;
@@ -333,11 +332,10 @@ bool OSExchangeDataProviderAuraX11Base::HasURL(
   // Windows does and stuffs all the data into one mime type.
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
   if (data.IsValid()) {
-    if (data.GetType() == gfx::GetAtom(Clipboard::kMimeTypeMozillaURL)) {
+    if (data.GetType() == Clipboard::kMimeTypeMozillaURL) {
       // File managers shouldn't be using this type, so this is a URL.
       return true;
-    } else if (data.GetType() ==
-               gfx::GetAtom(ui::Clipboard::kMimeTypeURIList)) {
+    } else if (data.GetType() == ui::Clipboard::kMimeTypeURIList) {
       std::vector<std::string> tokens = ui::ParseURIList(data);
       for (std::vector<std::string>::const_iterator it = tokens.begin();
            it != tokens.end(); ++it) {
@@ -354,9 +352,9 @@ bool OSExchangeDataProviderAuraX11Base::HasURL(
 }
 
 bool OSExchangeDataProviderAuraX11Base::HasFile() const {
-  std::vector<::Atom> url_atoms = ui::GetURIListAtomsFrom();
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes = ui::GetURIListMimesFrom();
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   if (requested_types.empty())
     return false;
@@ -381,10 +379,10 @@ bool OSExchangeDataProviderAuraX11Base::HasFile() const {
 
 bool OSExchangeDataProviderAuraX11Base::HasCustomFormat(
     const Clipboard::FormatType& format) const {
-  std::vector<::Atom> url_atoms;
-  url_atoms.push_back(gfx::GetAtom(format.ToString().c_str()));
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes;
+  url_mimes.push_back(format.ToString().c_str());
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   return !requested_types.empty();
 }
@@ -400,15 +398,15 @@ void OSExchangeDataProviderAuraX11Base::SetHtml(const base::string16& html,
   scoped_refptr<base::RefCountedMemory> mem(
       base::RefCountedBytes::TakeVector(&bytes));
 
-  format_map_.Insert(gfx::GetAtom(Clipboard::kMimeTypeHTML), mem);
+  format_map_.Insert(Clipboard::kMimeTypeHTML, mem);
 }
 
 bool OSExchangeDataProviderAuraX11Base::GetHtml(base::string16* html,
                                                 GURL* base_url) const {
-  std::vector<::Atom> url_atoms;
-  url_atoms.push_back(gfx::GetAtom(Clipboard::kMimeTypeHTML));
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes;
+  url_mimes.push_back(Clipboard::kMimeTypeHTML);
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   ui::SelectionData data(format_map_.GetFirstOf(requested_types));
   if (data.IsValid()) {
@@ -421,10 +419,10 @@ bool OSExchangeDataProviderAuraX11Base::GetHtml(base::string16* html,
 }
 
 bool OSExchangeDataProviderAuraX11Base::HasHtml() const {
-  std::vector<::Atom> url_atoms;
-  url_atoms.push_back(gfx::GetAtom(Clipboard::kMimeTypeHTML));
-  std::vector<::Atom> requested_types;
-  GetAtomIntersection(url_atoms, GetTargets(), &requested_types);
+  std::vector<std::string> url_mimes;
+  url_mimes.push_back(Clipboard::kMimeTypeHTML);
+  std::vector<std::string> requested_types;
+  GetMimesIntersection(url_mimes, GetTargets(), &requested_types);
 
   return !requested_types.empty();
 }
@@ -457,7 +455,7 @@ bool OSExchangeDataProviderAuraX11Base::GetPlainTextURL(GURL* url) const {
   return false;
 }
 
-std::vector<::Atom> OSExchangeDataProviderAuraX11Base::GetTargets() const {
+std::vector<std::string> OSExchangeDataProviderAuraX11Base::GetTargets() const {
   return format_map_.GetTypes();
 }
 

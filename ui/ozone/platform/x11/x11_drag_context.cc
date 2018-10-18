@@ -155,7 +155,7 @@ void X11DragContext::OnSelectionNotify(const XSelectionEvent& event) {
     ::Atom type = x11::None;
     if (ui::GetRawBytesOfProperty(local_window_, event.property, &data, NULL,
                                   &type)) {
-      fetched_targets_.Insert(event.target, data);
+      fetched_targets_.Insert(gfx::GetAtomName(event.target), data);
     }
   } else {
     // The source failed to convert the drop data to the format (target in X11

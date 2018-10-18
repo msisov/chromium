@@ -238,6 +238,10 @@ XAtom GetAtom(const char* name) {
   return X11AtomCache::GetInstance()->GetAtom(name);
 }
 
+std::string GetAtomName(XAtom atom) {
+  return X11AtomCache::GetInstance()->GetAtomName(atom);
+}
+
 X11AtomCache* X11AtomCache::GetInstance() {
   return base::Singleton<X11AtomCache>::get();
 }
@@ -265,6 +269,18 @@ XAtom X11AtomCache::GetAtom(const char* name) const {
   XAtom atom = XInternAtom(xdisplay_, name, False);
   cached_atoms_.insert(std::make_pair(name, atom));
   return atom;
+}
+
+std::string X11AtomCache::GetAtomName(XAtom atom) const {
+  auto it =
+      std::find_if(cached_atoms_.begin(), cached_atoms_.end(),
+                   [atom](const auto& item) { return item.second == atom; });
+  if (it != cached_atoms_.end())
+    return it->first;
+
+  std::string atom_name = XGetAtomName(xdisplay_, atom);
+  cached_atoms_.insert(std::make_pair(atom_name, atom));
+  return atom_name;
 }
 
 }  // namespace gfx

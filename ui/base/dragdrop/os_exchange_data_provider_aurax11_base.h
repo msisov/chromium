@@ -14,7 +14,6 @@
 #include "ui/base/dragdrop/os_exchange_data.h"
 #include "ui/base/x/selection_owner.h"
 #include "ui/base/x/selection_requestor.h"
-#include "ui/base/x/selection_utils.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/vector2d.h"
 #include "ui/gfx/image/image_skia.h"
@@ -95,7 +94,7 @@ class UI_BASE_EXPORT OSExchangeDataProviderAuraX11Base
   bool GetPlainTextURL(GURL* url) const;
 
   // Returns the targets in |format_map_|.
-  std::vector<::Atom> GetTargets() const;
+  std::vector<std::string> GetTargets() const;
 
   // Drag image and offset data.
   gfx::ImageSkia drag_image_;

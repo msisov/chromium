@@ -14,8 +14,9 @@
 #include "base/memory/ref_counted_memory.h"
 #include "base/time/time.h"
 #include "base/timer/timer.h"
+#include "ui/base/selection_utils_linux.h"
 #include "ui/base/ui_base_export.h"
-#include "ui/base/x/selection_utils.h"
+#include "ui/events/platform/x11/x11_event_source.h"
 #include "ui/gfx/x/x11_types.h"
 
 namespace ui {

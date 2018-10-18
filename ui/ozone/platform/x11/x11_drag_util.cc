@@ -7,7 +7,7 @@
 #include "base/memory/ref_counted_memory.h"
 #include "base/strings/string_split.h"
 #include "base/strings/utf_string_conversions.h"
-#include "ui/base/x/selection_utils.h"
+#include "ui/base/selection_utils_linux.h"
 
 namespace ui {
 
@@ -59,12 +59,12 @@ void InsertStringToSelectionFormatMap(const base::string16& text_data,
   scoped_refptr<base::RefCountedMemory> mem(
       base::RefCountedString::TakeString(&utf8));
 
-  map->Insert(gfx::GetAtom(Clipboard::kMimeTypeText), mem);
-  map->Insert(gfx::GetAtom(kDragText), mem);
-  map->Insert(gfx::GetAtom(kDragString), mem);
-  map->Insert(gfx::GetAtom(kDragUtf8String), mem);
-  map->Insert(gfx::GetAtom(kDragTextPlain), mem);
-  map->Insert(gfx::GetAtom(kDragTextPlainUtf8), mem);
+  map->Insert(Clipboard::kMimeTypeText, mem);
+  map->Insert(kDragText, mem);
+  map->Insert(kDragString, mem);
+  map->Insert(kDragUtf8String, mem);
+  map->Insert(kDragTextPlain, mem);
+  map->Insert(kDragTextPlainUtf8, mem);
 }
 
 void InsertURLToSelectionFormatMap(const GURL& url,
@@ -81,7 +81,7 @@ void InsertURLToSelectionFormatMap(const GURL& url,
     scoped_refptr<base::RefCountedMemory> mem(
         base::RefCountedBytes::TakeVector(&data));
 
-    map->Insert(gfx::GetAtom(Clipboard::kMimeTypeMozillaURL), mem);
+    map->Insert(Clipboard::kMimeTypeMozillaURL, mem);
 
     // Set a string fallback as well.
     InsertStringToSelectionFormatMap(spec, map);
@@ -94,7 +94,7 @@ void InsertURLToSelectionFormatMap(const GURL& url,
     std::string netscape_url = url.spec();
     netscape_url += "\n";
     netscape_url += base::UTF16ToUTF8(title);
-    map->Insert(gfx::GetAtom(kDragNetscapeURL),
+    map->Insert(kDragNetscapeURL,
                 scoped_refptr<base::RefCountedMemory>(
                     base::RefCountedString::TakeString(&netscape_url)));
   }

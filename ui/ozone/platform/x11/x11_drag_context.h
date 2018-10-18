@@ -5,7 +5,7 @@
 #ifndef UI_OZONE_PLATFORM_X11_X11_DRAG_CONTEXT_H_
 #define UI_OZONE_PLATFORM_X11_X11_DRAG_CONTEXT_H_
 
-#include "ui/base/x/selection_utils.h"
+#include "ui/base/selection_utils_linux.h"
 #include "ui/gfx/x/x11.h"
 #include "ui/gfx/x/x11_atom_cache.h"
 #include "ui/gfx/geometry/point_f.h"

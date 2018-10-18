@@ -9,6 +9,7 @@
 #include "ui/base/dragdrop/drag_drop_types.h"
 #include "ui/base/x/selection_owner.h"
 #include "ui/base/x/x11_util.h"
+#include "ui/gfx/x/x11.h"
 #include "ui/events/platform/platform_event_dispatcher.h"
 #include "ui/gfx/geometry/point.h"
 #include "ui/gfx/native_widget_types.h"

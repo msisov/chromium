@@ -1,8 +1,8 @@
-// Copyright (c) 2013 The Chromium Authors. All rights reserved.
+// Copyright 2018 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/base/x/selection_utils.h"
+#include "ui/base/selection_utils_linux.h"
 
 #include <stdint.h>
 
@@ -19,38 +19,40 @@
 
 namespace ui {
 
+namespace {
 const char kString[] = "STRING";
 const char kText[] = "TEXT";
 const char kTextPlain[] = "text/plain";
 const char kTextPlainUtf8[] = "text/plain;charset=utf-8";
 const char kUtf8String[] = "UTF8_STRING";
+}  // namespace
 
-std::vector<::Atom> GetTextAtomsFrom() {
-  std::vector< ::Atom> atoms;
-  atoms.push_back(gfx::GetAtom(kUtf8String));
-  atoms.push_back(gfx::GetAtom(kString));
-  atoms.push_back(gfx::GetAtom(kText));
-  atoms.push_back(gfx::GetAtom(kTextPlain));
-  atoms.push_back(gfx::GetAtom(kTextPlainUtf8));
-  return atoms;
+std::vector<std::string> GetTextMimesFrom() {
+  std::vector<std::string> mimes;
+  mimes.push_back(kUtf8String);
+  mimes.push_back(kString);
+  mimes.push_back(kText);
+  mimes.push_back(kTextPlain);
+  mimes.push_back(kTextPlainUtf8);
+  return mimes;
 }
 
-std::vector<::Atom> GetURLAtomsFrom() {
-  std::vector< ::Atom> atoms;
-  atoms.push_back(gfx::GetAtom(Clipboard::kMimeTypeURIList));
-  atoms.push_back(gfx::GetAtom(Clipboard::kMimeTypeMozillaURL));
-  return atoms;
+std::vector<std::string> GetURLMimesFrom() {
+  std::vector<std::string> mimes;
+  mimes.push_back(Clipboard::kMimeTypeURIList);
+  mimes.push_back(Clipboard::kMimeTypeMozillaURL);
+  return mimes;
 }
 
-std::vector<::Atom> GetURIListAtomsFrom() {
-  std::vector< ::Atom> atoms;
-  atoms.push_back(gfx::GetAtom(Clipboard::kMimeTypeURIList));
-  return atoms;
+std::vector<std::string> GetURIListMimesFrom() {
+  std::vector<std::string> mimes;
+  mimes.push_back(Clipboard::kMimeTypeURIList);
+  return mimes;
 }
 
-void GetAtomIntersection(const std::vector< ::Atom>& desired,
-                         const std::vector< ::Atom>& offered,
-                         std::vector< ::Atom>* output) {
+void GetMimesIntersection(const std::vector<std::string>& desired,
+                          const std::vector<std::string>& offered,
+                          std::vector<std::string>* output) {
   for (auto it = desired.begin(); it != desired.end(); ++it) {
     if (base::ContainsValue(offered, *it))
       output->push_back(*it);
@@ -68,8 +70,8 @@ std::vector<std::string> ParseURIList(const SelectionData& data) {
   // uri-lists are newline separated file lists in URL encoding.
   std::string unparsed;
   data.AssignTo(&unparsed);
-  return base::SplitString(
-      unparsed, "\n", base::KEEP_WHITESPACE, base::SPLIT_WANT_NONEMPTY);
+  return base::SplitString(unparsed, "\n", base::KEEP_WHITESPACE,
+                           base::SPLIT_WANT_NONEMPTY);
 }
 
 std::string RefCountedMemoryToString(
@@ -112,14 +114,14 @@ SelectionFormatMap::SelectionFormatMap(const SelectionFormatMap& other) =
 SelectionFormatMap::~SelectionFormatMap() {}
 
 void SelectionFormatMap::Insert(
-    ::Atom atom,
+    std::string type,
     const scoped_refptr<base::RefCountedMemory>& item) {
-  data_.erase(atom);
-  data_.insert(std::make_pair(atom, item));
+  data_.erase(type);
+  data_.insert(std::make_pair(type, item));
 }
 
 ui::SelectionData SelectionFormatMap::GetFirstOf(
-    const std::vector< ::Atom>& requested_types) const {
+    const std::vector<std::string>& requested_types) const {
   for (auto it = requested_types.begin(); it != requested_types.end(); ++it) {
     auto data_it = data_.find(*it);
     if (data_it != data_.end()) {
@@ -130,20 +132,20 @@ ui::SelectionData SelectionFormatMap::GetFirstOf(
   return SelectionData();
 }
 
-std::vector< ::Atom> SelectionFormatMap::GetTypes() const {
-  std::vector< ::Atom> atoms;
-  for (auto it = data_.begin(); it != data_.end(); ++it)
-    atoms.push_back(it->first);
+std::vector<std::string> SelectionFormatMap::GetTypes() const {
+  std::vector<std::string> mime_types;
+  for (const auto& data_item : data_)
+    mime_types.push_back(data_item.first);
 
-  return atoms;
+  return mime_types;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-SelectionData::SelectionData() : type_(x11::None) {}
+SelectionData::SelectionData() : type_(std::string()) {}
 
 SelectionData::SelectionData(
-    ::Atom type,
+    std::string type,
     const scoped_refptr<base::RefCountedMemory>& memory)
     : type_(type), memory_(memory) {}
 
@@ -161,10 +163,10 @@ SelectionData& SelectionData::operator=(const SelectionData& rhs) {
 }
 
 bool SelectionData::IsValid() const {
-  return type_ != x11::None;
+  return type_ != std::string();
 }
 
-::Atom SelectionData::GetType() const {
+std::string SelectionData::GetType() const {
   return type_;
 }
 
@@ -177,15 +179,12 @@ size_t SelectionData::GetSize() const {
 }
 
 std::string SelectionData::GetText() const {
-  if (type_ == gfx::GetAtom(kUtf8String) || type_ == gfx::GetAtom(kText) ||
-      type_ == gfx::GetAtom(kTextPlainUtf8)) {
+  if (type_ == kUtf8String || type_ == kText || type_ == kTextPlainUtf8) {
     return RefCountedMemoryToString(memory_);
-  } else if (type_ == gfx::GetAtom(kString) ||
-             type_ == gfx::GetAtom(kTextPlain)) {
+  } else if (type_ == kString || type_ == kTextPlain) {
     std::string result;
     base::ConvertToUtf8AndNormalize(RefCountedMemoryToString(memory_),
-                                    base::kCodepageLatin1,
-                                    &result);
+                                    base::kCodepageLatin1, &result);
     return result;
   } else {
     // BTW, I looked at COMPOUND_TEXT, and there's no way we're going to
@@ -198,14 +197,13 @@ std::string SelectionData::GetText() const {
 base::string16 SelectionData::GetHtml() const {
   base::string16 markup;
 
-  if (type_ == gfx::GetAtom(Clipboard::kMimeTypeHTML)) {
+  if (type_ == Clipboard::kMimeTypeHTML) {
     const unsigned char* data = GetData();
     size_t size = GetSize();
 
     // If the data starts with 0xFEFF, i.e., Byte Order Mark, assume it is
     // UTF-16, otherwise assume UTF-8.
-    if (size >= 2 &&
-        reinterpret_cast<const uint16_t*>(data)[0] == 0xFEFF) {
+    if (size >= 2 && reinterpret_cast<const uint16_t*>(data)[0] == 0xFEFF) {
       markup.assign(reinterpret_cast<const uint16_t*>(data) + 1,
                     (size / 2) - 1);
     } else {
