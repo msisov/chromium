@@ -281,3 +281,18 @@
 -WebRtcGetDisplayMediaBrowserTestWithPicker.GetDisplayMediaVideo
 -WebViewTest.TaskManagerExistingWebView
 -WebViewTest.TaskManagerNewWebView
+#The following cases happen on Igalia Buildbot.
+#7 tests failed:
+-PaymentRequestShippingAddressEditorTest.AddPossiblePhoneNumber
+-ProcessMemoryMetricsEmitterTest.FetchAndEmitMetrics
+-ProcessMemoryMetricsEmitterTest.FetchAndEmitMetricsWithExtensions
+-ProcessMemoryMetricsEmitterTest.FetchAndEmitMetricsWithHostedApps
+-ProcessMemoryMetricsEmitterTest.FetchDuringTrace
+-ProcessMemoryMetricsEmitterTest.FetchThreeTimes
+-ProcessMemoryMetricsEmitterTest.ForegroundAndBackgroundPages
+#2 tests failed: due to using no-sandbox switch
+-SandboxStatusUITest.testBPFSandboxEnabled
+-SandboxStatusUITest.testSUIDorNamespaceSandboxEnabled
+#2 tests timed out:
+-MediaGalleriesGalleryWatchApiTest.CorrectResponseOnModifyingWatchedGallery
+-MediaGalleriesGalleryWatchApiTest.RemoveListenerAndModifyGallery
