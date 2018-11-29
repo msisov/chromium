@@ -10,6 +10,12 @@
 #include "ui/events/platform/platform_event_source.h"
 #endif
 
+#if defined(USE_OZONE)
+#include "ui/base/clipboard/mock_clipboard_delegate.h"
+
+ui::ClipboardDelegate* g_clipboard_delegate_ = nullptr;
+#endif
+
 namespace ui {
 
 struct PlatformClipboardTraits {
@@ -19,7 +25,15 @@ struct PlatformClipboardTraits {
   }
 #endif
 
-  static Clipboard* Create() { return Clipboard::GetForCurrentThread(); }
+  static Clipboard* Create() {
+    auto clipboard = Clipboard::GetForCurrentThread();
+#if defined(USE_OZONE)
+    DCHECK(!g_clipboard_delegate_);
+    g_clipboard_delegate_ = new MockClipboardDelegate();
+    clipboard->SetDelegate(g_clipboard_delegate_);
+#endif
+    return clipboard;
+  }
 
   static void Destroy(Clipboard* clipboard) {
     ASSERT_EQ(Clipboard::GetForCurrentThread(), clipboard);
