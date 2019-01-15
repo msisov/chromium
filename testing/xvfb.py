@@ -75,6 +75,11 @@ def run_executable(cmd, env, stdoutfile=None):
         xcompmgr_proc = subprocess.Popen('xcompmgr', stdout=subprocess.PIPE,
                                          stderr=subprocess.STDOUT, env=env)
 
+        # Tests may need a Wayland server.
+        weston_proc = subprocess.Popen(('weston', '--backend=x11-backend.so'),
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.STDOUT, env=env)
+
         return test_env.run_executable(cmd, env, stdoutfile)
       except OSError as e:
         print >> sys.stderr, 'Failed to start Xvfb or Openbox: %s' % str(e)
@@ -82,6 +87,7 @@ def run_executable(cmd, env, stdoutfile=None):
       finally:
         kill(openbox_proc)
         kill(xcompmgr_proc)
+        kill(weston_proc)
     else:
       env['_CHROMIUM_INSIDE_XVFB'] = '1'
       if stdoutfile:

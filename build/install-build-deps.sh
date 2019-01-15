@@ -185,6 +185,7 @@ dev_list="\
   ruby
   subversion
   uuid-dev
+  weston
   wdiff
   x11-utils
   xcompmgr
