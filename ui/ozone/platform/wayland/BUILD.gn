@@ -5,6 +5,7 @@
 visibility = [ "//ui/ozone/*" ]
 
 import("//build/config/linux/pkg_config.gni")
+import("//testing/libfuzzer/fuzzer_test.gni")
 import("//ui/ozone/platform/wayland/wayland.gni")
 
 pkg_config("wayland-egl") {
@@ -204,6 +205,7 @@ source_set("test_support") {
     "test/test_zwp_text_input_manager.h",
   ]
 
+  defines = [ "WL_HIDE_DEPRECATED" ]
   deps = [
     "//base:base",
     "//skia",
@@ -256,9 +258,25 @@ source_set("wayland_unittests") {
   if (use_xkbcommon) {
     deps += [ "//ui/events/keycodes:xkb" ]
   }
-
-  defines = [ "WL_HIDE_DEPRECATED" ]
-  if (use_wayland_gbm) {
-    defines += [ "WAYLAND_GBM" ]
-  }
 }
+
+fuzzer_test("wayland_buffer_fuzzer") {
+  sources = [
+    "wayland_buffer_fuzzer.cc"
+  ]
+  deps = [
+    ":wayland",
+    ":test_support",
+    "//base/test:test_support",
+    "//build/config/linux/libdrm",
+    "//testing/gmock",
+    "//third_party/wayland:wayland_server",
+    "//third_party/wayland-protocols:linux_dmabuf_protocol",
+    "//third_party/wayland-protocols:text_input_protocol",
+    "//third_party/wayland-protocols:xdg_shell_protocol",
+    "//ui/gfx:test_support",
+    "//ui/ozone/common/linux:drm",
+    "//ui/ozone:platform",
+  ]
+}
+

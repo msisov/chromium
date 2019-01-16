@@ -52,7 +52,8 @@ WaylandConnection::~WaylandConnection() = default;
 
 bool WaylandConnection::Initialize() {
   static const wl_registry_listener registry_listener = {
-      &WaylandConnection::Global, &WaylandConnection::GlobalRemove,
+      &WaylandConnection::Global,
+      &WaylandConnection::GlobalRemove,
   };
 
   display_.reset(wl_display_connect(nullptr));
@@ -193,6 +194,7 @@ void WaylandConnection::CreateZwpLinuxDmabuf(
     uint32_t planes_count,
     uint32_t buffer_id) {
   DCHECK(base::MessageLoopCurrentForUI::IsSet());
+  DCHECK(buffer_manager_);
   if (!buffer_manager_->CreateBuffer(std::move(file), width, height, strides,
                                      offsets, format, modifiers, planes_count,
                                      buffer_id)) {
@@ -364,7 +366,8 @@ void WaylandConnection::Global(void* data,
                                const char* interface,
                                uint32_t version) {
   static const wl_seat_listener seat_listener = {
-      &WaylandConnection::Capabilities, &WaylandConnection::Name,
+      &WaylandConnection::Capabilities,
+      &WaylandConnection::Name,
   };
   static const xdg_shell_listener shell_listener = {
       &WaylandConnection::Ping,
