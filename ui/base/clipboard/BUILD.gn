@@ -84,17 +84,24 @@ jumbo_component("clipboard") {
 
   if (use_aura) {
     # Aura clipboard.
-    if (use_x11 && is_desktop_linux) {
-      sources += [
-        "clipboard_aurax11.cc",
-        "clipboard_aurax11.h",
-      ]
-      configs += [ "//build/config/linux:x11" ]
-      deps += [
-        "//ui/base",
-        "//ui/base/x",
-        "//ui/gfx/x",
-      ]
+    if (is_desktop_linux) {
+      if (use_ozone) {
+        sources += [
+          "clipboard_ozone.cc",
+          "clipboard_ozone.h",
+        ]
+      } else if (use_x11) {
+        sources += [
+          "clipboard_aurax11.cc",
+          "clipboard_aurax11.h",
+        ]
+        configs += [ "//build/config/linux:x11" ]
+        deps += [
+          "//ui/base",
+          "//ui/base/x",
+          "//ui/gfx/x",
+        ]
+      }
     } else if (!is_win) {
       # This file is used for all non-X11, non-Windows aura Builds.
       sources += [
@@ -114,6 +121,10 @@ jumbo_component("clipboard") {
       "AppKit.framework",
       "CoreFoundation.framework",
     ]
+  }
+
+  if (use_ozone) {
+    deps += [ "//ui/ozone" ]
   }
 }
 
