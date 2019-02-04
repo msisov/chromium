@@ -53,19 +53,15 @@ WaylandBufferManager::WaylandBufferManager(
     zwp_linux_dmabuf_v1* zwp_linux_dmabuf,
     WaylandConnection* connection)
     : zwp_linux_dmabuf_(zwp_linux_dmabuf), connection_(connection) {
-  DCHECK(zwp_linux_dmabuf_);
-  DCHECK(connection_);
-
   static const zwp_linux_dmabuf_v1_listener dmabuf_listener = {
-      &WaylandBufferManager::Format,
-      &WaylandBufferManager::Modifiers,
+      &WaylandBufferManager::Format, &WaylandBufferManager::Modifiers,
   };
   zwp_linux_dmabuf_v1_add_listener(zwp_linux_dmabuf_.get(), &dmabuf_listener,
                                    this);
 
   // A roundtrip after binding guarantees that the client has received all
   // supported formats.
-  wl_display_roundtrip(connection_->display());
+  wl_display_roundtrip(connection->display());
 }
 
 WaylandBufferManager::~WaylandBufferManager() {
